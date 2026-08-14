@@ -20,7 +20,7 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 | 6. Bootstrap admin + Auditoría | ✅ Hecho | `AdminBootstrapService` (`OnApplicationBootstrap`) crea admin desde `.env` si no existe, `must_change_password=true`. `AuditService` ya existía desde Task 5. 3/3 e2e específico + 16/16 e2e total PASS (commit `eaeb768`) |
 | 7. Frontend — scaffold PWA + Design System | ✅ Hecho | Vite+React 18+TS, Tailwind con tokens, vite-plugin-pwa, componentes `Button`/`Input`/`Card`/`Alert`/`Spinner`, `apiFetch` con refresh automático. Build+lint+vitest (2/2) OK (commit `053e7c7`) |
 | 8. Frontend — pantallas de autenticación | ✅ Hecho | `AuthProvider`/`useAuth`, `LoginPage` (con test), `RegisterPage`, `ChangePasswordPage`, `App.tsx` con router protegido por rol y `mustChangePassword`, `DashboardShell` placeholder. Build+lint+vitest (3/3) OK; verificado end-to-end vía curl contra proxy real de Vite (commit `ece1648`) |
-| 9. CI/CD — GitHub Actions | ❌ No iniciado | |
+| 9. CI/CD — GitHub Actions | ✅ Hecho | `.github/workflows/ci.yml`: job `api` (lint+build+`migrate deploy`+unit+e2e con servicio MySQL) y job `web` (lint+test+build). Verificado localmente que `migrate deploy` no requiere shadow DB (commit `1d95b3b`) |
 | 10. Verificación final de Fase 1 | ❌ No iniciado | |
 
 ### Cambios recientes (2026-08-14)
@@ -46,6 +46,10 @@ Task 8 cerrado: pantallas de autenticación. `login()` del contexto se modificó
 
 Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` (vitest) 3/3 PASS. Working tree limpio tras commit `ece1648`. Dev servers quedaron corriendo (api :3000, web :5173) para pruebas manuales.
 
+Task 9 cerrado: pipeline CI. Se corrigieron 3 gaps del snippet original del plan (confirmado con el usuario): faltaba lint en ambos jobs, usaba `prisma migrate dev --name ci` (requiere shadow DB — mismo problema de permisos resuelto ad-hoc en Task 4) en vez de `migrate deploy`, y el `npx jest --runInBand` del plan solo corre unit tests (el `testRegex` no matchea `*.e2e-spec.ts`) pese a que el objetivo del task decía "unit e integración". Se agregó step separado de e2e con `test/jest-e2e.json`. Verificado localmente (no en GitHub Actions real, no hay corrida remota todavía) que `prisma migrate deploy` aplica limpio con un usuario de privilegios acotados a una sola BD — igual a como el servicio `mysql` de Actions crea `MYSQL_USER`.
+
+**Pendiente:** el workflow no se ha ejecutado en GitHub real (requiere push/PR); solo validado localmente (sintaxis YAML + `migrate deploy` aislado).
+
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
 
 - Modular Monolith: `api/` (NestJS 10) + `web/` (React 18 + Vite 5 + Tailwind 3.4 PWA) + MySQL 8 + MinIO + Nginx.
@@ -60,4 +64,4 @@ Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` (vitest
 
 ## Próximo paso sugerido
 
-Task 9: CI/CD — GitHub Actions (`.github/workflows/ci.yml`: lint+test api con MySQL en container, build web), siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`. Antes de eso, conviene una pasada visual manual del flujo de auth en navegador (no verificada aún).
+Task 10: Verificación final de Fase 1 — levantar entorno completo con docker compose, probar flujo admin y registro de cliente en la app web real, actualizar README con instrucciones de ejecución. Sigue pendiente la pasada visual manual del flujo de auth en navegador (Task 8 solo se verificó por curl).
