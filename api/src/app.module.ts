@@ -12,6 +12,7 @@ import { AuthModule } from './auth/auth.module';
 import { AdminBootstrapModule } from './admin-bootstrap/admin-bootstrap.module';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { LoansModule } from './loans/loans.module';
+import { CustomersModule } from './customers/customers.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { LoansModule } from './loans/loans.module';
     AuthModule,
     AdminBootstrapModule,
     LoansModule,
+    CustomersModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

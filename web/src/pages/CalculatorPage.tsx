@@ -148,6 +148,11 @@ export function CalculatorPage() {
                 {formatDate(draft.schedule[draft.schedule.length - 1].dueDate)}
               </span>
             </div>
+            <Link to="/onboarding">
+              <Button type="button" className="w-full">
+                Completar mis datos
+              </Button>
+            </Link>
           </div>
         )}
 

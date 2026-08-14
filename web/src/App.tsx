@@ -4,6 +4,7 @@ import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { CalculatorPage } from './pages/CalculatorPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
 
@@ -27,6 +28,12 @@ export default function App() {
   return (
     <Routes>
       <Route path="/calculadora" element={<CalculatorPage />} />
+      <Route
+        path="/onboarding"
+        element={
+          user?.role === 'CLIENT' ? <OnboardingPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
       <Route path="/login" element={user ? <Navigate to={homeFor(user.role)} /> : <LoginPage />} />
       <Route
         path="/register"
