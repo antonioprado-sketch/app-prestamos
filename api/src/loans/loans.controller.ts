@@ -3,8 +3,10 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
   Post,
   Req,
   UseGuards,
@@ -50,6 +52,23 @@ export class LoansController {
         req.headers['user-agent'] ?? '',
       ),
     );
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CLIENT')
+  async findMine(@CurrentUser() user: { phone: string }) {
+    return this.loans.findMyLoans(user.phone);
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CLIENT')
+  async findOne(
+    @Param('id') id: string,
+    @CurrentUser() user: { phone: string },
+  ) {
+    return this.loans.findOne(user.phone, id);
   }
 
   private async handleQuoteErrors<T>(fn: () => Promise<T>): Promise<T> {

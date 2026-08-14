@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigurationService } from '../configuration/configuration.service';
@@ -36,6 +36,36 @@ function generateFolio(): string {
     .toString()
     .padStart(4, '0');
   return `ppni-${suffix}`;
+}
+
+function toDateString(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+type LoanWithSchedule = Prisma.LoanGetPayload<{ include: { schedule: true } }>;
+
+function toLoanDraftResult(loan: LoanWithSchedule): LoanDraftResult {
+  const schedule = loan.schedule
+    .slice()
+    .sort((a, b) => a.seq - b.seq)
+    .map((entry) => ({
+      seq: entry.seq,
+      dueDate: toDateString(entry.dueDate),
+      amount: Number(entry.amount),
+    }));
+
+  return {
+    id: String(loan.id),
+    folio: loan.folio,
+    status: loan.status,
+    amount: Number(loan.amount),
+    model: loan.model,
+    openingDate: toDateString(loan.openingDate),
+    total: Number(loan.totalToPay),
+    payment: schedule[0]?.amount ?? 0,
+    lastPayment: schedule[schedule.length - 1]?.amount ?? 0,
+    schedule,
+  };
 }
 
 @Injectable()
@@ -139,5 +169,27 @@ export class LoansService {
         throw err;
       }
     }
+  }
+
+  async findMyLoans(phone: string): Promise<LoanDraftResult[]> {
+    const loans = await this.prisma.loan.findMany({
+      where: { customerPhone: phone },
+      include: { schedule: true },
+      orderBy: { createdAt: 'desc' },
+    });
+    return loans.map(toLoanDraftResult);
+  }
+
+  async findOne(phone: string, id: string): Promise<LoanDraftResult> {
+    if (!/^\d+$/.test(id))
+      throw new NotFoundException('Préstamo no encontrado');
+    const loan = await this.prisma.loan.findUnique({
+      where: { id: BigInt(id) },
+      include: { schedule: true },
+    });
+    if (!loan || loan.customerPhone !== phone) {
+      throw new NotFoundException('Préstamo no encontrado');
+    }
+    return toLoanDraftResult(loan);
   }
 }

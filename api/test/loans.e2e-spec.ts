@@ -55,7 +55,10 @@ describe('Loans (e2e)', () => {
   });
 
   it('rechaza sin token', async () => {
-    await request(app.getHttpServer()).post('/api/v1/loans').send(validBody).expect(401);
+    await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .send(validBody)
+      .expect(401);
   });
 
   it('rechaza a un rol distinto de CLIENT', async () => {
@@ -87,6 +90,9 @@ describe('Loans (e2e)', () => {
       .expect(400);
   });
 
+  let loanId: string;
+  let folio: string;
+
   it('crea el préstamo en borrador con folio único y calendario', async () => {
     const token = await loginClient();
     const res = await request(app.getHttpServer())
@@ -99,6 +105,43 @@ describe('Loans (e2e)', () => {
     expect(res.body.status).toBe('DRAFT');
     expect(res.body.total).toBe(1400);
     expect(res.body.schedule).toHaveLength(20);
+    loanId = res.body.id;
+    folio = res.body.folio;
+  });
+
+  it('GET /loans requiere token', async () => {
+    await request(app.getHttpServer()).get('/api/v1/loans').expect(401);
+  });
+
+  it('GET /loans lista los préstamos del cliente autenticado', async () => {
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/loans')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].folio).toBe(folio);
+    expect(res.body[0].schedule).toHaveLength(20);
+  });
+
+  it('GET /loans/:id devuelve el detalle del préstamo propio', async () => {
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/loans/${loanId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.id).toBe(loanId);
+    expect(res.body.folio).toBe(folio);
+  });
+
+  it('GET /loans/:id devuelve 404 si no existe', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/loans/999999999')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
   });
 
   it('rechaza una segunda solicitud mientras haya una en curso', async () => {
