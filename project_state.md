@@ -18,6 +18,8 @@ Fase 1 completa: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10/10
 
 **Verificado 2026-08-14:** `npm test` API 23/23 PASS, `npm run test:e2e` 16/16 PASS (repetido, sigue idempotente), `npm run build`/`lint` API y web OK, `npm test` web 4/4 PASS. Probado end-to-end contra el stack Docker real (`localhost`), no solo unit tests.
 
+**Esquema Prisma para préstamos (2026-08-14, commit `079ba68`):** se agregaron los modelos `Loan` y `LoanSchedule` (sección 6 de la spec), adaptados a las convenciones ya usadas en el schema (BigInt autoincrement en vez de UUID como sugiere la spec, enums UPPERCASE, `DECIMAL(10,2)`). `Loan.model` usa el mismo enum `WEEKLY`/`BIWEEKLY` que ya devuelve `loan-quote.ts`. Migración `20260814211137_loans` aplicada y verificada (`prisma migrate status` OK, build/lint/23 unit/16 e2e en verde, container `api` reconstruido y probado contra el stack real). **Todavía sin endpoints que usen estos modelos** — es solo el schema; el botón "Lo quiero" de la calculadora aún no crea registros en `loans`. Nota de la sesión: `prisma generate` puede fallar con `EPERM` en Windows por archivos `.tmp` residuales del query engine si hay procesos node colgados — no bloqueante, se limpia borrando los `.tmp` y el cliente generado en el primer intento suele ser válido igual (verificar con grep en `.prisma/client/index.d.ts` antes de asumir que falló).
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -87,6 +89,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Continuar Fase 2: siguiente corte natural es "Lo quiero" creando una `Loan` en estado `draft` (falta agregar el modelo `Loan`/`LoanSchedule` a `schema.prisma` — no existe todavía, Task 4 solo cubrió el núcleo de usuarios). Después: onboarding por pasos, documentos, video, pagaré PDF. Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+Continuar Fase 2: siguiente corte natural es el endpoint `POST /api/v1/loans` ("Lo quiero") que cree el `Loan` en estado `DRAFT` + su `LoanSchedule` (reusando `calculateQuote()`), con generación de folio `ppni-XXXX` único (reintento en colisión, C1). Después: onboarding por pasos, documentos, video, pagaré PDF. Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
 
 Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
