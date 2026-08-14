@@ -1,0 +1,108 @@
+name: appprestamos-prod
+
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: appprestamos-mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      TZ: ${TZ}
+    command: --default-time-zone=America/Mexico_City --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  minio:
+    image: minio/minio:latest
+    container_name: appprestamos-minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: prod
+    container_name: appprestamos-api
+    restart: always
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      NODE_ENV: production
+      MINIO_ENDPOINT: minio
+    depends_on:
+      mysql:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+      target: prod
+    container_name: appprestamos-worker
+    restart: always
+    command: ["node", "dist/src/main-worker.js"]
+    env_file: .env
+    environment:
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
+      NODE_ENV: production
+    depends_on:
+      mysql:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: appprestamos-nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./docker/nginx/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./web/dist:/usr/share/nginx/html:ro
+    depends_on:
+      - api
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  mysql_data:
+  minio_data:
