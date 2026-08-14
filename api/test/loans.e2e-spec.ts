@@ -1,0 +1,112 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { INestApplication } from '@nestjs/common';
+import * as request from 'supertest';
+import { AppModule } from '../src/app.module';
+import { ValidationPipe } from '../src/common/pipes/validation.pipe';
+import { PrismaService } from '../src/prisma/prisma.service';
+
+describe('Loans (e2e)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  const clientPhone = '5522334455';
+  const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
+
+  const validBody = {
+    amount: 1000,
+    model: 'WEEKLY',
+    openingDate: '2026-08-17', // lunes futuro
+  };
+
+  async function loginClient(): Promise<string> {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: clientPhone, password: 'Abcdef12!' });
+    return res.body.accessToken;
+  }
+
+  beforeAll(async () => {
+    const setupModule: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const setupApp = setupModule.createNestApplication();
+    await setupApp.init();
+    prisma = setupModule.get(PrismaService);
+    await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: adminPhone } });
+    await setupApp.close();
+
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
+    await app.init();
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: clientPhone, password: 'Abcdef12!' });
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: adminPhone } });
+    await app.close();
+  });
+
+  it('rechaza sin token', async () => {
+    await request(app.getHttpServer()).post('/api/v1/loans').send(validBody).expect(401);
+  });
+
+  it('rechaza a un rol distinto de CLIENT', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: adminPhone, password: adminPassword });
+    await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .send(validBody)
+      .expect(403);
+  });
+
+  it('rechaza parámetros de cotización inválidos (fecha no es lunes/viernes)', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ ...validBody, openingDate: '2026-08-18' })
+      .expect(400);
+  });
+
+  it('rechaza monto sobre el tope de cliente nuevo', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ ...validBody, amount: 10000 })
+      .expect(400);
+  });
+
+  it('crea el préstamo en borrador con folio único y calendario', async () => {
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validBody)
+      .expect(201);
+
+    expect(res.body.folio).toMatch(/^ppni-\d{4}$/);
+    expect(res.body.status).toBe('DRAFT');
+    expect(res.body.total).toBe(1400);
+    expect(res.body.schedule).toHaveLength(20);
+  });
+
+  it('rechaza una segunda solicitud mientras haya una en curso', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${token}`)
+      .send(validBody)
+      .expect(409);
+  });
+});

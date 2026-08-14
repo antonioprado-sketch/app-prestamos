@@ -26,6 +26,12 @@ interface QuoteResult {
   schedule: QuoteScheduleEntry[];
 }
 
+interface LoanDraft extends QuoteResult {
+  id: string;
+  folio: string;
+  status: string;
+}
+
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 
 function formatDate(iso: string) {
@@ -40,14 +46,19 @@ export function CalculatorPage() {
   const [model, setModel] = useState<Model>('WEEKLY');
   const [openingDate, setOpeningDate] = useState('');
   const [result, setResult] = useState<QuoteResult | null>(null);
+  const [draft, setDraft] = useState<LoanDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [wantItError, setWantItError] = useState<string | null>(null);
+  const [wantItLoading, setWantItLoading] = useState(false);
+
   const [loading, setLoading] = useState(false);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
     setResult(null);
+    setDraft(null);
+    setWantItError(null);
     setLoading(true);
     try {
       const quote = await apiFetch<QuoteResult>('/loans/quote', {
@@ -62,9 +73,21 @@ export function CalculatorPage() {
     }
   };
 
-  const onWantIt = () => {
+  const onWantIt = async () => {
     if (!user) return; // el Link a /register cubre este caso
-    setNotice('La solicitud en línea estará disponible próximamente.');
+    setWantItError(null);
+    setWantItLoading(true);
+    try {
+      const created = await apiFetch<LoanDraft>('/loans', {
+        method: 'POST',
+        body: JSON.stringify({ amount: Number(amount), model, openingDate }),
+      });
+      setDraft(created);
+    } catch (err) {
+      setWantItError(err instanceof ApiError ? err.message : 'No se pudo guardar la solicitud');
+    } finally {
+      setWantItLoading(false);
+    }
   };
 
   return (
@@ -145,10 +168,16 @@ export function CalculatorPage() {
               </span>
             </div>
 
-            {notice && <Alert variant="success">{notice}</Alert>}
+            {wantItError && <Alert variant="error">{wantItError}</Alert>}
+            {draft && (
+              <Alert variant="success">
+                Solicitud guardada como borrador. Folio <strong>{draft.folio}</strong>. Vas a
+                retomar esta misma cotización al terminar el registro de tus datos.
+              </Alert>
+            )}
 
-            {user ? (
-              <Button type="button" onClick={onWantIt}>
+            {draft ? null : user ? (
+              <Button type="button" loading={wantItLoading} onClick={onWantIt}>
                 Lo quiero
               </Button>
             ) : (
