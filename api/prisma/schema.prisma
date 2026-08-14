@@ -24,6 +24,7 @@ model User {
   admin       Admin?
   refreshTokens RefreshToken[]
   auditLogs   AuditLog[]
+  approvedLoans Loan[] @relation("LoanApprover")
 
   @@map("users")
 }
@@ -64,6 +65,7 @@ model Customer {
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
+  loans Loan[]
 
   @@map("customers")
 }
@@ -76,6 +78,7 @@ model Collector {
   createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
+  loans Loan[]
 
   @@map("collectors")
 }
@@ -109,6 +112,47 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model Loan {
+  id            BigInt     @id @default(autoincrement())
+  folio         String     @unique @db.VarChar(9)
+  customerPhone String     @map("customer_phone") @db.VarChar(15)
+  collectorId   BigInt?    @map("collector_id")
+  amount        Decimal    @db.Decimal(10, 2)
+  totalToPay    Decimal    @map("total_to_pay") @db.Decimal(10, 2)
+  model         LoanModel
+  status        LoanStatus @default(DRAFT)
+  openingDate   DateTime   @map("opening_date") @db.Date
+  approvedBy    String?    @map("approved_by") @db.VarChar(15)
+  approvedAt    DateTime?  @map("approved_at")
+  liquidatedAt  DateTime?  @map("liquidated_at")
+  createdAt     DateTime   @default(now()) @map("created_at")
+  updatedAt     DateTime   @updatedAt @map("updated_at")
+
+  customer  Customer       @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
+  collector Collector?     @relation(fields: [collectorId], references: [id], onDelete: SetNull)
+  approver  User?          @relation("LoanApprover", fields: [approvedBy], references: [phone], onDelete: SetNull)
+  schedule  LoanSchedule[]
+
+  @@index([customerPhone, status])
+  @@map("loans")
+}
+
+model LoanSchedule {
+  id         BigInt         @id @default(autoincrement())
+  loanId     BigInt         @map("loan_id")
+  seq        Int
+  dueDate    DateTime       @map("due_date") @db.Date
+  amount     Decimal        @db.Decimal(10, 2)
+  status     ScheduleStatus @default(PENDING)
+  paidAmount Decimal        @default(0) @map("paid_amount") @db.Decimal(10, 2)
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, seq])
+  @@index([loanId, dueDate])
+  @@map("loan_schedules")
+}
+
 model Configuration {
   key       String   @id @db.VarChar(100)
   value     Json
@@ -128,4 +172,28 @@ enum UserStatus {
   ACTIVE
   INACTIVE
   BLOCKED
+}
+
+enum LoanModel {
+  WEEKLY
+  BIWEEKLY
+}
+
+enum LoanStatus {
+  DRAFT
+  SUBMITTED
+  IN_REVIEW
+  REQUIRES_CORRECTION
+  APPROVED
+  REJECTED
+  ACTIVE
+  LIQUIDATED
+  CANCELLED
+}
+
+enum ScheduleStatus {
+  PENDING
+  PAID
+  PARTIAL
+  OVERDUE
 }
