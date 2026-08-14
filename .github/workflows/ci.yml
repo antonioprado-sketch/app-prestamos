@@ -1,0 +1,78 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: appprestamos
+          MYSQL_USER: prestamos
+          MYSQL_PASSWORD: prestamos
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -u root -proot"
+          --health-interval 10s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: mysql://prestamos:prestamos@localhost:3306/appprestamos
+      JWT_ACCESS_SECRET: test-access
+      JWT_REFRESH_SECRET: test-refresh
+      JWT_ACCESS_TTL: 15m
+      JWT_REFRESH_TTL_DAYS: 30
+      ADMIN_PHONE: admin
+      ADMIN_PASSWORD: admin
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: api/package-lock.json
+      - name: Install dependencies
+        working-directory: api
+        run: npm ci
+      - name: Lint
+        working-directory: api
+        run: npm run lint
+      - name: Build
+        working-directory: api
+        run: npm run build
+      - name: Apply migrations
+        working-directory: api
+        run: npx prisma migrate deploy
+      - name: Unit tests
+        working-directory: api
+        run: npx jest --runInBand
+      - name: E2E tests
+        working-directory: api
+        run: npx jest --config ./test/jest-e2e.json --runInBand
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install dependencies
+        working-directory: web
+        run: npm ci
+      - name: Lint
+        working-directory: web
+        run: npm run lint
+      - name: Unit tests
+        working-directory: web
+        run: npm test
+      - name: Build
+        working-directory: web
+        run: npm run build
