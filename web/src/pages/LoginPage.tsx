@@ -65,6 +65,9 @@ export function LoginPage() {
         <p className="mt-4 text-center text-sm text-secondary">
           ¿No tienes cuenta? <Link to="/register" className="text-primary">Regístrate</Link>
         </p>
+        <p className="mt-2 text-center text-sm text-secondary">
+          <Link to="/calculadora" className="text-primary">Simula tu préstamo</Link>
+        </p>
       </Card>
     </main>
   );

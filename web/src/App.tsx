@@ -3,6 +3,7 @@ import { useAuth } from './store/auth';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
+import { CalculatorPage } from './pages/CalculatorPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
 
@@ -25,6 +26,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/calculadora" element={<CalculatorPage />} />
       <Route path="/login" element={user ? <Navigate to={homeFor(user.role)} /> : <LoginPage />} />
       <Route
         path="/register"

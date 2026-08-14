@@ -41,7 +41,7 @@ export class AuthService {
         email: dto.email,
         passwordHash,
         role: 'CLIENT',
-        customer: { create: {} },
+        customer: { create: { isNewCustomer: true } },
       },
     });
     await this.audit.log({
