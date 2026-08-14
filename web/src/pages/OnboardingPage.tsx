@@ -66,7 +66,11 @@ export function OnboardingPage() {
       <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
         <Card className="w-full max-w-md text-center">
           <Alert variant="success">Tus datos se guardaron correctamente.</Alert>
-          <Link to="/calculadora" className="mt-4 inline-block text-primary">
+          <Link to="/documentos" className="mt-4 inline-block text-primary">
+            Continuar con mis documentos
+          </Link>
+          <br />
+          <Link to="/calculadora" className="mt-2 inline-block text-sm text-secondary">
             Volver a mi solicitud
           </Link>
         </Card>

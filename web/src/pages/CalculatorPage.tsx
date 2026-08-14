@@ -153,6 +153,11 @@ export function CalculatorPage() {
                 Completar mis datos
               </Button>
             </Link>
+            <Link to="/documentos">
+              <Button type="button" variant="ghost" className="w-full">
+                Subir mis documentos
+              </Button>
+            </Link>
           </div>
         )}
 
