@@ -28,6 +28,8 @@ Fase 1 completa: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10/10
 
 Verificado 2026-08-14: 6/6 e2e nuevos de `loans.e2e-spec.ts` (401 sin token, 403 rol distinto de CLIENT, 400 fecha inválida, 400 tope de cliente nuevo, 201 creación con folio+calendario, 409 duplicado). Suite e2e completa 22/22, corrida dos veces seguidas (idempotente). Probado también contra el stack Docker real: crea borrador `ppni-1326` y bloquea la segunda solicitud con `409`.
 
+**GET /api/v1/loans y /:id — retomar el borrador (2026-08-14, commit `14250ff`):** `findMyLoans()` lista los préstamos del cliente autenticado (con calendario completo); `findOne()` valida propiedad y devuelve `404` (no `403`) si el préstamo no es suyo, para no filtrar existencia de IDs ajenos. Frontend: `CalculatorPage` consulta `GET /loans` al montar — si hay una solicitud sin terminar (status fuera de `LIQUIDATED`/`CANCELLED`/`REJECTED`), muestra esa cotización guardada directamente en vez del formulario vacío, cumpliendo lo que pidió el usuario ("guardalo en el back como temporal... al terminar el onBoarding se muestra esa misma información"). 10/10 tests en `loans.e2e-spec.ts`, 26/26 e2e total, verificado dos veces seguidas. Probado contra el stack Docker real: `GET /loans` devuelve el borrador `ppni-1326` creado antes, `GET /loans/5` idem.
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -97,6 +99,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Continuar Fase 2: el `Loan` en `DRAFT` ya se crea, pero no hay forma de verlo/retomarlo — falta `GET /api/v1/loans` (o `/loans/me`) para que el cliente consulte su solicitud en curso, y una pantalla que la muestre (para no perder la cotización si cierra el navegador, tal como pidió el usuario). Después: onboarding por pasos, documentos, video, pagaré PDF. Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+Continuar Fase 2: el ciclo cotizar → crear borrador → retomarlo ya está completo end-to-end. Siguiente corte natural: el onboarding por pasos (datos del cliente — nombres, dirección, aval — que hoy están vacíos en `Customer`), luego documentos (INE, comprobante), video de identidad, pagaré PDF, y transición de estado `DRAFT` → `SUBMITTED`. Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
 
 Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
