@@ -4,9 +4,9 @@
 
 Última actualización: 2026-08-14.
 
-## Fase actual: Fase 1 — Fundaciones
+## Fase actual: Fase 1 — Fundaciones (✅ completa) → definiendo Fase 2
 
-Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 tasks). Spec de diseño: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`.
+Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10/10 tasks hechas). Spec de diseño: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`. Fase 2 (préstamos/cuotas/pagos, documentos, etc.) aún no tiene plan escrito.
 
 ### Qué existe
 
@@ -21,7 +21,7 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 | 7. Frontend — scaffold PWA + Design System | ✅ Hecho | Vite+React 18+TS, Tailwind con tokens, vite-plugin-pwa, componentes `Button`/`Input`/`Card`/`Alert`/`Spinner`, `apiFetch` con refresh automático. Build+lint+vitest (2/2) OK (commit `053e7c7`) |
 | 8. Frontend — pantallas de autenticación | ✅ Hecho | `AuthProvider`/`useAuth`, `LoginPage` (con test), `RegisterPage`, `ChangePasswordPage`, `App.tsx` con router protegido por rol y `mustChangePassword`, `DashboardShell` placeholder. Build+lint+vitest (3/3) OK; verificado end-to-end vía curl contra proxy real de Vite (commit `ece1648`) |
 | 9. CI/CD — GitHub Actions | ✅ Hecho | `.github/workflows/ci.yml`: job `api` (lint+build+`migrate deploy`+unit+e2e con servicio MySQL) y job `web` (lint+test+build). Verificado localmente que `migrate deploy` no requiere shadow DB (commit `1d95b3b`) |
-| 10. Verificación final de Fase 1 | ❌ No iniciado | |
+| 10. Verificación final de Fase 1 | ✅ Hecho | Stack completo verificado con `docker compose -f docker-compose.dev.yml up -d --build` real (no solo servicios sueltos): health checks vía Nginx→API→MySQL, flujo admin (login→cambio obligatorio→me) y registro/login de cliente, todo por curl contra `http://localhost`. README actualizado con instrucciones. 3 bugs de infra encontrados y corregidos (commit `7d58daf`) |
 
 ### Cambios recientes (2026-08-14)
 
@@ -50,6 +50,17 @@ Task 9 cerrado: pipeline CI. Se corrigieron 3 gaps del snippet original del plan
 
 **Pendiente:** el workflow no se ha ejecutado en GitHub real (requiere push/PR); solo validado localmente (sintaxis YAML + `migrate deploy` aislado).
 
+Task 10 cerrado: verificación final de Fase 1 con **docker compose real** (no dev servers locales sueltos, que fue lo usado en Tasks 3-9). Esto expuso 3 bugs de infraestructura que ningún test unitario/e2e local detecta porque corren fuera de contenedores:
+
+1. **`.dockerignore` no excluía `api/node_modules`** (549MB) — el patrón bare `node_modules` no se comportó como recursivo de forma confiable; el build context llegó a transferir 513MB y el primer intento de `npm ci` dentro del build falló con "Exit handler never called!" (bug conocido de npm, agravado por el contexto gigante).
+2. **Bloqueo de red no relacionado con el código**: Avast (antivirus del host) intercepta TLS y su certificado (`NODE_EXTRA_CA_CERTS`) solo está registrado en el host, no dentro del contenedor Alpine — `npm ci` fallaba con `UNABLE_TO_VERIFY_LEAF_SIGNATURE` hasta que el usuario desactivó Avast. No se tocó el Dockerfile para esto (no se debe commitear un cert de antivirus personal); en CI (GitHub Actions) no aplica.
+3. **El bind mount `./api:/app` en dev tapaba el `node_modules` Linux de la imagen con el `node_modules` Windows del host** (host y contenedor comparten el mismo path pero arquitecturas distintas) → `nest: not found` dentro del contenedor. Se agregó volumen anónimo `/app/node_modules` en `api` y `worker`.
+4. **`Dockerfile.api` nunca corría `prisma generate`** — el cliente Prisma quedaba sin los tipos generados (`User`, `Role` no exportados), rompiendo la compilación TS dentro del contenedor aunque compilaba bien en el host (donde sí se había corrido `prisma generate` manualmente en Task 4). Se agregó el paso en los stages `dev` y `build` de `Dockerfile.api`.
+
+Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health` y `/health/ready` → `200 ok`; login admin (`admin`/`admin`) fuerza `mustChangePassword`, cambio de contraseña limpia la bandera; registro de cliente (`5512345678`) + login + `/auth/me` devuelve `customer` asociado. El servicio `worker` reinicia en bucle porque `main-worker.ts` es de Fase 2 — es el comportamiento esperado, documentado en el README. Working tree limpio tras commit `7d58daf`.
+
+**Fase 1 — Fundaciones: completa (Tasks 1-10).**
+
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
 
 - Modular Monolith: `api/` (NestJS 10) + `web/` (React 18 + Vite 5 + Tailwind 3.4 PWA) + MySQL 8 + MinIO + Nginx.
@@ -64,4 +75,4 @@ Task 9 cerrado: pipeline CI. Se corrigieron 3 gaps del snippet original del plan
 
 ## Próximo paso sugerido
 
-Task 10: Verificación final de Fase 1 — levantar entorno completo con docker compose, probar flujo admin y registro de cliente en la app web real, actualizar README con instrucciones de ejecución. Sigue pendiente la pasada visual manual del flujo de auth en navegador (Task 8 solo se verificó por curl).
+Fase 1 completa. Definir con el usuario el alcance de Fase 2 (spec: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`) — probablemente préstamos/cuotas/pagos, MinIO para documentos, worker de jobs. Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth (Task 8 solo se verificó por curl/API) — recomendable antes de construir Fase 2 encima.
