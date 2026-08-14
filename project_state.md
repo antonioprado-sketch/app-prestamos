@@ -4,9 +4,19 @@
 
 Última actualización: 2026-08-14.
 
-## Fase actual: Fase 1 — Fundaciones (✅ completa) → definiendo Fase 2
+## Fase actual: Fase 2 — Cliente (en curso, sin plan escrito task-por-task)
 
-Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10/10 tasks hechas). Spec de diseño: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`. Fase 2 (préstamos/cuotas/pagos, documentos, etc.) aún no tiene plan escrito.
+Fase 1 completa: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10/10 tasks). Spec de diseño: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`. Fase 2 (calculadora/quote, onboarding por pasos, documentos, video, pagaré PDF, solicitud + estados) se está construyendo incrementalmente sin plan escrito previo — cada corte se confirma con el usuario antes de implementar.
+
+### Fase 2 — avance
+
+**Calculadora de préstamos (primer corte, 2026-08-14, commit `29ef0f7`):** motor financiero puro (`api/src/loans/loan-quote.ts`, 14/14 tests TDD) para modelos semanal (20 pagos, total/20) y quincenal (10 pagos en día 15/último día del mes, total/10), redondeo con último pago absorbiendo residuo, nunca expone la tasa 40% (R4). Endpoint público `POST /api/v1/loans/quote` (anónimo o cliente sin tope; cliente nuevo con tope $3,000 configurable vía tabla `Configuration`, clave `loans.new_client_max_amount`, editable por admin cuando exista panel en Fase 3 — sin código nuevo). Frontend: `CalculatorPage` pública en `/calculadora`, CTA "Lo quiero" → registro si no hay sesión.
+
+**Alcance confirmado con el usuario:** solo cotizador + CTA a registro; onboarding/solicitud/documentos/video/pagaré quedan para próximos cortes de Fase 2.
+
+**Bug encontrado y corregido:** `AuthService.register()` (Task 5, Fase 1) nunca marcaba `customer.isNewCustomer = true` (el default del schema es `false`), así que ningún cliente recién registrado quedaba sujeto al tope de $3,000 de R12. Corregido en el mismo commit. Verificado manualmente: cliente nuevo con monto $10,000 → `400`; cliente existente sin flag → sin tope.
+
+**Verificado 2026-08-14:** `npm test` API 23/23 PASS, `npm run test:e2e` 16/16 PASS (repetido, sigue idempotente), `npm run build`/`lint` API y web OK, `npm test` web 4/4 PASS. Probado end-to-end contra el stack Docker real (`localhost`), no solo unit tests.
 
 ### Qué existe
 
@@ -59,6 +69,8 @@ Task 10 cerrado: verificación final de Fase 1 con **docker compose real** (no d
 
 Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health` y `/health/ready` → `200 ok`; login admin (`admin`/`admin`) fuerza `mustChangePassword`, cambio de contraseña limpia la bandera; registro de cliente (`5512345678`) + login + `/auth/me` devuelve `customer` asociado. El servicio `worker` reinicia en bucle porque `main-worker.ts` es de Fase 2 — es el comportamiento esperado, documentado en el README. Working tree limpio tras commit `7d58daf`.
 
+**Nota operativa (2026-08-14, misma sesión):** el `worker` se dejó **detenido** (`docker compose stop worker`) a pedido del usuario en vez de reintentando indefinidamente — no se auto-reinicia hasta `docker compose up -d worker` o `start worker`. Recordar levantarlo cuando exista `main-worker.ts` (Fase 2, jobs de multas).
+
 **Fase 1 — Fundaciones: completa (Tasks 1-10).**
 
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
@@ -75,4 +87,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Fase 1 completa. Definir con el usuario el alcance de Fase 2 (spec: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`) — probablemente préstamos/cuotas/pagos, MinIO para documentos, worker de jobs. Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth (Task 8 solo se verificó por curl/API) — recomendable antes de construir Fase 2 encima.
+Continuar Fase 2: siguiente corte natural es "Lo quiero" creando una `Loan` en estado `draft` (falta agregar el modelo `Loan`/`LoanSchedule` a `schema.prisma` — no existe todavía, Task 4 solo cubrió el núcleo de usuarios). Después: onboarding por pasos, documentos, video, pagaré PDF. Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+
+Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
