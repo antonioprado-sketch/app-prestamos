@@ -6,6 +6,9 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { AuditModule } from './audit/audit.module';
+import { EmailModule } from './email/email.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -15,7 +18,10 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
     PrismaModule,
+    AuditModule,
+    EmailModule,
     HealthModule,
+    AuthModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })
