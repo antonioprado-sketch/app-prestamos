@@ -1,9 +1,12 @@
+**/node_modules
 node_modules
+api/node_modules
+web/node_modules
 dist
+api/dist
+web/dist
 .env
 .git
 docs
 .superpowers
-web/node_modules
-web/dist
 *.log

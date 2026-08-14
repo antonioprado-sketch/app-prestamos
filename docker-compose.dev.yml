@@ -58,6 +58,7 @@ services:
       - "3000:3000"
     volumes:
       - ./api:/app
+      - /app/node_modules
     depends_on:
       mysql:
         condition: service_healthy
@@ -78,6 +79,7 @@ services:
       NODE_ENV: development
     volumes:
       - ./api:/app
+      - /app/node_modules
     depends_on:
       mysql:
         condition: service_healthy
