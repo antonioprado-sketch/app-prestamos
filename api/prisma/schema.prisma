@@ -6,3 +6,126 @@ datasource db {
   provider = "mysql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  phone              String   @id @db.VarChar(15)
+  email              String?  @unique @db.VarChar(190)
+  passwordHash       String   @map("password_hash") @db.VarChar(255)
+  role               Role     @default(CLIENT)
+  status             UserStatus @default(ACTIVE)
+  mustChangePassword Boolean  @default(false) @map("must_change_password")
+  failedAttempts     Int      @default(0) @map("failed_attempts")
+  blockedUntil       DateTime? @map("blocked_until") @db.DateTime(6)
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  customer    Customer?
+  collector   Collector?
+  admin       Admin?
+  refreshTokens RefreshToken[]
+  auditLogs   AuditLog[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        BigInt   @id @default(autoincrement())
+  userPhone String   @map("user_phone") @db.VarChar(15)
+  tokenHash String   @unique @map("token_hash") @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userPhone], references: [phone], onDelete: Cascade)
+
+  @@index([userPhone])
+  @@map("refresh_tokens")
+}
+
+model Customer {
+  phone              String   @id @db.VarChar(15)
+  nombres            String?  @db.VarChar(25)
+  apellidos          String?  @db.VarChar(35)
+  aval               String?  @db.VarChar(70)
+  avalPhone          String?  @map("aval_phone") @db.VarChar(15)
+  email              String?  @db.VarChar(190)
+  calle              String?
+  numero             String?
+  colonia            String?
+  cp                 String?  @db.VarChar(5)
+  ciudad             String?
+  estado             String?
+  referencias        String?  @db.VarChar(255)
+  isNewCustomer      Boolean  @default(false) @map("is_new_customer")
+  onboardingComplete Boolean  @default(false) @map("onboarding_complete")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
+
+  @@map("customers")
+}
+
+model Collector {
+  id        BigInt  @id @default(autoincrement())
+  phone     String  @unique @db.VarChar(15)
+  name      String  @db.VarChar(70)
+  active    Boolean @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
+
+  @@map("collectors")
+}
+
+model Admin {
+  id        BigInt  @id @default(autoincrement())
+  phone     String  @unique @db.VarChar(15)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
+
+  @@map("admins")
+}
+
+model AuditLog {
+  id        BigInt   @id @default(autoincrement())
+  userPhone String?  @map("user_phone") @db.VarChar(15)
+  action    String   @db.VarChar(100)
+  entity    String   @db.VarChar(100)
+  entityId  String?  @map("entity_id") @db.VarChar(100)
+  prevValue Json?    @map("prev_value")
+  newValue  Json?    @map("new_value")
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userPhone], references: [phone], onDelete: SetNull)
+
+  @@index([userPhone])
+  @@index([entity, entityId])
+  @@map("audit_logs")
+}
+
+model Configuration {
+  key       String   @id @db.VarChar(100)
+  value     Json
+  updatedBy String?  @map("updated_by") @db.VarChar(15)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("configuration")
+}
+
+enum Role {
+  CLIENT
+  COLLECTOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BLOCKED
+}
