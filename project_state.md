@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-13.
+Última actualización: 2026-08-14.
 
 ## Fase actual: Fase 1 — Fundaciones
 
@@ -14,8 +14,8 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 |---|---|---|
 | 1. Scaffolding del repo | ✅ Hecho | `.gitignore`, `.env.example`, `README.md`, `docs/architecture.md` (commit `d87292b`) |
 | 2. Docker Compose dev/prod | ✅ Hecho | mysql, minio, api, worker, nginx (commits `cda6280`, `18505b6`) |
-| 3. Backend NestJS — bootstrap y salud | ✅ Hecho, con ajustes sin commitear | `AppModule`, `HealthController` (`/api/v1/health`, `/health/ready`), `PrismaService`, `HttpExceptionFilter`, `ValidationPipe`, helmet, CORS, throttler, pino logger (commit base `4fa9604`) |
-| 4. Esquema Prisma — tablas núcleo | ❌ No iniciado | `api/prisma/schema.prisma` solo tiene el datasource default de `prisma init`, sin modelos (`User`, `Customer`, `Collector`, `Admin`, `RefreshToken`, `AuditLog`, `Configuration`) |
+| 3. Backend NestJS — bootstrap y salud | ✅ Hecho | `AppModule`, `HealthController` (`/api/v1/health`, `/health/ready`), `PrismaService`, `HttpExceptionFilter`, `ValidationPipe`, helmet, CORS, throttler, pino logger (commits `4fa9604`, `d43cabc`) |
+| 4. Esquema Prisma — tablas núcleo | ✅ Hecho | `api/prisma/schema.prisma` con `User`, `RefreshToken`, `Customer`, `Collector`, `Admin`, `AuditLog`, `Configuration` + enums `Role`/`UserStatus`; migración `20260814035948_init` aplicada y verificada (commit `6407ee5`) |
 | 5. Autenticación | ❌ No iniciado | Sin `api/src/auth/` |
 | 6. Bootstrap admin + Auditoría | ❌ No iniciado | Sin `api/src/audit/`, `api/src/admin-bootstrap/` |
 | 7. Frontend — scaffold PWA + Design System | ❌ No iniciado | `web/` existe vacío |
@@ -23,16 +23,11 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 | 9. CI/CD — GitHub Actions | ❌ No iniciado | |
 | 10. Verificación final de Fase 1 | ❌ No iniciado | |
 
-### Cambios sin commitear (2026-08-13)
+### Cambios recientes (2026-08-14)
 
-`api/src/app.module.ts`, `api/src/common/filters/http-exception.filter.ts`, `api/src/main.ts`:
-- Conecta `ValidationPipe` custom (`api/src/common/pipes/validation.pipe.ts`) que existía sin usar.
-- Registra `HttpExceptionFilter` como `APP_FILTER` global (antes no estaba enganchado).
-- `HttpExceptionFilter` ahora normaliza `message`/`error` desde el body de `HttpException` (soporta arrays de `class-validator`); la respuesta de error pasó de `{statusCode, message, path, timestamp}` a `{statusCode, message, error}`.
+Task 4 cerrado: esquema Prisma núcleo escrito y migrado contra MySQL (`docker-compose.dev.yml`, puerto host `3307`). Nota de implementación: usuario `prestamos` no tenía permiso para crear la shadow database que usa `prisma migrate dev`; se le otorgó `GRANT ALL PRIVILEGES ON *.*` vía root (solo dev, no aplica a prod). `AuditLog.userPhone` es nullable, así que la relación `user` se dejó opcional con `onDelete: SetNull` (el plan no especificaba ese detalle).
 
-Verificado 2026-08-13: `npm run build` OK, `npm run lint` OK (sin warnings), `npm test` 3/3 PASS (spec nuevo `http-exception.filter.spec.ts` agregado, era el único archivo de test del repo — antes había cero tests).
-
-**Pendiente de decisión del usuario:** si el cambio de forma de la respuesta de error (se quitó `path`/`timestamp`) rompe algún contrato ya acordado con el frontend/spec — no hay consumidores todavía (Task 7/8 sin empezar), así que no hay regresión real hoy, pero conviene confirmarlo antes de commitear.
+Verificado 2026-08-14: `npx prisma migrate status` OK, `npm run build` OK, `npm run lint` OK, `npm test` 3/3 PASS. Working tree limpio tras commit `6407ee5`.
 
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
 
@@ -48,4 +43,4 @@ Verificado 2026-08-13: `npm run build` OK, `npm run lint` OK (sin warnings), `np
 
 ## Próximo paso sugerido
 
-Confirmar y commitear el segmento de Task 3 (filter/pipe/main.ts + test nuevo), luego seguir con Task 4 (esquema Prisma) siguiendo el plan.
+Task 5: Autenticación (register, login, refresh, logout, cambio de contraseña) siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`.
