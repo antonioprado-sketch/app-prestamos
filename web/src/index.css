@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply text-secondary antialiased;
+  }
+  body {
+    @apply bg-gray-50 font-sans;
+  }
+  button,
+  a {
+    @apply touch-manipulation;
+  }
+}
