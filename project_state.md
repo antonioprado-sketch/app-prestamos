@@ -30,6 +30,10 @@ Verificado 2026-08-14: 6/6 e2e nuevos de `loans.e2e-spec.ts` (401 sin token, 403
 
 **GET /api/v1/loans y /:id — retomar el borrador (2026-08-14, commit `14250ff`):** `findMyLoans()` lista los préstamos del cliente autenticado (con calendario completo); `findOne()` valida propiedad y devuelve `404` (no `403`) si el préstamo no es suyo, para no filtrar existencia de IDs ajenos. Frontend: `CalculatorPage` consulta `GET /loans` al montar — si hay una solicitud sin terminar (status fuera de `LIQUIDATED`/`CANCELLED`/`REJECTED`), muestra esa cotización guardada directamente en vez del formulario vacío, cumpliendo lo que pidió el usuario ("guardalo en el back como temporal... al terminar el onBoarding se muestra esa misma información"). 10/10 tests en `loans.e2e-spec.ts`, 26/26 e2e total, verificado dos veces seguidas. Probado contra el stack Docker real: `GET /loans` devuelve el borrador `ppni-1326` creado antes, `GET /loans/5` idem.
 
+**Onboarding de datos del cliente — PATCH /api/v1/customers/me (2026-08-14, commit `c139b8c`):** módulo `CustomersModule` nuevo. Valida los 10 campos que R14 marca obligatorios (nombres, apellidos, aval + su teléfono, dirección completa por C5, referencias), marca `Customer.onboardingComplete=true` al guardar, audita el cambio. Decisiones confirmadas con el usuario: **formulario único** para V1 (no el wizard multi-paso con Stepper que describe la spec literalmente — queda como posible mejora de UX después, sin tocar el backend) y **entrada desde la calculadora** ("Completar mis datos" cuando hay un borrador guardado), no desde el dashboard. `GET /customers/me` no se construyó — no hacía falta todavía porque `/auth/me` ya devuelve `customer`, y el formulario arranca vacío en el primer llenado.
+
+5/5 e2e nuevos (`customers.e2e-spec.ts`), 31/31 e2e total, verificado dos veces seguidas (idempotente). Nota de sesión: probar acentos con `curl -d` desde Git Bash en Windows los corrompe (bug del terminal — bytes UTF-8 rotos antes de salir del shell, confirmado con `HEX()` en MySQL); el flujo real se verificó con `fetch()` en Node (mismo motor que el navegador), que guardó "García"/"Portón" correctamente. Si se necesita probar acentos por curl en esta máquina de nuevo, usar Node/fetch en vez de `-d` con comillas.
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -99,6 +103,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Continuar Fase 2: el ciclo cotizar → crear borrador → retomarlo ya está completo end-to-end. Siguiente corte natural: el onboarding por pasos (datos del cliente — nombres, dirección, aval — que hoy están vacíos en `Customer`), luego documentos (INE, comprobante), video de identidad, pagaré PDF, y transición de estado `DRAFT` → `SUBMITTED`. Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+Continuar Fase 2: cotizar → crear borrador → retomarlo → completar datos del cliente, todo cerrado end-to-end. Siguiente corte natural: documentos (INE frente/reverso, comprobante de domicilio — necesita MinIO, todavía no integrado en el backend pese a estar en docker-compose desde Task 2), luego video de identidad, pagaré PDF, y finalmente la transición de estado `DRAFT` → `SUBMITTED` del `Loan` (que hoy nunca cambia de estado tras crearse). Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
 
 Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
