@@ -3,9 +3,11 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
+import { PrismaService } from '../src/prisma/prisma.service';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
+  let prisma: PrismaService;
   const phone = '5512345678';
 
   beforeAll(async () => {
@@ -15,9 +17,14 @@ describe('Auth (e2e)', () => {
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(new ValidationPipe());
     await app.init();
+    prisma = moduleFixture.get(PrismaService);
+    await prisma.user.deleteMany({ where: { phone } });
   });
 
-  afterAll(async () => app.close());
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { phone } });
+    await app.close();
+  });
 
   it('registra un cliente', async () => {
     await request(app.getHttpServer())
