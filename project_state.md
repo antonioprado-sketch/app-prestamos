@@ -17,7 +17,7 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 | 3. Backend NestJS — bootstrap y salud | ✅ Hecho | `AppModule`, `HealthController` (`/api/v1/health`, `/health/ready`), `PrismaService`, `HttpExceptionFilter`, `ValidationPipe`, helmet, CORS, throttler, pino logger (commits `4fa9604`, `d43cabc`) |
 | 4. Esquema Prisma — tablas núcleo | ✅ Hecho | `api/prisma/schema.prisma` con `User`, `RefreshToken`, `Customer`, `Collector`, `Admin`, `AuditLog`, `Configuration` + enums `Role`/`UserStatus`; migración `20260814035948_init` aplicada y verificada (commit `6407ee5`) |
 | 5. Autenticación | ✅ Hecho | `api/src/auth/` completo: register/login/refresh/logout/change-password/forgot-password/reset-password, `TokensService` (refresh rotativo en BD), `JwtAuthGuard`/`RolesGuard`, decoradores `@Roles`/`@CurrentUser`, `password.policy.ts` (TDD). Módulos base `audit/` y `email/` creados como dependencia (bootstrap de admin real va en Task 6). 11/11 e2e + 6/6 unit PASS (commit `ccd7bef`) |
-| 6. Bootstrap admin + Auditoría | ❌ No iniciado | `AuditService`/`AuditModule` ya existen (creados en Task 5). Falta `api/src/admin-bootstrap/` |
+| 6. Bootstrap admin + Auditoría | ✅ Hecho | `AdminBootstrapService` (`OnApplicationBootstrap`) crea admin desde `.env` si no existe, `must_change_password=true`. `AuditService` ya existía desde Task 5. 3/3 e2e específico + 16/16 e2e total PASS (commit `eaeb768`) |
 | 7. Frontend — scaffold PWA + Design System | ❌ No iniciado | `web/` existe vacío |
 | 8. Frontend — pantallas de autenticación | ❌ No iniciado | Depende de Task 7 |
 | 9. CI/CD — GitHub Actions | ❌ No iniciado | |
@@ -34,6 +34,10 @@ Task 5 cerrado: autenticación completa. Dos decisiones no cubiertas por el plan
 
 Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` 9/9 PASS, `test/auth.e2e-spec.ts` 11/11 PASS. Working tree limpio tras commits `6407ee5`, `33f2570`, `ccd7bef`.
 
+Task 6 cerrado: `AdminBootstrapService`. Hallazgo importante: los e2e de Task 5 no limpiaban sus datos (mismo teléfono/admin persistente en la BD de dev), así que una segunda corrida de la suite completa fallaba en cascada (teléfono ya registrado, admin con contraseña ya cambiada). Se agregó `deleteMany` en `beforeAll`/`afterAll` de `auth.e2e-spec.ts` y `admin-bootstrap.e2e-spec.ts` — verificado corriendo la suite dos veces seguidas (16/16 PASS ambas veces). Este patrón de limpieza debe repetirse en los e2e de Tasks futuras que creen datos con teléfonos fijos.
+
+Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` 9/9 PASS, e2e completo (health+auth+admin-bootstrap) 16/16 PASS, repetido dos veces. Working tree limpio tras commit `eaeb768`.
+
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
 
 - Modular Monolith: `api/` (NestJS 10) + `web/` (React 18 + Vite 5 + Tailwind 3.4 PWA) + MySQL 8 + MinIO + Nginx.
@@ -48,4 +52,4 @@ Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` 9/9 PAS
 
 ## Próximo paso sugerido
 
-Task 6: Bootstrap del administrador inicial (`AdminBootstrapService`, `OnApplicationBootstrap`) + su e2e-spec, siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`. `AuditService` ya está listo, solo falta el bootstrap.
+Task 7: Frontend — scaffold PWA + Design System (Vite + React + Tailwind), siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`. `web/` sigue vacío.
