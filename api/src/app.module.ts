@@ -13,6 +13,8 @@ import { AdminBootstrapModule } from './admin-bootstrap/admin-bootstrap.module';
 import { ConfigurationModule } from './configuration/configuration.module';
 import { LoansModule } from './loans/loans.module';
 import { CustomersModule } from './customers/customers.module';
+import { StorageModule } from './storage/storage.module';
+import { DocumentsModule } from './documents/documents.module';
 
 @Module({
   imports: [
@@ -25,11 +27,13 @@ import { CustomersModule } from './customers/customers.module';
     AuditModule,
     EmailModule,
     ConfigurationModule,
+    StorageModule,
     HealthModule,
     AuthModule,
     AdminBootstrapModule,
     LoansModule,
     CustomersModule,
+    DocumentsModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

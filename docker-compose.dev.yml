@@ -54,6 +54,8 @@ services:
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/${MYSQL_DATABASE}
       NODE_ENV: development
       MINIO_ENDPOINT: minio
+      MINIO_PUBLIC_ENDPOINT: localhost
+      MINIO_PUBLIC_PORT: "9000"
     ports:
       - "3000:3000"
     volumes:
