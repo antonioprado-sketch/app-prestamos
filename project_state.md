@@ -18,8 +18,8 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 | 4. Esquema Prisma — tablas núcleo | ✅ Hecho | `api/prisma/schema.prisma` con `User`, `RefreshToken`, `Customer`, `Collector`, `Admin`, `AuditLog`, `Configuration` + enums `Role`/`UserStatus`; migración `20260814035948_init` aplicada y verificada (commit `6407ee5`) |
 | 5. Autenticación | ✅ Hecho | `api/src/auth/` completo: register/login/refresh/logout/change-password/forgot-password/reset-password, `TokensService` (refresh rotativo en BD), `JwtAuthGuard`/`RolesGuard`, decoradores `@Roles`/`@CurrentUser`, `password.policy.ts` (TDD). Módulos base `audit/` y `email/` creados como dependencia (bootstrap de admin real va en Task 6). 11/11 e2e + 6/6 unit PASS (commit `ccd7bef`) |
 | 6. Bootstrap admin + Auditoría | ✅ Hecho | `AdminBootstrapService` (`OnApplicationBootstrap`) crea admin desde `.env` si no existe, `must_change_password=true`. `AuditService` ya existía desde Task 5. 3/3 e2e específico + 16/16 e2e total PASS (commit `eaeb768`) |
-| 7. Frontend — scaffold PWA + Design System | ❌ No iniciado | `web/` existe vacío |
-| 8. Frontend — pantallas de autenticación | ❌ No iniciado | Depende de Task 7 |
+| 7. Frontend — scaffold PWA + Design System | ✅ Hecho | Vite+React 18+TS, Tailwind con tokens, vite-plugin-pwa, componentes `Button`/`Input`/`Card`/`Alert`/`Spinner`, `apiFetch` con refresh automático. Build+lint+vitest (2/2) OK (commit `053e7c7`) |
+| 8. Frontend — pantallas de autenticación | ❌ No iniciado | Depende de Task 7 (listo) |
 | 9. CI/CD — GitHub Actions | ❌ No iniciado | |
 | 10. Verificación final de Fase 1 | ❌ No iniciado | |
 
@@ -38,6 +38,10 @@ Task 6 cerrado: `AdminBootstrapService`. Hallazgo importante: los e2e de Task 5 
 
 Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` 9/9 PASS, e2e completo (health+auth+admin-bootstrap) 16/16 PASS, repetido dos veces. Working tree limpio tras commit `eaeb768`.
 
+Task 7 cerrado: scaffold de `web/`. Decisión confirmada con el usuario: el template de Vite instala por defecto React 19 + Vite 8; se bajó explícitamente a React 18.3 + Vite 5.4 para cumplir la decisión ya fijada en CLAUDE.md (no reabierta, solo ejecutada). Vulnerabilidad npm audit conocida (esbuild <=0.24.2, moderate, solo dev-server) aceptada — arreglarla requeriría subir a Vite 8, que contradice la decisión de versión; no afecta el build de producción.
+
+Verificado 2026-08-14: `npm run build` OK (incluye generación de service worker), `npm run lint` (oxlint) OK, `npm test` (vitest) 2/2 PASS. Working tree limpio tras commit `053e7c7`.
+
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
 
 - Modular Monolith: `api/` (NestJS 10) + `web/` (React 18 + Vite 5 + Tailwind 3.4 PWA) + MySQL 8 + MinIO + Nginx.
@@ -52,4 +56,4 @@ Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` 9/9 PAS
 
 ## Próximo paso sugerido
 
-Task 7: Frontend — scaffold PWA + Design System (Vite + React + Tailwind), siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`. `web/` sigue vacío.
+Task 8: Frontend — pantallas de autenticación (login, registro, cambio de contraseña, shell multi-rol), siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`.
