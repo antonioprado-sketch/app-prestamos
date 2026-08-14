@@ -1,8 +1,8 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoLogger } from 'nestjs-pino';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { ValidationPipe } from './common/pipes/validation.pipe';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -13,13 +13,7 @@ async function bootstrap() {
     origin: process.env.CORS_ORIGIN?.split(',') ?? ['http://localhost'],
     credentials: true,
   });
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
+  app.useGlobalPipes(new ValidationPipe());
 
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
