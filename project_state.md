@@ -34,6 +34,16 @@ Verificado 2026-08-14: 6/6 e2e nuevos de `loans.e2e-spec.ts` (401 sin token, 403
 
 5/5 e2e nuevos (`customers.e2e-spec.ts`), 31/31 e2e total, verificado dos veces seguidas (idempotente). Nota de sesión: probar acentos con `curl -d` desde Git Bash en Windows los corrompe (bug del terminal — bytes UTF-8 rotos antes de salir del shell, confirmado con `HEX()` en MySQL); el flujo real se verificó con `fetch()` en Node (mismo motor que el navegador), que guardó "García"/"Portón" correctamente. Si se necesita probar acentos por curl en esta máquina de nuevo, usar Node/fetch en vez de `-d` con comillas.
 
+**Documentos + MinIO — INE y comprobante (2026-08-14, commits `3881170` backend + `01f944c` frontend):** modelo `Document` (Prisma) + `StorageModule` (cliente MinIO) + `DocumentsModule` (`POST /api/v1/documents` multipart, `GET /api/v1/documents` lista propia, `GET /api/v1/documents/:id/signed-url`). Validación por magic bytes reales (no el `Content-Type` que declara el cliente) para JPEG/PNG/PDF, tope 5MB, checksum SHA-256 — todo con TDD (8/8 unit en `document-validation.spec.ts`).
+
+**Bug real encontrado y corregido antes de llegar a producción:** el cliente MinIO firmaba las URLs usando el endpoint interno de Docker (`minio`, solo resoluble dentro de la red del compose) — el navegador del cliente final nunca hubiera podido abrir el link de descarga, aunque todos los tests con Supertest (que corren en el mismo proceso/red que la API) lo hubieran dejado pasar sin detectarlo. Se separó un segundo cliente MinIO (`publicClient`) apuntando a `MINIO_PUBLIC_ENDPOINT`/`MINIO_PUBLIC_PORT` (`localhost:9000` en dev) solo para firmar — `presignedGetObject` firma localmente sin conectar de verdad cuando el `region` del cliente ya está seteado, así que el contenedor no necesita poder alcanzar ese endpoint. Verificado descargando el archivo real con `curl -o` a través de la URL firmada: bytes JPEG (`ffd8ff`) intactos.
+
+**Pendiente real, no bloqueante ahora:** `docker-compose.prod.yml` no expone MinIO al host (a propósito, por seguridad) — en producción hace falta un reverse-proxy de Nginx hacia MinIO (o exponer un endpoint público equivalente) antes de que las URLs firmadas funcionen fuera de dev. Documentado en `.env.example`.
+
+Frontend: `DocumentsPage` en `/documentos` (3 slots: INE frente/reverso, comprobante), enlazada desde el éxito de `OnboardingPage` y desde la calculadora. `apiFetch` se ajustó para no forzar `Content-Type: application/json` cuando el body es `FormData`.
+
+Verificado 2026-08-14: 8 unit + 6 e2e nuevos de documents, 37/37 e2e total (corrida dos veces, idempotente), build/lint/test API y web en verde, subida+descarga real probada contra el stack Docker completo (no solo Supertest).
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -103,6 +113,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Continuar Fase 2: cotizar → crear borrador → retomarlo → completar datos del cliente, todo cerrado end-to-end. Siguiente corte natural: documentos (INE frente/reverso, comprobante de domicilio — necesita MinIO, todavía no integrado en el backend pese a estar en docker-compose desde Task 2), luego video de identidad, pagaré PDF, y finalmente la transición de estado `DRAFT` → `SUBMITTED` del `Loan` (que hoy nunca cambia de estado tras crearse). Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+Continuar Fase 2: cotizar → crear borrador → retomarlo → completar datos → subir documentos, todo cerrado end-to-end. Siguiente corte natural: video de identidad (C17b: mínimos técnicos + detección facial MediaPipe en navegador — más complejo, no reutiliza directamente la infra de documents), pagaré PDF, y finalmente la transición de estado `DRAFT` → `SUBMITTED` del `Loan` (que hoy nunca cambia de estado tras crearse, ni siquiera cuando ya tiene datos+documentos). Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
 
 Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
