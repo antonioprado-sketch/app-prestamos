@@ -19,7 +19,7 @@ Plan completo: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10 task
 | 5. Autenticación | ✅ Hecho | `api/src/auth/` completo: register/login/refresh/logout/change-password/forgot-password/reset-password, `TokensService` (refresh rotativo en BD), `JwtAuthGuard`/`RolesGuard`, decoradores `@Roles`/`@CurrentUser`, `password.policy.ts` (TDD). Módulos base `audit/` y `email/` creados como dependencia (bootstrap de admin real va en Task 6). 11/11 e2e + 6/6 unit PASS (commit `ccd7bef`) |
 | 6. Bootstrap admin + Auditoría | ✅ Hecho | `AdminBootstrapService` (`OnApplicationBootstrap`) crea admin desde `.env` si no existe, `must_change_password=true`. `AuditService` ya existía desde Task 5. 3/3 e2e específico + 16/16 e2e total PASS (commit `eaeb768`) |
 | 7. Frontend — scaffold PWA + Design System | ✅ Hecho | Vite+React 18+TS, Tailwind con tokens, vite-plugin-pwa, componentes `Button`/`Input`/`Card`/`Alert`/`Spinner`, `apiFetch` con refresh automático. Build+lint+vitest (2/2) OK (commit `053e7c7`) |
-| 8. Frontend — pantallas de autenticación | ❌ No iniciado | Depende de Task 7 (listo) |
+| 8. Frontend — pantallas de autenticación | ✅ Hecho | `AuthProvider`/`useAuth`, `LoginPage` (con test), `RegisterPage`, `ChangePasswordPage`, `App.tsx` con router protegido por rol y `mustChangePassword`, `DashboardShell` placeholder. Build+lint+vitest (3/3) OK; verificado end-to-end vía curl contra proxy real de Vite (commit `ece1648`) |
 | 9. CI/CD — GitHub Actions | ❌ No iniciado | |
 | 10. Verificación final de Fase 1 | ❌ No iniciado | |
 
@@ -42,6 +42,10 @@ Task 7 cerrado: scaffold de `web/`. Decisión confirmada con el usuario: el temp
 
 Verificado 2026-08-14: `npm run build` OK (incluye generación de service worker), `npm run lint` (oxlint) OK, `npm test` (vitest) 2/2 PASS. Working tree limpio tras commit `053e7c7`.
 
+Task 8 cerrado: pantallas de autenticación. `login()` del contexto se modificó respecto al snippet del plan para devolver el `AuthUser` (no solo `Promise<void>`) — `LoginPage`/`RegisterPage` necesitan el `role`/`mustChangePassword` recién resueltos para decidir a dónde navegar, y leer del contexto tras `await` no garantiza el valor actualizado en el mismo ciclo. No se pudo verificar visualmente en navegador (extensión de Chrome no conectada en esta sesión); se verificó el contrato end-to-end con curl contra el proxy real de Vite (`/api/v1/auth/login`, `/api/v1/auth/me`) — pendiente una pasada visual manual antes de dar la Fase 1 por cerrada del todo.
+
+Verificado 2026-08-14: `npm run build` OK, `npm run lint` OK, `npm test` (vitest) 3/3 PASS. Working tree limpio tras commit `ece1648`. Dev servers quedaron corriendo (api :3000, web :5173) para pruebas manuales.
+
 ## Decisiones ya tomadas (del spec/plan, no reabrir sin pedir)
 
 - Modular Monolith: `api/` (NestJS 10) + `web/` (React 18 + Vite 5 + Tailwind 3.4 PWA) + MySQL 8 + MinIO + Nginx.
@@ -56,4 +60,4 @@ Verificado 2026-08-14: `npm run build` OK (incluye generación de service worker
 
 ## Próximo paso sugerido
 
-Task 8: Frontend — pantallas de autenticación (login, registro, cambio de contraseña, shell multi-rol), siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`.
+Task 9: CI/CD — GitHub Actions (`.github/workflows/ci.yml`: lint+test api con MySQL en container, build web), siguiendo `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md`. Antes de eso, conviene una pasada visual manual del flujo de auth en navegador (no verificada aún).
