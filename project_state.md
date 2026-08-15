@@ -125,6 +125,19 @@ Decisión de arquitectura necesaria antes de implementar (analizada y confirmada
 
 Verificado 2026-08-15: `npm test` API 57/57 PASS (48 anteriores + 9 nuevos de `payment-application.spec.ts`), `npm run test:e2e` 80/80 PASS con `--runInBand` (69 anteriores + 11 nuevos de `payments.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: préstamo real aprobado, pago de $70 registrado con `admin`, `status` pasó de `APPROVED` a `ACTIVE` en la misma llamada. Datos de prueba limpiados después. Pasada visual del formulario de pagos en `AdminLoansPage` pendiente (extensión de Chrome seguía desconectada esta sesión).
 
+**Fase 3 — Score (verde/amarillo/naranja/rojo) (2026-08-15):** cuarto corte de Fase 3, confirmado con el usuario. Cierra el ciclo multa → consecuencia visible para admin y cliente.
+
+Dos decisiones que la spec deja abiertas ("por reglas configurables") y se confirmaron explícitamente con el usuario, ya que `score_rules` sigue fuera de alcance (mismo patrón que la multa: cálculo en vivo, sin tabla):
+- **Umbrales fijos por días de atraso** (el máximo entre los préstamos `APPROVED`/`ACTIVE` del cliente): 0 = `GREEN`, 1–7 = `YELLOW`, 8–15 = `ORANGE`, 16+ = `RED`. Quedan hardcodeados en `score-calculation.ts` hasta que exista `score_rules` editable por admin.
+- **Sin ajuste manual del admin en este corte** (la spec lo pide auditado vía `PATCH /admin/scores/:id`) — se dejó fuera a propósito, mismo criterio de "corte chico primero" que ya se usó con la multa y con cobradores.
+
+- `api/src/score/score-calculation.ts`: función pura `calculateScoreLevel(maxDaysLate)`, 4/4 tests TDD (límites 0/1/7/8/15/16).
+- `ScoreService.computeScore()`: reusa `calculateLoanPenalty` (ya existente) sobre los préstamos `APPROVED`/`ACTIVE` del cliente, toma el máximo `daysLate` entre todas las cuotas vencidas de todos sus préstamos.
+- `GET /api/v1/customers/me/score` (cliente, propio) y `GET /api/v1/admin/scores` (admin, todos los clientes registrados, calculado en vivo por request — a esta escala, ~10 usuarios, no hace falta cachear).
+- Frontend: `CalculatorPage` muestra un badge de color con el nivel al cliente (siempre que esté logueado como `CLIENT`, no solo cuando hay un préstamo activo). `AdminLoansPage` muestra un punto de color junto al nombre de cada cliente en la lista de solicitudes.
+
+Verificado 2026-08-15: `npm test` API 61/61 PASS (57 anteriores + 4 nuevos de `score-calculation.spec.ts`), `npm run test:e2e` 87/87 PASS con `--runInBand` (80 anteriores + 7 nuevos de `score.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: cliente sin préstamos → `GREEN`; con préstamo `APPROVED` sin atraso → `GREEN`; `GET /admin/scores` lista al cliente con nombre y nivel correctos. Datos de prueba limpiados después. Pasada visual pendiente (extensión de Chrome desconectada toda la sesión).
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -196,6 +209,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 **Fase 2 "Cliente" completa**: cotizar → crear borrador → retomarlo → completar datos → subir documentos (INE+comprobante) → video de identidad → firmar pagaré → `SUBMITTED`. Todo el roadmap de Fase 2 de la spec (calculadora/quote, onboarding, documentos, video, pagaré, solicitud+estados) está construido y verificado contra el stack Docker real.
 
-**Fase 3 (Administrador) — tres cortes hechos**: revisión de solicitudes, cobradores (CRUD + asignación) y payments (registrar pagos, ver arriba). Falta del roadmap de Fase 3: reglas configurables (`score_rules`/`business_rules` — hoy `PENALTY_PER_DAY=$50` está hardcodeado, no editable por admin), score (verde/amarillo/naranja/rojo), BI, ubicaciones. Cada uno debe confirmarse con el usuario como corte aparte antes de implementar, igual que los anteriores.
+**Fase 3 (Administrador) — cuatro cortes hechos**: revisión de solicitudes, cobradores (CRUD + asignación), payments (registrar pagos) y score (verde/amarillo/naranja/rojo, ver arriba). Falta del roadmap de Fase 3: reglas configurables (`score_rules`/`business_rules` — hoy `PENALTY_PER_DAY=$50` y los umbrales de score están hardcodeados, no editables por admin, ni existe el ajuste manual de score auditado que pide la spec), BI, ubicaciones. Cada uno debe confirmarse con el usuario como corte aparte antes de implementar, igual que los anteriores.
 
 Pendiente no bloqueante: el video de identidad ya se probó visualmente con cámara real (ver arriba). El resto de las pantallas (login, registro, calculadora, onboarding, documentos, pagaré, `AdminLoansPage`) siguen sin una pasada visual real en navegador — todo verificado por curl/Node fetch/API — recomendable antes de seguir apilando UI, ya que el bug de Nginx (413 en subida de video) demostró que hay problemas que solo aparecen probando el flujo real de punta a punta, no con tests que le pegan directo a la API.

@@ -46,6 +46,38 @@ interface PenaltyResult {
   overdueInstallments: PenaltyInstallment[];
 }
 
+type ScoreLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+
+interface CustomerScore {
+  level: ScoreLevel;
+  maxDaysLate: number;
+}
+
+const SCORE_LABELS: Record<ScoreLevel, string> = {
+  GREEN: 'Al corriente',
+  YELLOW: 'Atraso leve',
+  ORANGE: 'Atraso importante',
+  RED: 'Atraso grave',
+};
+
+const SCORE_COLORS: Record<ScoreLevel, string> = {
+  GREEN: 'bg-green-100 text-green-800',
+  YELLOW: 'bg-yellow-100 text-yellow-800',
+  ORANGE: 'bg-orange-100 text-orange-800',
+  RED: 'bg-red-100 text-red-800',
+};
+
+function ScoreBadge({ score }: { score: CustomerScore }) {
+  return (
+    <div
+      className={`mb-4 flex items-center justify-between rounded-xl px-3 py-2 text-sm ${SCORE_COLORS[score.level]}`}
+    >
+      <span className="font-semibold">{SCORE_LABELS[score.level]}</span>
+      {score.maxDaysLate > 0 && <span>{score.maxDaysLate} días de atraso</span>}
+    </div>
+  );
+}
+
 const TERMINAL_STATUSES = ['LIQUIDATED', 'CANCELLED', 'REJECTED'];
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
@@ -177,6 +209,7 @@ export function CalculatorPage() {
   const [loading, setLoading] = useState(false);
   const [checkingDraft, setCheckingDraft] = useState(user?.role === 'CLIENT');
   const [penalty, setPenalty] = useState<PenaltyResult | null>(null);
+  const [score, setScore] = useState<CustomerScore | null>(null);
 
   useEffect(() => {
     if (user?.role !== 'CLIENT') {
@@ -190,6 +223,10 @@ export function CalculatorPage() {
       })
       .catch(() => undefined)
       .finally(() => setCheckingDraft(false));
+
+    apiFetch<CustomerScore>('/customers/me/score')
+      .then(setScore)
+      .catch(() => undefined);
   }, [user]);
 
   useEffect(() => {
@@ -255,6 +292,8 @@ export function CalculatorPage() {
         <p className="mb-6 text-center text-sm text-secondary">
           {draft ? 'Ya tienes una solicitud guardada' : 'Simula tu préstamo antes de solicitarlo'}
         </p>
+
+        {score && <ScoreBadge score={score} />}
 
         {draft && (
           <div className="flex flex-col gap-4">

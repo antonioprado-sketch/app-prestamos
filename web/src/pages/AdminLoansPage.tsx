@@ -45,6 +45,21 @@ interface Payment {
   createdBy: string;
 }
 
+type ScoreLevel = 'GREEN' | 'YELLOW' | 'ORANGE' | 'RED';
+
+interface CustomerScore {
+  customerPhone: string;
+  level: ScoreLevel;
+  maxDaysLate: number;
+}
+
+const SCORE_DOT: Record<ScoreLevel, string> = {
+  GREEN: 'bg-green-500',
+  YELLOW: 'bg-yellow-500',
+  ORANGE: 'bg-orange-500',
+  RED: 'bg-red-500',
+};
+
 const ASSIGNABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 const PAYABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
@@ -86,6 +101,8 @@ export function AdminLoansPage() {
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
+  const [scores, setScores] = useState<Record<string, CustomerScore>>({});
+
   const load = () => {
     setLoading(true);
     setError(null);
@@ -102,8 +119,19 @@ export function AdminLoansPage() {
       .catch(() => undefined);
   };
 
+  const loadScores = () => {
+    apiFetch<CustomerScore[]>('/admin/scores')
+      .then((list) => {
+        const byPhone: Record<string, CustomerScore> = {};
+        for (const s of list) byPhone[s.customerPhone] = s;
+        setScores(byPhone);
+      })
+      .catch(() => undefined);
+  };
+
   useEffect(load, [statusFilter]);
   useEffect(loadCollectors, []);
+  useEffect(loadScores, []);
 
   const createCollector = async () => {
     setCollectorFormLoading(true);
@@ -281,7 +309,13 @@ export function AdminLoansPage() {
                   className="flex w-full items-center justify-between gap-2 p-3 text-left"
                 >
                   <div>
-                    <p className="font-semibold text-secondary">
+                    <p className="flex items-center gap-2 font-semibold text-secondary">
+                      {scores[loan.customerPhone] && (
+                        <span
+                          className={`inline-block h-2.5 w-2.5 rounded-full ${SCORE_DOT[scores[loan.customerPhone].level]}`}
+                          title={scores[loan.customerPhone].level}
+                        />
+                      )}
                       {loan.folio} · {loan.customerName ?? loan.customerPhone}
                     </p>
                     <p className="text-xs text-secondary">
