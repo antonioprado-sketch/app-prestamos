@@ -34,12 +34,108 @@ interface LoanDraft extends QuoteResult {
 }
 
 const TERMINAL_STATUSES = ['LIQUIDATED', 'CANCELLED', 'REJECTED'];
+const PENALTY_PER_DAY = 50;
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
+const longDate = new Intl.DateTimeFormat('es-MX', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
 
-function formatDate(iso: string) {
-  const [y, m, d] = iso.split('-');
-  return `${d}/${m}/${y}`;
+function formatLongDate(iso: string) {
+  const [y, m, d] = iso.split('-').map(Number);
+  return longDate.format(new Date(Date.UTC(y, m - 1, d)));
+}
+
+function ScheduleSummary({ quote }: { quote: QuoteResult }) {
+  let saldo = quote.total;
+  const plazo = quote.model === 'WEEKLY' ? '20 semanas' : '10 quincenas';
+  const frecuencia = quote.model === 'WEEKLY' ? 'semanalmente' : 'quincenalmente';
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex justify-between text-sm">
+        <span className="text-secondary">Total a pagar</span>
+        <span className="font-semibold text-secondary">{currency.format(quote.total)}</span>
+      </div>
+      <div className="flex justify-between text-sm">
+        <span className="text-secondary">
+          Pago {quote.model === 'WEEKLY' ? 'semanal' : 'quincenal'}
+        </span>
+        <span className="font-semibold text-secondary">{currency.format(quote.payment)}</span>
+      </div>
+      <p className="text-xs text-secondary">
+        Este préstamo tiene un plazo de {plazo}. Los pagos se realizan {frecuencia} de acuerdo
+        con el calendario mostrado a continuación.
+      </p>
+
+      <div>
+        <h2 className="mb-2 text-sm font-semibold text-secondary">Calendario de pagos</h2>
+        <div className="overflow-x-auto rounded-xl border border-gray-200">
+          <table className="w-full min-w-[480px] text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left text-xs uppercase text-secondary">
+                <th className="px-3 py-2">#</th>
+                <th className="px-3 py-2">Fecha de pago</th>
+                <th className="px-3 py-2 text-right">Abono a deuda</th>
+                <th className="px-3 py-2 text-right">Saldo pendiente</th>
+              </tr>
+            </thead>
+            <tbody>
+              {quote.schedule.map((entry) => {
+                saldo = Math.max(0, Math.round((saldo - entry.amount) * 100) / 100);
+                return (
+                  <tr key={entry.seq} className="border-t border-gray-100">
+                    <td className="px-3 py-2 text-secondary">{entry.seq}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-secondary">
+                      {formatLongDate(entry.dueDate)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-secondary">
+                      {currency.format(entry.amount)}
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-secondary">
+                      {currency.format(saldo)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PenaltyCalculator() {
+  const inputId = useId();
+  const [days, setDays] = useState('');
+  const parsedDays = Math.max(0, Number(days) || 0);
+  const penalty = parsedDays * PENALTY_PER_DAY;
+
+  return (
+    <div className="mt-6 flex flex-col gap-2 border-t border-gray-200 pt-4">
+      <h2 className="text-sm font-semibold text-secondary">Penalización por atraso</h2>
+      <p className="text-xs text-secondary">
+        Por cada día de retraso se genera una penalización de {currency.format(PENALTY_PER_DAY)}{' '}
+        MXN.
+      </p>
+      <Input
+        id={inputId}
+        label="Días de retraso"
+        type="number"
+        min="0"
+        inputMode="numeric"
+        value={days}
+        onChange={(e) => setDays(e.target.value)}
+      />
+      <p className="text-sm text-secondary">
+        Penalización: <span className="font-semibold">{currency.format(penalty)}</span>
+      </p>
+    </div>
+  );
 }
 
 export function CalculatorPage() {
@@ -116,7 +212,7 @@ export function CalculatorPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-2xl">
         <h1 className="mb-1 text-center text-xl font-bold text-secondary">
           Calculadora de préstamo
         </h1>
@@ -125,29 +221,14 @@ export function CalculatorPage() {
         </p>
 
         {draft && (
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-4">
             <Alert variant="success">
               Folio <strong>{draft.folio}</strong> · estado {draft.status}. Vas a retomar esta
               misma cotización al terminar el registro de tus datos.
             </Alert>
-            <div className="flex justify-between text-sm">
-              <span className="text-secondary">Total a pagar</span>
-              <span className="font-semibold text-secondary">{currency.format(draft.total)}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-secondary">
-                Pago {draft.model === 'WEEKLY' ? 'semanal' : 'quincenal'}
-              </span>
-              <span className="font-semibold text-secondary">
-                {currency.format(draft.payment)}
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-secondary">Fecha del último pago</span>
-              <span className="font-semibold text-secondary">
-                {formatDate(draft.schedule[draft.schedule.length - 1].dueDate)}
-              </span>
-            </div>
+
+            <ScheduleSummary quote={draft} />
+
             {draft.status === 'DRAFT' ? (
               <>
                 <Link to="/onboarding">
@@ -223,31 +304,8 @@ export function CalculatorPage() {
             </form>
 
             {result && (
-              <div className="mt-6 flex flex-col gap-3 border-t border-gray-200 pt-4">
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Total a pagar</span>
-                  <span className="font-semibold text-secondary">
-                    {currency.format(result.total)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">
-                    Pago {result.model === 'WEEKLY' ? 'semanal' : 'quincenal'}
-                  </span>
-                  <span className="font-semibold text-secondary">
-                    {currency.format(result.payment)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Número de pagos</span>
-                  <span className="font-semibold text-secondary">{result.schedule.length}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-secondary">Fecha del último pago</span>
-                  <span className="font-semibold text-secondary">
-                    {formatDate(result.schedule[result.schedule.length - 1].dueDate)}
-                  </span>
-                </div>
+              <div className="mt-6 flex flex-col gap-4 border-t border-gray-200 pt-4">
+                <ScheduleSummary quote={result} />
 
                 {wantItError && <Alert variant="error">{wantItError}</Alert>}
 
@@ -266,6 +324,8 @@ export function CalculatorPage() {
             )}
           </>
         )}
+
+        <PenaltyCalculator />
       </Card>
     </main>
   );
