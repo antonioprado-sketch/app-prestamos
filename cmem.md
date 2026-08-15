@@ -148,3 +148,27 @@ desconectada al arrancar tareas nuevas y requiere reconexión manual del usuario
 pantallas (incluyendo `AdminLoansPage` completa) siguen sin una pasada visual real en
 navegador — todo verificado por curl/Node fetch contra la API real, pero no confirmado
 visualmente.
+
+## Sincronización entre equipos/máquinas (2026-08-15)
+
+Pregunta del usuario: cómo hacer que otro equipo lea el contexto de Claude Code de este
+proyecto. Aclarado: **no existe sync automático de sesión** entre máquinas — la memoria
+de conversación de Claude Code vive local, fuera del repo. Lo único que viaja entre
+equipos es lo que está en git:
+
+- `CLAUDE.md` — reglas operativas, carga automática al abrir sesión en el repo.
+- `project_state.md` — estado vivo (qué existe hoy, qué sigue).
+- `cmem.md` (este archivo) — narrativa histórica portable.
+
+Flujo para un equipo nuevo en otra máquina: `git pull` → abrir Claude Code en el repo
+(`CLAUDE.md` carga solo) → pedir que lea `cmem.md` para contexto histórico. Sin
+infraestructura cloud de por medio — es intencional, decisión previa del usuario
+("user chose markdown export instead" de sync en la nube).
+
+Se evaluó además `claude-mem:cloud-sync` (plugin claude-mem, sync a cmem.ai Pro) para
+sincronizar memoria de observaciones entre las propias máquinas del usuario — no es
+sync compartido de equipo, cada persona necesitaría su propia cuenta cmem.ai. Estado al
+cierre de esta sesión: **no configurado** (`configured: false` en `/api/sync/status`).
+Requiere token + user id + Hub URL desde cmem.ai → Connect; el usuario no llegó a
+proveerlos en esta sesión. Nota de privacidad importante si se retoma: cloud sync sube
+narrativas de observaciones y texto completo de prompts a la cuenta cmem.ai del usuario.
