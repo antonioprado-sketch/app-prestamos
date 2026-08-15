@@ -67,6 +67,14 @@ Verificado 2026-08-15: 17/17 unit + 7/7 e2e de documents (incluye subida de vide
 
 **Nota de proceso:** la extensión de Chrome no estaba conectada al arrancar esta tarea; tras reconectarla, el permiso de cámara del sitio quedó en estado "prompt" y el popup nativo de Chrome (fuera del DOM de la página, no capturable por screenshot ni clickeable por las herramientas de automatización) requirió que el usuario lo aceptara manualmente con un clic — las herramientas de automatización no pueden interactuar con UI nativa del navegador (permisos, `chrome://settings`), solo con el contenido de la página.
 
+**Calendario de pagos + calculadora de penalización en el cotizador (2026-08-14, commit `7119504`):** `CalculatorPage` reemplaza el resumen plano (total/pago/última fecha) por una tabla de calendario de pagos (fecha larga, abono, saldo pendiente calculado por fila), factorizada en `ScheduleSummary` y reutilizada tanto en la vista de resultado recién cotizado como en la de un borrador retomado. Se agregó `PenaltyCalculator`: simulador de multa por atraso ($50 MXN/día, según R3/C6 de la spec), siempre visible al fondo de la tarjeta.
+
+Revisado antes de commitear (build/lint/tsc en verde, sin huérfanos de `formatDate`). Dos puntos quedaron pendientes de ajuste, a pedido del usuario ("ajusto después"):
+- El simulador de multa es standalone: el usuario mete "días de atraso" a mano, no lee la mora real del préstamo ni respeta el orden de aplicación de pagos (multas → cuota vencida → cuota vigente, C7). Riesgo: un cliente con atraso real podría leer un monto que no coincide con su deuda real.
+- El widget se muestra siempre (con o sin cotización, con o sin sesión) en vez de estar acotado al contexto de un préstamo con atraso real.
+
+**Pendiente no bloqueante:** decidir si el cálculo de multa se mueve a backend (ligado al `Loan` real, respetando C7) o se deja como simulador informativo con copy que aclare que es una estimación.
+
 ### Qué existe
 
 | Task | Estado | Detalle |
