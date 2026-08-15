@@ -10,7 +10,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../storage/storage.service';
-import { calculateQuote, QuoteInput, QuoteResult } from './loan-quote';
+import {
+  calculateQuote,
+  QuoteInput,
+  QuoteResult,
+  todayInMexicoCity,
+} from './loan-quote';
+import { calculateLoanPenalty, PenaltyResult } from './loan-penalty';
 import { renderPagarePdf } from './pagare';
 import { decodeSignaturePng } from '../documents/document-validation';
 
@@ -201,6 +207,26 @@ export class LoansService {
       throw new NotFoundException('Préstamo no encontrado');
     }
     return toLoanDraftResult(loan);
+  }
+
+  async getPenalty(phone: string, loanId: string): Promise<PenaltyResult> {
+    if (!/^\d+$/.test(loanId))
+      throw new NotFoundException('Préstamo no encontrado');
+    const loan = await this.prisma.loan.findUnique({
+      where: { id: BigInt(loanId) },
+      include: { schedule: true },
+    });
+    if (!loan || loan.customerPhone !== phone) {
+      throw new NotFoundException('Préstamo no encontrado');
+    }
+    return calculateLoanPenalty(
+      loan.schedule.map((entry) => ({
+        seq: entry.seq,
+        dueDate: entry.dueDate,
+        status: entry.status,
+      })),
+      todayInMexicoCity(),
+    );
   }
 
   async signPagare(

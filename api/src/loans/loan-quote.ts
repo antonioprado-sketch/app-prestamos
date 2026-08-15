@@ -75,7 +75,7 @@ function nextQuincenaDate(date: Date): Date {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 15));
 }
 
-function todayInMexicoCity(): Date {
+export function todayInMexicoCity(): Date {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Mexico_City',
     year: 'numeric',

@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { todayInMexicoCity } from '../src/loans/loan-quote';
 
 describe('Loans (e2e)', () => {
   let app: INestApplication;
@@ -142,6 +143,77 @@ describe('Loans (e2e)', () => {
       .get('/api/v1/loans/999999999')
       .set('Authorization', `Bearer ${token}`)
       .expect(404);
+  });
+
+  it('GET /loans/:id/penalty requiere token', async () => {
+    await request(app.getHttpServer())
+      .get(`/api/v1/loans/${loanId}/penalty`)
+      .expect(401);
+  });
+
+  it('GET /loans/:id/penalty rechaza a un rol distinto de CLIENT', async () => {
+    const login = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: adminPhone, password: adminPassword });
+    await request(app.getHttpServer())
+      .get(`/api/v1/loans/${loanId}/penalty`)
+      .set('Authorization', `Bearer ${login.body.accessToken}`)
+      .expect(403);
+  });
+
+  it('GET /loans/:id/penalty devuelve 404 si no existe', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/loans/999999999/penalty')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
+  });
+
+  it('GET /loans/:id/penalty devuelve 0 si ninguna cuota está vencida', async () => {
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/loans/${loanId}/penalty`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.totalPenalty).toBe(0);
+    expect(res.body.overdueInstallments).toHaveLength(0);
+  });
+
+  it('GET /loans/:id/penalty calcula la multa real de las cuotas vencidas', async () => {
+    const schedule = await prisma.loanSchedule.findMany({
+      where: { loanId: BigInt(loanId) },
+      orderBy: { seq: 'asc' },
+    });
+
+    const today = todayInMexicoCity();
+    const threeDaysAgo = new Date(today.getTime() - 3 * 86400000);
+    const oneDayAgo = new Date(today.getTime() - 1 * 86400000);
+
+    await prisma.loanSchedule.update({
+      where: { id: schedule[0].id },
+      data: { dueDate: threeDaysAgo, status: 'PENDING' },
+    });
+    await prisma.loanSchedule.update({
+      where: { id: schedule[1].id },
+      data: { dueDate: oneDayAgo, status: 'PARTIAL' },
+    });
+    await prisma.loanSchedule.update({
+      where: { id: schedule[2].id },
+      data: { dueDate: threeDaysAgo, status: 'PAID' },
+    });
+
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/loans/${loanId}/penalty`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.totalPenalty).toBe(3 * 50 + 1 * 50);
+    expect(res.body.overdueInstallments).toHaveLength(2);
+    expect(res.body.overdueInstallments.map((i: { seq: number }) => i.seq)).toEqual(
+      [schedule[0].seq, schedule[1].seq],
+    );
   });
 
   it('rechaza una segunda solicitud mientras haya una en curso', async () => {

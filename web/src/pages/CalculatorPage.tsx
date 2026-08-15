@@ -33,8 +33,19 @@ interface LoanDraft extends QuoteResult {
   status: string;
 }
 
+interface PenaltyInstallment {
+  seq: number;
+  dueDate: string;
+  daysLate: number;
+  penalty: number;
+}
+
+interface PenaltyResult {
+  totalPenalty: number;
+  overdueInstallments: PenaltyInstallment[];
+}
+
 const TERMINAL_STATUSES = ['LIQUIDATED', 'CANCELLED', 'REJECTED'];
-const PENALTY_PER_DAY = 50;
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 const longDate = new Intl.DateTimeFormat('es-MX', {
@@ -109,31 +120,44 @@ function ScheduleSummary({ quote }: { quote: QuoteResult }) {
   );
 }
 
-function PenaltyCalculator() {
-  const inputId = useId();
-  const [days, setDays] = useState('');
-  const parsedDays = Math.max(0, Number(days) || 0);
-  const penalty = parsedDays * PENALTY_PER_DAY;
+function PenaltySummary({ penalty }: { penalty: PenaltyResult }) {
+  if (penalty.totalPenalty <= 0) return null;
 
   return (
     <div className="mt-6 flex flex-col gap-2 border-t border-gray-200 pt-4">
-      <h2 className="text-sm font-semibold text-secondary">Penalización por atraso</h2>
-      <p className="text-xs text-secondary">
-        Por cada día de retraso se genera una penalización de {currency.format(PENALTY_PER_DAY)}{' '}
-        MXN.
-      </p>
-      <Input
-        id={inputId}
-        label="Días de retraso"
-        type="number"
-        min="0"
-        inputMode="numeric"
-        value={days}
-        onChange={(e) => setDays(e.target.value)}
-      />
-      <p className="text-sm text-secondary">
-        Penalización: <span className="font-semibold">{currency.format(penalty)}</span>
-      </p>
+      <Alert variant="error">
+        Tienes {penalty.overdueInstallments.length}{' '}
+        {penalty.overdueInstallments.length === 1 ? 'pago vencido' : 'pagos vencidos'} y una
+        multa acumulada de <strong>{currency.format(penalty.totalPenalty)}</strong>.
+      </Alert>
+      <div className="overflow-x-auto rounded-xl border border-gray-200">
+        <table className="w-full min-w-[380px] text-sm">
+          <thead>
+            <tr className="bg-gray-50 text-left text-xs uppercase text-secondary">
+              <th className="px-3 py-2">#</th>
+              <th className="px-3 py-2">Vencía el</th>
+              <th className="px-3 py-2 text-right">Días de atraso</th>
+              <th className="px-3 py-2 text-right">Multa</th>
+            </tr>
+          </thead>
+          <tbody>
+            {penalty.overdueInstallments.map((entry) => (
+              <tr key={entry.seq} className="border-t border-gray-100">
+                <td className="px-3 py-2 text-secondary">{entry.seq}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-secondary">
+                  {formatLongDate(entry.dueDate)}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-secondary">
+                  {entry.daysLate}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-secondary">
+                  {currency.format(entry.penalty)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -151,6 +175,7 @@ export function CalculatorPage() {
   const [wantItLoading, setWantItLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingDraft, setCheckingDraft] = useState(user?.role === 'CLIENT');
+  const [penalty, setPenalty] = useState<PenaltyResult | null>(null);
 
   useEffect(() => {
     if (user?.role !== 'CLIENT') {
@@ -165,6 +190,16 @@ export function CalculatorPage() {
       .catch(() => undefined)
       .finally(() => setCheckingDraft(false));
   }, [user]);
+
+  useEffect(() => {
+    if (!draft) {
+      setPenalty(null);
+      return;
+    }
+    apiFetch<PenaltyResult>(`/loans/${draft.id}/penalty`)
+      .then(setPenalty)
+      .catch(() => undefined);
+  }, [draft]);
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -228,6 +263,8 @@ export function CalculatorPage() {
             </Alert>
 
             <ScheduleSummary quote={draft} />
+
+            {penalty && <PenaltySummary penalty={penalty} />}
 
             {draft.status === 'DRAFT' ? (
               <>
@@ -324,8 +361,6 @@ export function CalculatorPage() {
             )}
           </>
         )}
-
-        <PenaltyCalculator />
       </Card>
     </main>
   );

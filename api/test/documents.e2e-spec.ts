@@ -145,7 +145,10 @@ describe('Documents (e2e)', () => {
       .post('/api/v1/documents')
       .set('Authorization', `Bearer ${token}`)
       .field('type', 'VIDEO_IDENTITY')
-      .attach('file', webmBuffer(), { filename: 'video.webm', contentType: 'video/webm' })
+      .attach('file', webmBuffer(), {
+        filename: 'video.webm',
+        contentType: 'video/webm',
+      })
       .expect(201);
 
     expect(res.body.type).toBe('VIDEO_IDENTITY');

@@ -73,6 +73,16 @@ export class LoansController {
     return this.loans.findOne(user.phone, id);
   }
 
+  @Get(':id/penalty')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('CLIENT')
+  async getPenalty(
+    @Param('id') id: string,
+    @CurrentUser() user: { phone: string },
+  ) {
+    return this.loans.getPenalty(user.phone, id);
+  }
+
   @Post(':id/pagare')
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, RolesGuard)
