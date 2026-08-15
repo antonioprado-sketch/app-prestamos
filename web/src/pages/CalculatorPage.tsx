@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../store/auth';
 import { apiFetch, ApiError } from '../lib/api';
+import { captureLocation } from '../lib/location';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
@@ -268,6 +269,7 @@ export function CalculatorPage() {
         body: JSON.stringify({ amount: Number(amount), model, openingDate }),
       });
       setDraft(created);
+      captureLocation('REQUEST');
     } catch (err) {
       setWantItError(err instanceof ApiError ? err.message : 'No se pudo guardar la solicitud');
     } finally {

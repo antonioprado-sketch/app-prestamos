@@ -68,6 +68,7 @@ model Customer {
   user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
   loans Loan[]
   documents Document[]
+  locations Location[]
 
   @@map("customers")
 }
@@ -178,6 +179,21 @@ model Document {
   @@map("documents")
 }
 
+model Location {
+  id            BigInt         @id @default(autoincrement())
+  customerPhone String         @map("customer_phone") @db.VarChar(15)
+  lat           Decimal        @db.Decimal(9, 6)
+  lng           Decimal        @db.Decimal(9, 6)
+  accuracy      Decimal?       @db.Decimal(10, 2)
+  source        LocationSource
+  capturedAt    DateTime       @default(now()) @map("captured_at")
+
+  customer Customer @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
+
+  @@index([customerPhone, capturedAt])
+  @@map("locations")
+}
+
 model Payment {
   id             BigInt   @id @default(autoincrement())
   loanId         BigInt   @map("loan_id")
@@ -214,6 +230,13 @@ enum ScoreLevel {
   YELLOW
   ORANGE
   RED
+}
+
+enum LocationSource {
+  ONBOARDING
+  LOGIN
+  PAYMENT
+  REQUEST
 }
 
 enum UserStatus {

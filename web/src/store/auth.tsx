@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { apiFetch, setAccessToken } from '../lib/api';
+import { captureLocation } from '../lib/location';
 
 export type Role = 'CLIENT' | 'COLLECTOR' | 'ADMIN';
 
@@ -46,6 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(res.accessToken);
     localStorage.setItem('refreshToken', res.refreshToken);
     setUser(res.user);
+    if (res.user.role === 'CLIENT') captureLocation('LOGIN');
     return res.user;
   };
 

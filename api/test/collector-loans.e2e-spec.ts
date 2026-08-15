@@ -222,7 +222,10 @@ describe('Collector loans (e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/collector/loans/${loanId}/documents`)
       .set('Authorization', `Bearer ${otherCollectorToken}`)
-      .attach('file', jpegBuffer(), { filename: 'visita.jpg', contentType: 'image/jpeg' })
+      .attach('file', jpegBuffer(), {
+        filename: 'visita.jpg',
+        contentType: 'image/jpeg',
+      })
       .expect(404);
   });
 
@@ -241,7 +244,10 @@ describe('Collector loans (e2e)', () => {
     const uploadRes = await request(app.getHttpServer())
       .post(`/api/v1/collector/loans/${loanId}/documents`)
       .set('Authorization', `Bearer ${collectorToken}`)
-      .attach('file', jpegBuffer(), { filename: 'visita.jpg', contentType: 'image/jpeg' })
+      .attach('file', jpegBuffer(), {
+        filename: 'visita.jpg',
+        contentType: 'image/jpeg',
+      })
       .expect(201);
     expect(uploadRes.body.type).toBe('COLLECTOR_DOC');
 

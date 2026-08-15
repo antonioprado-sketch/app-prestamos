@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import type { Role } from '../../store/auth';
 import { useAuth } from '../../store/auth';
 import { Button } from '../../components/ui/Button';
+import { LocationConsentBanner } from '../../components/LocationConsentBanner';
 
 const titles: Record<Role, string> = {
   CLIENT: 'Panel del Cliente',
@@ -21,6 +22,7 @@ export function DashboardShell({ role }: { role: Role }) {
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
       <main className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
+        {role === 'CLIENT' && <LocationConsentBanner />}
         <h1 className="text-xl font-bold text-secondary">{titles[role]}</h1>
         <p className="text-secondary">{messages[role]}</p>
         {role === 'CLIENT' && (

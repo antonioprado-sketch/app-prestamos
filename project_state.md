@@ -216,7 +216,20 @@ Verificado 2026-08-15: `npm run build`/`lint`/`tsc -b` web en verde, `npm test` 
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS (63 anteriores + 3 nuevos de `COLLECTOR_DOC` en `document-validation.spec.ts`), `npm run test:e2e` 118/118 PASS con `--runInBand` (114 anteriores + 4 nuevos en `collector-loans.e2e-spec.ts`: 404 por ownership, 400 por contenido inválido, upload+listado, verificado además que `customerPhone`/`uploadedBy` quedan separados en BD). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real de punta a punta: cobrador sube foto real (multipart), `GET .../documents` la lista, y aparece en `GET /admin/customers/:phone` junto al resto de documentos del cliente. Datos de prueba limpiados después. No verificado visualmente (extensión de Chrome sigue desconectada).
 
-**Fase 4: 3 de 4 sub-features del roadmap de la spec completas** (cartera, pagos, llamar/WhatsApp, documentos de campo). Falta solo **ubicación** (requiere definir el flujo de consentimiento de C15 antes de tocar código — geolocalización nunca en background sin permiso, aviso de privacidad explícito). Próximo corte debe confirmarse con el usuario antes de implementar.
+**Ubicación, cuarto corte — backend + captura consentida del cliente (2026-08-15):** cierra el roadmap explícito de Fase 4. Alcance acotado y confirmado con el usuario vía preguntas explícitas antes de tocar código (C15 obligaba a resolver el flujo de consentimiento primero, no es un detalle de implementación libre):
+
+- **Aviso propio antes del prompt nativo del navegador** (no solo el diálogo "compartir ubicación?" del browser, que no explica el propósito) — `LocationConsentBanner` en `DashboardShell` (solo rol `CLIENT`), decisión guardada en `localStorage` (`locationConsent: 'granted'|'declined'`), no se vuelve a preguntar una vez decidido.
+- **Triggers: solo login + solicitud** — el tercer valor del enum `source` que ya proponía la spec (`payment`) se dejó sin usar a propósito: el cliente no registra sus propios pagos en la app (eso lo hacen cobrador/admin desde Fase 3), así que no hay evento de pago del lado cliente que capturar. El enum se implementó completo (`ONBOARDING, LOGIN, PAYMENT, REQUEST`) igual que en la spec, por si se conecta más adelante.
+- **Solo backend + captura, sin mapa admin ni vista del cobrador todavía** — evita meter Leaflet+OpenStreetMap (primera dependencia de mapas del proyecto) sin confirmar ese corte aparte.
+
+Implementación:
+- Prisma: modelo `Location` (`lat`/`lng DECIMAL(9,6)`, `accuracy DECIMAL(10,2)?`, `source LocationSource`, `capturedAt`) + enum `LocationSource`, migración `20260815202323_customer_locations`.
+- `POST /api/v1/locations` (`@Roles('CLIENT')`), valida rango real de lat/lng (`-90..90`/`-180..180`) vía `class-validator`, no solo que sean números.
+- Frontend: `web/src/lib/location.ts` — `captureLocation(source)` usa `navigator.geolocation.getCurrentPosition()`, **nunca bloquea ni muestra error** al usuario si falla o el permiso fue denegado (falla en silencio, es opcional); no captura nada si `locationConsent !== 'granted'`. Hooks: `AuthProvider.login()` dispara `captureLocation('LOGIN')` para clientes, `CalculatorPage.onWantIt()` dispara `captureLocation('REQUEST')` al crear la solicitud.
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 124/124 PASS con `--runInBand` (118 anteriores + 6 nuevos de `locations.e2e-spec.ts`: 401/403, validación de rango, validación de `source`, registro con/sin `accuracy` opcional). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `POST /locations` válido → `201`, lat fuera de rango → `400` con mensaje claro. Datos de prueba limpiados después. No verificado visualmente (extensión de Chrome sigue desconectada) — el banner de consentimiento y la captura real del navegador no se probaron en un dispositivo real todavía.
+
+**Fase 4: 4 de 4 sub-features del roadmap de la spec completas** (cartera, pagos, llamar/WhatsApp, documentos de campo, ubicación backend+captura). Pendiente fuera de este roadmap, cortes aparte a confirmar: mapa admin (Leaflet+OSM) y vista de última ubicación del cliente en la cartera del cobrador — ambos dependen de que exista al menos una ubicación capturada real para probarse útilmente.
 
 ### Qué existe
 

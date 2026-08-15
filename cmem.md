@@ -187,11 +187,26 @@ ownership 404 que ya usaba `payments`. Admin ve estos documentos gratis en
 por tipo) — cero cambios ahí. Frontend: input de archivo con `capture="environment"` para
 abrir la cámara directo en mobile.
 
-Con esto, 3 de las 4 sub-features del roadmap de Fase 4 quedaron completas (cartera,
-pagos, llamar/WhatsApp, documentos de campo). Pendiente: **ubicación** — requiere definir
-el flujo de consentimiento de C15 antes de tocar código (geolocalización nunca en
-background sin permiso, aviso de privacidad explícito), corte más grande que los
-anteriores porque toca privacidad legal (LFPDPPP), no solo código.
+**Cuarto corte — ubicación (backend + captura consentida)**: el más grande de los cuatro
+por tocar privacidad legal (C15/LFPDPPP), no solo código. Antes de implementar se
+confirmaron con el usuario 3 decisiones explícitas vía preguntas puntuales:
+1. **Aviso propio antes del prompt nativo del navegador** — el diálogo "compartir
+   ubicación?" del browser no explica el propósito, así que se agregó un banner in-app
+   (`LocationConsentBanner`) que sí lo hace, con la decisión guardada en `localStorage`
+   para no volver a preguntar.
+2. **Triggers solo login + solicitud** — la spec lista 3 (`onboarding`... en realidad
+   login/payment/request), pero "payment" no tiene sentido del lado cliente porque el
+   cliente nunca registra sus propios pagos (eso es cobrador/admin desde Fase 3). El
+   enum `source` se implementó completo igual, por si se conecta más adelante.
+3. **Solo backend + captura este corte** — el mapa admin (Leaflet+OSM, primera
+   dependencia de mapas del proyecto) y la vista de ubicación en la cartera del cobrador
+   quedaron para cortes aparte, sin confirmar todavía.
+
+Con esto, las 4 sub-features del roadmap de Fase 4 quedaron completas (cartera, pagos,
+llamar/WhatsApp, documentos de campo, ubicación backend+captura). Fase 4 no está "cerrada
+del todo" en el sentido de Fase 3 — el mapa admin y la vista de ubicación del cobrador
+siguen pendientes, son extensiones naturales una vez que exista ubicación real capturada
+para probarlas útilmente.
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 
@@ -225,6 +240,11 @@ anteriores porque toca privacidad legal (LFPDPPP), no solo código.
 - **`project_state.md`, `cmem.md` y `CLAUDE.md` se actualizan los tres antes de cada
   commit+push**, no solo al cerrar fase — regla explícita del usuario (2026-08-15). Es la
   única vía por la que el contexto viaja entre máquinas/sesiones.
+- **Captura opcional del lado cliente nunca bloquea el flujo principal**: `captureLocation()`
+  falla en silencio (sin alertar al usuario) si el navegador no soporta geolocalización, el
+  permiso fue denegado, o el request falla — el login/la solicitud de préstamo tienen que
+  funcionar igual aunque la ubicación no se capture. Mismo criterio para cualquier feature
+  "opcional, mejora la experiencia pero no es requisito".
 - **Actor vs. dueño del recurso son campos separados, no asumir que son el mismo**: el
   schema de `documents` ya tenía `customerPhone` y `uploadedBy` como columnas distintas
   desde Fase 1, pero el código los colapsaba en un solo parámetro hasta que hizo falta que
