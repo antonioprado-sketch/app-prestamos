@@ -42,6 +42,11 @@ export function DashboardShell({ role }: { role: Role }) {
                 Clientes
               </Button>
             </Link>
+            <Link to="/admin/configuracion" className="w-full max-w-xs">
+              <Button type="button" variant="ghost" className="w-full">
+                Reglas de negocio
+              </Button>
+            </Link>
           </>
         )}
         <Button variant="ghost" onClick={() => logout()} className="mt-6">

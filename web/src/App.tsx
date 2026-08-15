@@ -10,6 +10,7 @@ import { PagarePage } from './pages/PagarePage';
 import { VideoIdentityPage } from './pages/VideoIdentityPage';
 import { AdminLoansPage } from './pages/AdminLoansPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
+import { AdminConfigurationPage } from './pages/AdminConfigurationPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
 
@@ -67,6 +68,12 @@ export default function App() {
         path="/admin/clientes"
         element={
           user?.role === 'ADMIN' ? <AdminCustomersPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/admin/configuracion"
+        element={
+          user?.role === 'ADMIN' ? <AdminConfigurationPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
         }
       />
       <Route path="/login" element={user ? <Navigate to={homeFor(user.role)} /> : <LoginPage />} />
