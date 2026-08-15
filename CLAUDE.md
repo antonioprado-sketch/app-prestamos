@@ -6,8 +6,8 @@ Contexto operativo persistente para cualquier sesión de Claude en este repo. Es
 
 Modular Monolith:
 - `api/` — NestJS 10 + TypeScript, Prisma 5 (MySQL 8), Argon2id, JWT (access 15min + refresh rotativo en BD), nestjs-pino, helmet, throttler, class-validator/class-transformer, Swagger (solo dev, `/api/v1/docs`).
-- `web/` — React 18 + Vite 5 + Tailwind 3.4 + vite-plugin-pwa (aún no scaffolded).
-- MySQL 8, MinIO (almacenamiento, no usado hasta Fase 2), Nginx como proxy.
+- `web/` — React 18 + Vite 5 + Tailwind 3.4 + vite-plugin-pwa.
+- MySQL 8, MinIO (documentos/video/pagarés vía URLs firmadas), Nginx como proxy.
 - Solo dos entornos: `docker-compose.dev.yml` y `docker-compose.prod.yml`.
 
 ## Restricciones globales (no reabrir sin pedir al usuario)
@@ -34,6 +34,8 @@ npm run test:e2e     # jest e2e (requiere MySQL arriba)
 npm run test:cov     # cobertura
 ```
 
+> `npm run test:e2e` sin flags corre las suites en paralelo (varios workers bootstrapean `AdminBootstrapService` a la vez y chocan creando el mismo admin). Localmente correr con `npx jest --config ./test/jest-e2e.json --runInBand` (mismo flag que ya usa CI en `.github/workflows/ci.yml`).
+
 Docker (raíz del repo):
 ```bash
 docker compose -f docker-compose.dev.yml up     # dev completo
@@ -54,6 +56,7 @@ npx prisma migrate status
 - `PrismaModule` es `@Global()` — no reimportar `PrismaService` por feature module.
 - TDD: en el plan de Fase 1 cada task escribe primero el test que falla, luego la implementación. Mantener esa disciplina para tasks nuevas.
 - Todo cambio de funcionalidad va con su test unitario/e2e ejecutable con `npm test` / `npm run test:e2e`. Un cambio sin test no se da por terminado.
+- Lógica de negocio financiera (cotización, multas, aplicación de pagos) vive en funciones puras sin dependencias de Nest/Prisma (`loans/loan-quote.ts`, `loans/loan-penalty.ts`, `payments/payment-application.ts`), cada una con su `.spec.ts` de unit tests TDD. El `Service` correspondiente solo envuelve esa función pura con acceso a BD/auditoría — mantener este patrón al agregar reglas de negocio nuevas.
 
 ## Reglas del protocolo `addv-web-app` aplicadas a este repo
 
