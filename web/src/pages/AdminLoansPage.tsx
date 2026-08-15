@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
@@ -18,6 +19,8 @@ interface AdminLoan {
   adminNote: string | null;
   customerPhone: string;
   customerName: string | null;
+  collectorId: string | null;
+  collectorName: string | null;
   amount: number;
   total: number;
   payment: number;
@@ -25,6 +28,15 @@ interface AdminLoan {
   openingDate: string;
   schedule: ScheduleEntry[];
 }
+
+interface Collector {
+  id: string;
+  phone: string;
+  name: string;
+  active: boolean;
+}
+
+const ASSIGNABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
 const STATUS_FILTERS = [
   { value: 'SUBMITTED', label: 'Enviadas (pendientes de revisión)' },
@@ -47,6 +59,16 @@ export function AdminLoansPage() {
   const [reasonText, setReasonText] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  const [collectors, setCollectors] = useState<Collector[]>([]);
+  const [collectorPickerFor, setCollectorPickerFor] = useState<string | null>(null);
+  const [pickedCollectorId, setPickedCollectorId] = useState('');
+  const [showNewCollector, setShowNewCollector] = useState(false);
+  const [newCollectorPhone, setNewCollectorPhone] = useState('');
+  const [newCollectorName, setNewCollectorName] = useState('');
+  const [newCollectorResult, setNewCollectorResult] = useState<{ name: string; tempPassword: string } | null>(null);
+  const [collectorFormLoading, setCollectorFormLoading] = useState(false);
+  const [collectorError, setCollectorError] = useState<string | null>(null);
+
   const load = () => {
     setLoading(true);
     setError(null);
@@ -57,7 +79,65 @@ export function AdminLoansPage() {
       .finally(() => setLoading(false));
   };
 
+  const loadCollectors = () => {
+    apiFetch<Collector[]>('/admin/collectors')
+      .then(setCollectors)
+      .catch(() => undefined);
+  };
+
   useEffect(load, [statusFilter]);
+  useEffect(loadCollectors, []);
+
+  const createCollector = async () => {
+    setCollectorFormLoading(true);
+    setCollectorError(null);
+    try {
+      const res = await apiFetch<{ name: string; tempPassword: string }>('/admin/collectors', {
+        method: 'POST',
+        body: JSON.stringify({ phone: newCollectorPhone, name: newCollectorName }),
+      });
+      setNewCollectorResult(res);
+      setNewCollectorPhone('');
+      setNewCollectorName('');
+      loadCollectors();
+    } catch (err) {
+      setCollectorError(err instanceof ApiError ? err.message : 'No se pudo crear el cobrador');
+    } finally {
+      setCollectorFormLoading(false);
+    }
+  };
+
+  const assignCollector = async (loanId: string) => {
+    if (!pickedCollectorId) return;
+    setActionLoading(true);
+    setError(null);
+    try {
+      await apiFetch(`/admin/loans/${loanId}/assign-collector`, {
+        method: 'POST',
+        body: JSON.stringify({ collectorId: pickedCollectorId }),
+      });
+      setCollectorPickerFor(null);
+      setPickedCollectorId('');
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo asignar el cobrador');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const unassignCollector = async (loanId: string) => {
+    setActionLoading(true);
+    setError(null);
+    try {
+      await apiFetch(`/admin/loans/${loanId}/unassign-collector`, { method: 'POST' });
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo quitar el cobrador');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const selected = loans.find((l) => l.id === selectedId) ?? null;
 
@@ -187,6 +267,59 @@ export function AdminLoansPage() {
                       <Alert variant="error">Nota admin: {loan.adminNote}</Alert>
                     )}
 
+                    {ASSIGNABLE_STATUSES.includes(loan.status) && (
+                      <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
+                        <p className="text-sm font-medium text-secondary">
+                          Cobrador: {loan.collectorName ?? 'sin asignar'}
+                        </p>
+                        {loan.collectorId ? (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            loading={actionLoading}
+                            className="w-full"
+                            onClick={() => unassignCollector(loan.id)}
+                          >
+                            Quitar cobrador
+                          </Button>
+                        ) : collectorPickerFor === loan.id ? (
+                          <div className="flex gap-2">
+                            <select
+                              value={pickedCollectorId}
+                              onChange={(e) => setPickedCollectorId(e.target.value)}
+                              className="min-h-11 flex-1 rounded-xl border border-gray-300 px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                            >
+                              <option value="">Selecciona un cobrador</option>
+                              {collectors
+                                .filter((c) => c.active)
+                                .map((c) => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name} ({c.phone})
+                                  </option>
+                                ))}
+                            </select>
+                            <Button
+                              type="button"
+                              loading={actionLoading}
+                              disabled={!pickedCollectorId}
+                              onClick={() => assignCollector(loan.id)}
+                            >
+                              Asignar
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full"
+                            onClick={() => setCollectorPickerFor(loan.id)}
+                          >
+                            Asignar cobrador
+                          </Button>
+                        )}
+                      </div>
+                    )}
+
                     {loan.status === 'SUBMITTED' && !actionMode && (
                       <div className="flex flex-col gap-2 sm:flex-row">
                         <Button
@@ -248,6 +381,66 @@ export function AdminLoansPage() {
                     )}
                   </div>
                 )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card className="mt-4 w-full max-w-3xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-secondary">Cobradores</h2>
+          <Button type="button" variant="ghost" onClick={() => setShowNewCollector((v) => !v)}>
+            {showNewCollector ? 'Cerrar' : 'Nuevo cobrador'}
+          </Button>
+        </div>
+
+        {showNewCollector && (
+          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
+            {collectorError && <Alert variant="error">{collectorError}</Alert>}
+            {newCollectorResult && (
+              <Alert variant="success">
+                Cobrador <strong>{newCollectorResult.name}</strong> creado. Contraseña temporal (
+                compártela por un canal seguro, no se vuelve a mostrar):{' '}
+                <strong>{newCollectorResult.tempPassword}</strong>
+              </Alert>
+            )}
+            <Input
+              label="Teléfono (10 dígitos)"
+              value={newCollectorPhone}
+              onChange={(e) => setNewCollectorPhone(e.target.value)}
+            />
+            <Input
+              label="Nombre completo"
+              value={newCollectorName}
+              onChange={(e) => setNewCollectorName(e.target.value)}
+            />
+            <Button
+              type="button"
+              loading={collectorFormLoading}
+              disabled={!newCollectorPhone.trim() || !newCollectorName.trim()}
+              onClick={createCollector}
+            >
+              Crear cobrador
+            </Button>
+          </div>
+        )}
+
+        {collectors.length === 0 ? (
+          <p className="py-4 text-center text-sm text-secondary">Sin cobradores registrados.</p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {collectors.map((c) => (
+              <div
+                key={c.id}
+                className="flex items-center justify-between rounded-xl border border-gray-200 p-3 text-sm"
+              >
+                <span className="text-secondary">
+                  {c.name} · {c.phone}
+                </span>
+                <span className={c.active ? 'text-primary' : 'text-secondary'}>
+                  {c.active ? 'Activo' : 'Inactivo'}
+                </span>
               </div>
             ))}
           </div>

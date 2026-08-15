@@ -95,6 +95,7 @@ describe('Admin loans (e2e)', () => {
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: '5577889900' } });
     await app.close();
   });
 
@@ -224,8 +225,10 @@ describe('Admin loans (e2e)', () => {
       .expect(409);
   });
 
+  let secondLoanId: string;
+
   it('POST /admin/loans/:id/approve aprueba un préstamo enviado', async () => {
-    const secondLoanId = await createSubmittedLoan('2026-08-21'); // viernes futuro
+    secondLoanId = await createSubmittedLoan('2026-08-21'); // viernes futuro
     const token = await loginAdmin();
 
     const res = await request(app.getHttpServer())
@@ -234,5 +237,59 @@ describe('Admin loans (e2e)', () => {
       .expect(200);
 
     expect(res.body.status).toBe('APPROVED');
+  });
+
+  const collectorPhone = '5577889900';
+  let collectorId: string;
+
+  it('POST /admin/loans/:id/assign-collector asigna un cobrador a un préstamo aprobado', async () => {
+    const collectorUser = await prisma.user.create({
+      data: {
+        phone: collectorPhone,
+        passwordHash: 'x',
+        role: 'COLLECTOR',
+        collector: { create: { name: 'Rosa Cobradora' } },
+      },
+      include: { collector: true },
+    });
+    collectorId = String(collectorUser.collector!.id);
+
+    const token = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${secondLoanId}/assign-collector`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ collectorId })
+      .expect(200);
+
+    expect(res.body.collectorId).toBe(collectorId);
+    expect(res.body.collectorName).toBe('Rosa Cobradora');
+  });
+
+  it('POST /admin/loans/:id/assign-collector devuelve 404 con un cobrador inexistente', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${secondLoanId}/assign-collector`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ collectorId: '999999999' })
+      .expect(404);
+  });
+
+  it('POST /admin/loans/:id/unassign-collector quita al cobrador asignado', async () => {
+    const token = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${secondLoanId}/unassign-collector`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body.collectorId).toBeNull();
+  });
+
+  it('POST /admin/loans/:id/assign-collector rechaza un préstamo que no está aprobado ni activo', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${loanId}/assign-collector`) // loanId está REJECTED
+      .set('Authorization', `Bearer ${token}`)
+      .send({ collectorId })
+      .expect(409);
   });
 });
