@@ -119,11 +119,65 @@ Cada corte confirmado con el usuario por separado, siguiendo el mismo patrón qu
 
 Con estos cinco cortes, el roadmap explícito de Fase 3 de la spec ("Administrador:
 clientes, préstamos, cobradores, aprobaciones, correcciones, reglas, multas, score")
-queda cubierto salvo **reglas configurables** (`score_rules`/`business_rules` — hoy
-`PENALTY_PER_DAY=$50` y los umbrales de score están hardcodeados). BI y ubicaciones son
-Fases 4/5 del roadmap, no Fase 3. El usuario decidió pausar Fase 3 acá explícitamente
-en vez de seguir con reglas configurables — no es que falte terminarlo, es una decisión
-tomada.
+quedó cubierto salvo **reglas configurables** (`score_rules`/`business_rules` — en ese
+momento `PENALTY_PER_DAY=$50` y los umbrales de score seguían hardcodeados). El usuario
+decidió pausar Fase 3 ahí explícitamente en esa sesión — no era que faltara terminarlo,
+fue una decisión tomada. Se retomó y se cerró del todo en la sesión siguiente (ver abajo).
+
+## Fase 3 — cierre: reglas configurables + ajuste manual de score (2026-08-15)
+
+Sexto y séptimo corte, en una sesión posterior a las cinco anteriores. El usuario retomó
+explícitamente los dos puntos que había dejado pendientes.
+
+**Sexto corte — `business_rules`/`score_rules` configurables**: `penalty.per_day`,
+`score.yellow_max_days`, `score.orange_max_days` dejaron de estar hardcodeados. La tabla
+`Configuration` (`key`/`value` JSON) ya existía desde Fase 1 pero solo tenía lectura
+(`ConfigurationService.getNumber`) — se agregó `set()` y un `BusinessRulesService`
+(`@Global()`, en `configuration/`) que centraliza las 3 claves en un solo `get()`/`set()`
+con validación cruzada (`yellowMaxDays < orangeMaxDays`). Breaking change deliberado: las
+funciones puras `calculateLoanPenalty`/`calculateScoreLevel` pasaron a recibir esos
+valores como parámetro explícito en vez de leer una constante de módulo — TDD, specs
+actualizados primero. `GET/PUT /admin/configuration/business-rules` + pantalla
+`AdminConfigurationPage`. Decisiones confirmadas con el usuario vía preguntas explícitas:
+multa **y** score configurables juntos (no solo uno), backend+UI en el mismo corte,
+cambios en vivo y retroactivos a todo préstamo activo.
+
+**Séptimo corte — ajuste manual de score, auditado**: la spec pedía aparte de
+`score_rules` que el admin pudiera forzar el score de un cliente puntual. No era obvio
+cómo convivía con que el score fuera 100% calculado en vivo (sin tabla `scores`) — se
+confirmó con el usuario que el override es **permanente** (`Customer.scoreOverride`,
+nuevo enum `ScoreLevel` en Prisma) hasta que el admin lo limpia explícitamente
+(`level: null`), nunca se pierde solo porque el cliente pague o se atrase más. Todas las
+respuestas de score exponen `isManualOverride`/`isManualScoreOverride` para
+transparencia. `PATCH /admin/scores/:phone`, auditado (`score_manually_adjusted`).
+
+Con esto Fase 3 quedó **100% completa (7 cortes)**, cubriendo el roadmap explícito
+completo de la spec.
+
+## Fase 4 — Cobrador (arrancada 2026-08-15, en curso)
+
+**Primer corte — cartera del cobrador**: hasta este punto el rol `COLLECTOR` solo tenía
+un dashboard placeholder sin pantalla real, aunque el backend de pagos ya soportaba
+`COLLECTOR` con ownership desde el corte de `payments` de Fase 3. Se armó
+`api/src/collector/` (`GET /collector/loans`, `GET /collector/loans/:id`) **sin lógica de
+negocio nueva** — reusa `toAdminLoanResult`/`ADMIN_LOAN_INCLUDE`/`AdminLoanResult` que ya
+existían en `admin/admin-loans.service.ts` (se exportaron para esto). El registro de pago
+tampoco necesitó endpoint nuevo: el cobrador ya podía `POST /loans/:id/payments` desde
+Fase 3, solo faltaba la UI (`CollectorLoansPage`, `/collector/cartera`) para llegar ahí.
+Bug real encontrado (en el test, no en producción): `idempotencyKey` de texto libre en
+vez de UUID — `RegisterPaymentDto` ya validaba `@IsUUID()`, la API respondía `400`
+correctamente.
+
+**Segundo corte — llamar/WhatsApp**: el más chico de los tres pendientes de Fase 4
+(ubicación, llamar/WhatsApp, documentos de campo), elegido por eso mismo. Sin backend
+nuevo — dos enlaces (`tel:+52{phone}`, `https://wa.me/52{phone}`) en `CollectorLoansPage`
+usando el teléfono que ya devolvía `GET /collector/loans`. Acotado a la cartera del
+cobrador; la spec también lo lista para cliente (soporte) y admin, pero eso quedó fuera
+de este corte a propósito.
+
+Pendiente de Fase 4: ubicación/mapa (requiere definir el flujo de consentimiento de C15
+antes de tocar código — geolocalización nunca en background sin permiso) y documentos de
+campo.
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 
@@ -139,7 +193,24 @@ tomada.
   compartiendo BD — usar siempre `--runInBand` localmente (CI ya lo hace).
 - **Cada corte se prueba contra el stack Docker real**, no solo Supertest — varios bugs
   reales (413 de Nginx, URLs firmadas con endpoint interno de MinIO) solo aparecieron ahí.
-- **`project_state.md` se actualiza al cerrar cada corte**, no solo al final de fase.
+  Nota práctica: el contenedor `api` en dev usa un volumen anónimo para `node_modules`
+  que **no** se regenera solo al cambiar `schema.prisma` — hace falta
+  `docker compose exec api npx prisma generate` + `restart` después de una migración,
+  si no el build dentro del contenedor falla con tipos de Prisma desactualizados.
+- **Reglas de negocio configurables** viven en `Configuration` (key/value JSON) vía
+  `BusinessRulesService` (`@Global()`), que centraliza todas las claves conocidas en un
+  solo `get()`/`set()` con validación cruzada. Las funciones puras las reciben como
+  parámetro explícito, nunca las leen de una constante de módulo.
+- **Overrides manuales auditados son permanentes** hasta que se limpian explícitamente
+  (no se pierden solo por un evento real) — patrón confirmado con el usuario para el
+  ajuste manual de score, aplica a cualquier override similar futuro.
+- **Los `Service` de `admin/` exportan sus helpers de mapeo Prisma→DTO** (tipos +
+  funciones) para que módulos con la misma forma de datos pero distinto scope de
+  ownership (ej. `collector/` filtrando por `collectorId` en vez de ver todo) los reusen
+  en vez de duplicar el mapeo.
+- **`project_state.md`, `cmem.md` y `CLAUDE.md` se actualizan los tres antes de cada
+  commit+push**, no solo al cerrar fase — regla explícita del usuario (2026-08-15). Es la
+  única vía por la que el contexto viaja entre máquinas/sesiones.
 
 ## Estado de la extensión de Chrome
 
