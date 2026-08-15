@@ -211,9 +211,9 @@ describe('Loans (e2e)', () => {
 
     expect(res.body.totalPenalty).toBe(3 * 50 + 1 * 50);
     expect(res.body.overdueInstallments).toHaveLength(2);
-    expect(res.body.overdueInstallments.map((i: { seq: number }) => i.seq)).toEqual(
-      [schedule[0].seq, schedule[1].seq],
-    );
+    expect(
+      res.body.overdueInstallments.map((i: { seq: number }) => i.seq),
+    ).toEqual([schedule[0].seq, schedule[1].seq]);
   });
 
   it('rechaza una segunda solicitud mientras haya una en curso', async () => {

@@ -31,6 +31,7 @@ interface LoanDraft extends QuoteResult {
   id: string;
   folio: string;
   status: string;
+  adminNote: string | null;
 }
 
 interface PenaltyInstallment {
@@ -266,7 +267,13 @@ export function CalculatorPage() {
 
             {penalty && <PenaltySummary penalty={penalty} />}
 
-            {draft.status === 'DRAFT' ? (
+            {draft.status === 'REQUIRES_CORRECTION' && draft.adminNote && (
+              <Alert variant="error">
+                El administrador pidió una corrección: {draft.adminNote}
+              </Alert>
+            )}
+
+            {draft.status === 'DRAFT' || draft.status === 'REQUIRES_CORRECTION' ? (
               <>
                 <Link to="/onboarding">
                   <Button type="button" className="w-full">

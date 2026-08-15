@@ -44,6 +44,7 @@ export interface LoanDraftResult extends QuoteResult {
   id: string;
   folio: string;
   status: string;
+  adminNote: string | null;
 }
 
 function generateFolio(): string {
@@ -57,9 +58,11 @@ function toDateString(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-type LoanWithSchedule = Prisma.LoanGetPayload<{ include: { schedule: true } }>;
+export type LoanWithSchedule = Prisma.LoanGetPayload<{
+  include: { schedule: true };
+}>;
 
-function toLoanDraftResult(loan: LoanWithSchedule): LoanDraftResult {
+export function toLoanDraftResult(loan: LoanWithSchedule): LoanDraftResult {
   const schedule = loan.schedule
     .slice()
     .sort((a, b) => a.seq - b.seq)
@@ -73,6 +76,7 @@ function toLoanDraftResult(loan: LoanWithSchedule): LoanDraftResult {
     id: String(loan.id),
     folio: loan.folio,
     status: loan.status,
+    adminNote: loan.adminNote,
     amount: Number(loan.amount),
     model: loan.model,
     openingDate: toDateString(loan.openingDate),
@@ -175,7 +179,13 @@ export class LoansService {
           userAgent: ua,
         });
 
-        return { ...quote, id: String(loan.id), folio, status: loan.status };
+        return {
+          ...quote,
+          id: String(loan.id),
+          folio,
+          status: loan.status,
+          adminNote: null,
+        };
       } catch (err) {
         const isFolioCollision =
           err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -245,7 +255,7 @@ export class LoansService {
     if (!loan || loan.customerPhone !== phone) {
       throw new NotFoundException('Préstamo no encontrado');
     }
-    if (loan.status !== 'DRAFT') {
+    if (loan.status !== 'DRAFT' && loan.status !== 'REQUIRES_CORRECTION') {
       throw new ConflictException(
         'Este préstamo ya no admite la firma del pagaré',
       );
@@ -307,7 +317,7 @@ export class LoansService {
       }),
       this.prisma.loan.update({
         where: { id: loan.id },
-        data: { status: 'SUBMITTED' },
+        data: { status: 'SUBMITTED', adminNote: null },
       }),
     ]);
 

@@ -15,6 +15,7 @@ import { LoansModule } from './loans/loans.module';
 import { CustomersModule } from './customers/customers.module';
 import { StorageModule } from './storage/storage.module';
 import { DocumentsModule } from './documents/documents.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { DocumentsModule } from './documents/documents.module';
     LoansModule,
     CustomersModule,
     DocumentsModule,
+    AdminModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })
