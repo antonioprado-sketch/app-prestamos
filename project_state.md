@@ -50,6 +50,17 @@ Frontend: `PagarePage` en `/pagare` con canvas de firma (pointer events, funcion
 
 Verificado 2026-08-15: 5/5 e2e nuevos (`pagare.e2e-spec.ts`), 42/42 e2e total corrido dos veces (idempotente), build/lint/test API y web en verde. Probado contra el stack Docker real con el flujo completo: registro → crear préstamo → completar onboarding → firmar → PDF real descargado vía URL firmada (`%PDF`, 2550 bytes) → `GET /loans/:id` confirma `SUBMITTED`.
 
+**Video de identidad — última pieza de Fase 2 (2026-08-15, commit `51ae570`):** nuevo `DocumentType.VIDEO_IDENTITY`, reutiliza el endpoint genérico `POST /api/v1/documents` (sin ruta nueva). `document-validation.ts` ahora reconoce magic bytes de WEBM (header EBML) y MP4 (átomo `ftyp`), y usa un tope de tamaño **por tipo** (5MB imágenes, 50MB video — antes era un único límite global). El mime declarado por `MediaRecorder` viene con parámetros de códec (`video/webm;codecs=vp9,opus`); se normaliza a la parte base antes de comparar contra el sniff, si no todas las subidas de video hubieran fallado con "no coincide con el tipo declarado".
+
+Decisiones confirmadas con el usuario (evitando repetir los problemas de dependencias nativas de esta sesión — Prisma/EPERM, Avast+Docker, etc.):
+- **Duración/resolución se validan solo client-side** (el video se graba en vivo con `getUserMedia`, no es un archivo que el usuario elige del disco) + magic bytes/tamaño server-side. No se agregó `ffmpeg`/`ffprobe` al Dockerfile — el admin revisa manualmente de todos modos (C17b ya lo exige como capa adicional).
+- **Detección facial completa con MediaPipe ahora**, no diferida a un corte aparte: `@mediapipe/tasks-vision` corre `FaceDetector` sobre frames durante la grabación (mínimo 3 detecciones positivas antes de aceptar el video). Se importa dinámicamente (`await import(...)`) — quedó en su propio chunk de ~155KB gzip, no infla el bundle principal (verificado en el build de Vite).
+- **Frase declarada** (R9) es un texto de consentimiento propuesto por Claude, mostrado en pantalla durante la grabación — no viene de la spec original literal.
+
+**Nota de arquitectura, no bloqueante:** el modelo de MediaPipe (`blaze_face_short_range.tflite`) y el runtime WASM se cargan desde el CDN de Google (`storage.googleapis.com`/`cdn.jsdelivr.net`) en el primer uso — es solo el modelo genérico de detección facial, el video del cliente nunca sale del navegador (cumple "sin enviar el video a servicios externos" de C17b). Si se necesita operar sin dependencia de red externa (ej. red corporativa restringida), habría que self-hostear esos archivos — no se hizo en este corte.
+
+Verificado 2026-08-15: 17/17 unit + 7/7 e2e de documents (incluye subida de video simulado), 43/43 e2e total corrido dos veces (idempotente). Probado contra el stack Docker real: ruta `/video` sirve `200`, subida de video vía multipart funciona end-to-end. **No probado con cámara/navegador real** (grabación en vivo + MediaPipe no se puede verificar por curl/API) — recomendable una prueba manual antes de considerar esta pieza completamente cerrada.
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -119,6 +130,8 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Flujo completo del cliente cerrado end-to-end: cotizar → crear borrador → retomarlo → completar datos → subir documentos → firmar pagaré → `SUBMITTED`. Fase 2 "Cliente" (roadmap de la spec: calculadora/quote, onboarding, documentos, video, pagaré, solicitud+estados) le falta solo el **video de identidad** (C17b: mínimos técnicos + detección facial MediaPipe en navegador — el más complejo de los pendientes, no reutiliza directamente la infra de documents ya construida) para estar completa. Después de eso, sigue Fase 3 (Administrador: aprobar/rechazar solicitudes `SUBMITTED`, asignar cobradores, reglas, multas, score — hoy nada de eso existe, las solicitudes quedan en `SUBMITTED` sin que nadie las revise). Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+**Fase 2 "Cliente" completa**: cotizar → crear borrador → retomarlo → completar datos → subir documentos (INE+comprobante) → video de identidad → firmar pagaré → `SUBMITTED`. Todo el roadmap de Fase 2 de la spec (calculadora/quote, onboarding, documentos, video, pagaré, solicitud+estados) está construido y verificado contra el stack Docker real.
 
-Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
+Siguiente: **Fase 3 (Administrador)** — hoy las solicitudes quedan en `SUBMITTED` sin que nadie las revise (no existe panel de admin, ni `GET /admin/loans`, ni aprobar/rechazar/pedir corrección, ni asignar cobradores, ni reglas/multas/score). Es el bloqueo real para que el flujo tenga sentido de negocio completo. Confirmar alcance con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2/3 todavía).
+
+Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador de ningún flujo (todo verificado por curl/Node fetch/API, sin extensión de Chrome disponible en esta sesión) — recomendable antes de seguir apilando UI, especialmente para el video de identidad (cámara/MediaPipe no se puede probar por API).
