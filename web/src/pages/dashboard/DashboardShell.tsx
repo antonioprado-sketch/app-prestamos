@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { Role } from '../../store/auth';
 import { useAuth } from '../../store/auth';
 import { Button } from '../../components/ui/Button';
@@ -22,6 +23,13 @@ export function DashboardShell({ role }: { role: Role }) {
       <main className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
         <h1 className="text-xl font-bold text-secondary">{titles[role]}</h1>
         <p className="text-secondary">{messages[role]}</p>
+        {role === 'CLIENT' && (
+          <Link to="/calculadora" className="mt-4 w-full max-w-xs">
+            <Button type="button" className="w-full">
+              Solicitar o continuar mi préstamo
+            </Button>
+          </Link>
+        )}
         <Button variant="ghost" onClick={() => logout()} className="mt-6">
           Cerrar sesión
         </Button>
