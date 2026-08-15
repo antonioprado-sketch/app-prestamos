@@ -148,16 +148,27 @@ export function CalculatorPage() {
                 {formatDate(draft.schedule[draft.schedule.length - 1].dueDate)}
               </span>
             </div>
-            <Link to="/onboarding">
-              <Button type="button" className="w-full">
-                Completar mis datos
-              </Button>
-            </Link>
-            <Link to="/documentos">
-              <Button type="button" variant="ghost" className="w-full">
-                Subir mis documentos
-              </Button>
-            </Link>
+            {draft.status === 'DRAFT' ? (
+              <>
+                <Link to="/onboarding">
+                  <Button type="button" className="w-full">
+                    Completar mis datos
+                  </Button>
+                </Link>
+                <Link to="/documentos">
+                  <Button type="button" variant="ghost" className="w-full">
+                    Subir mis documentos
+                  </Button>
+                </Link>
+                <Link to="/pagare">
+                  <Button type="button" variant="ghost" className="w-full">
+                    Firmar mi pagaré
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <Alert variant="success">Tu solicitud está siendo procesada.</Alert>
+            )}
           </div>
         )}
 

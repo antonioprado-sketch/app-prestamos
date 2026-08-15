@@ -223,4 +223,5 @@ enum DocumentType {
   INE_FRONT
   INE_BACK
   ADDRESS_PROOF
+  PAGARE
 }

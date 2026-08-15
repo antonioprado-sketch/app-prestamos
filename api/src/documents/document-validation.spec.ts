@@ -1,5 +1,6 @@
 import {
   validateDocument,
+  decodeSignaturePng,
   DocumentValidationError,
   MAX_DOCUMENT_SIZE_BYTES,
 } from './document-validation';
@@ -77,5 +78,36 @@ describe('validateDocument', () => {
     expect(() => validateDocument('INE_FRONT', 'image/png', jpeg())).toThrow(
       DocumentValidationError,
     );
+  });
+});
+
+describe('decodeSignaturePng', () => {
+  const validPngBase64 =
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+
+  it('decodifica una firma PNG válida', () => {
+    const buffer = decodeSignaturePng(
+      `data:image/png;base64,${validPngBase64}`,
+    );
+    expect(buffer.length).toBeGreaterThan(0);
+  });
+
+  it('rechaza un string que no es data URL', () => {
+    expect(() => decodeSignaturePng('no-es-una-data-url')).toThrow(
+      DocumentValidationError,
+    );
+  });
+
+  it('rechaza una data URL con mime distinto de PNG', () => {
+    expect(() => decodeSignaturePng('data:image/jpeg;base64,AAAA')).toThrow(
+      DocumentValidationError,
+    );
+  });
+
+  it('rechaza contenido cuyo magic bytes no es PNG real', () => {
+    const fakeBase64 = Buffer.from('no es un png').toString('base64');
+    expect(() =>
+      decodeSignaturePng(`data:image/png;base64,${fakeBase64}`),
+    ).toThrow(DocumentValidationError);
   });
 });

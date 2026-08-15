@@ -124,7 +124,10 @@ export function DocumentsPage() {
           </div>
         )}
 
-        <Link to="/calculadora" className="mt-6 block text-center text-sm text-primary">
+        <Link to="/pagare" className="mt-6 block text-center text-primary">
+          Continuar y firmar el pagaré
+        </Link>
+        <Link to="/calculadora" className="mt-2 block text-center text-sm text-secondary">
           Volver a mi solicitud
         </Link>
       </Card>

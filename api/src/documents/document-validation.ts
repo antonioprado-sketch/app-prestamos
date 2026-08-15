@@ -1,16 +1,17 @@
-import type { DocumentType } from '@prisma/client';
+/** Tipos que el cliente sube directamente. PAGARE se genera server-side y nunca pasa por acá. */
+export type UploadableDocumentType = 'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF';
 
 export class DocumentValidationError extends Error {}
 
 export const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
 
-const ALLOWED_MIME_BY_TYPE: Record<DocumentType, string[]> = {
+const ALLOWED_MIME_BY_TYPE: Record<UploadableDocumentType, string[]> = {
   INE_FRONT: ['image/jpeg', 'image/png'],
   INE_BACK: ['image/jpeg', 'image/png'],
   ADDRESS_PROOF: ['image/jpeg', 'image/png', 'application/pdf'],
 };
 
-function sniffMime(buffer: Buffer): string | null {
+export function sniffMime(buffer: Buffer): string | null {
   if (
     buffer.length >= 3 &&
     buffer[0] === 0xff &&
@@ -36,7 +37,7 @@ function sniffMime(buffer: Buffer): string | null {
 
 /** Valida tamaño, magic bytes y coherencia con el mime declarado. Devuelve el mime verificado. */
 export function validateDocument(
-  type: DocumentType,
+  type: UploadableDocumentType,
   declaredMime: string,
   buffer: Buffer,
 ): string {
@@ -66,4 +67,32 @@ export function validateDocument(
   }
 
   return sniffed;
+}
+
+const MAX_SIGNATURE_SIZE_BYTES = 1 * 1024 * 1024;
+const SIGNATURE_DATA_URL = /^data:image\/png;base64,(.+)$/;
+
+/** Decodifica y valida la firma dibujada en canvas (data URL PNG). */
+export function decodeSignaturePng(dataUrl: string): Buffer {
+  const match = SIGNATURE_DATA_URL.exec(dataUrl);
+  if (!match) {
+    throw new DocumentValidationError(
+      'La firma debe ser una imagen PNG en formato data URL',
+    );
+  }
+  const buffer = Buffer.from(match[1], 'base64');
+  if (buffer.length === 0) {
+    throw new DocumentValidationError('La firma está vacía');
+  }
+  if (buffer.length > MAX_SIGNATURE_SIZE_BYTES) {
+    throw new DocumentValidationError(
+      'La firma supera el máximo permitido de 1MB',
+    );
+  }
+  if (sniffMime(buffer) !== 'image/png') {
+    throw new DocumentValidationError(
+      'El contenido de la firma no es un PNG válido',
+    );
+  }
+  return buffer;
 }

@@ -1,9 +1,13 @@
 import { IsIn } from 'class-validator';
-import type { DocumentType } from '@prisma/client';
+import type { UploadableDocumentType } from '../document-validation';
 
-const TYPES: DocumentType[] = ['INE_FRONT', 'INE_BACK', 'ADDRESS_PROOF'];
+const TYPES: UploadableDocumentType[] = [
+  'INE_FRONT',
+  'INE_BACK',
+  'ADDRESS_PROOF',
+];
 
 export class UploadDocumentDto {
   @IsIn(TYPES)
-  type: DocumentType;
+  type: UploadableDocumentType;
 }

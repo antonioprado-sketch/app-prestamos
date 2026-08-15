@@ -1,9 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigurationService } from '../configuration/configuration.service';
 import { AuditService } from '../audit/audit.service';
+import { StorageService } from '../storage/storage.service';
 import { calculateQuote, QuoteInput, QuoteResult } from './loan-quote';
+import { renderPagarePdf } from './pagare';
+import { decodeSignaturePng } from '../documents/document-validation';
 
 const NEW_CLIENT_MAX_AMOUNT_KEY = 'loans.new_client_max_amount';
 const NEW_CLIENT_MAX_AMOUNT_DEFAULT = 3000;
@@ -74,6 +83,7 @@ export class LoansService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigurationService,
     private readonly audit: AuditService,
+    private readonly storage: StorageService,
   ) {}
 
   async resolveMaxAmount(phone: string | undefined): Promise<number | null> {
@@ -191,5 +201,100 @@ export class LoansService {
       throw new NotFoundException('Préstamo no encontrado');
     }
     return toLoanDraftResult(loan);
+  }
+
+  async signPagare(
+    phone: string,
+    loanId: string,
+    input: { signature: string; fullName: string },
+    ip: string,
+    ua: string,
+  ): Promise<{ documentId: string; status: string }> {
+    if (!/^\d+$/.test(loanId))
+      throw new NotFoundException('Préstamo no encontrado');
+    const loan = await this.prisma.loan.findUnique({
+      where: { id: BigInt(loanId) },
+      include: { schedule: { orderBy: { seq: 'asc' } } },
+    });
+    if (!loan || loan.customerPhone !== phone) {
+      throw new NotFoundException('Préstamo no encontrado');
+    }
+    if (loan.status !== 'DRAFT') {
+      throw new ConflictException(
+        'Este préstamo ya no admite la firma del pagaré',
+      );
+    }
+
+    const customer = await this.prisma.customer.findUnique({
+      where: { phone },
+    });
+    if (!customer?.onboardingComplete) {
+      throw new BadRequestException(
+        'Completa tus datos antes de firmar el pagaré',
+      );
+    }
+
+    const signatureBuffer = decodeSignaturePng(input.signature);
+
+    const pdfBuffer = await renderPagarePdf({
+      folio: loan.folio,
+      fullName: input.fullName,
+      nombres: customer.nombres,
+      apellidos: customer.apellidos,
+      calle: customer.calle,
+      numero: customer.numero,
+      colonia: customer.colonia,
+      cp: customer.cp,
+      ciudad: customer.ciudad,
+      estado: customer.estado,
+      aval: customer.aval,
+      avalPhone: customer.avalPhone,
+      amount: Number(loan.amount),
+      total: Number(loan.totalToPay),
+      model: loan.model,
+      schedule: loan.schedule.map((s) => ({
+        seq: s.seq,
+        dueDate: toDateString(s.dueDate),
+        amount: Number(s.amount),
+      })),
+      signature: signatureBuffer,
+      signedAt: new Date(),
+      ip,
+    });
+
+    const checksum = createHash('sha256').update(pdfBuffer).digest('hex');
+    const storageKey = `customers/${phone}/pagare/${Date.now()}-${randomBytes(6).toString('hex')}.pdf`;
+    await this.storage.putObject(storageKey, pdfBuffer, 'application/pdf');
+
+    const [document] = await this.prisma.$transaction([
+      this.prisma.document.create({
+        data: {
+          customerPhone: phone,
+          loanId: loan.id,
+          type: 'PAGARE',
+          storageKey,
+          mime: 'application/pdf',
+          sizeBytes: pdfBuffer.length,
+          checksum,
+          uploadedBy: phone,
+        },
+      }),
+      this.prisma.loan.update({
+        where: { id: loan.id },
+        data: { status: 'SUBMITTED' },
+      }),
+    ]);
+
+    await this.audit.log({
+      userPhone: phone,
+      action: 'pagare_signed',
+      entity: 'loan',
+      entityId: String(loan.id),
+      newValue: { documentId: String(document.id), fullName: input.fullName },
+      ip,
+      userAgent: ua,
+    });
+
+    return { documentId: String(document.id), status: 'SUBMITTED' };
   }
 }

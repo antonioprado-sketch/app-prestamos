@@ -4,7 +4,10 @@ import type { DocumentType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
 import { AuditService } from '../audit/audit.service';
-import { validateDocument } from './document-validation';
+import {
+  validateDocument,
+  UploadableDocumentType,
+} from './document-validation';
 
 const SIGNED_URL_EXPIRY_SECONDS = 5 * 60;
 
@@ -24,25 +27,62 @@ export class DocumentsService {
 
   async upload(
     phone: string,
-    type: DocumentType,
+    type: UploadableDocumentType,
     file: { buffer: Buffer; mimetype: string },
     ip: string,
     ua: string,
   ) {
     const verifiedMime = validateDocument(type, file.mimetype, file.buffer);
-    const checksum = createHash('sha256').update(file.buffer).digest('hex');
-    const ext = EXTENSION_BY_MIME[verifiedMime];
+    return this.persist(
+      phone,
+      type,
+      null,
+      file.buffer,
+      verifiedMime,
+      'document_uploaded',
+      ip,
+      ua,
+    );
+  }
+
+  /** Documentos generados por el servidor (ej. pagaré) — el contenido no viene del cliente, no se valida como upload. */
+  async storeGenerated(
+    phone: string,
+    loanId: bigint,
+    type: DocumentType,
+    buffer: Buffer,
+    mime: string,
+    action: string,
+    ip: string,
+    ua: string,
+  ) {
+    return this.persist(phone, type, loanId, buffer, mime, action, ip, ua);
+  }
+
+  private async persist(
+    phone: string,
+    type: DocumentType,
+    loanId: bigint | null,
+    buffer: Buffer,
+    mime: string,
+    action: string,
+    ip: string,
+    ua: string,
+  ) {
+    const checksum = createHash('sha256').update(buffer).digest('hex');
+    const ext = EXTENSION_BY_MIME[mime] ?? 'bin';
     const storageKey = `customers/${phone}/${type.toLowerCase()}/${Date.now()}-${randomBytes(6).toString('hex')}.${ext}`;
 
-    await this.storage.putObject(storageKey, file.buffer, verifiedMime);
+    await this.storage.putObject(storageKey, buffer, mime);
 
     const document = await this.prisma.document.create({
       data: {
         customerPhone: phone,
+        loanId: loanId ?? undefined,
         type,
         storageKey,
-        mime: verifiedMime,
-        sizeBytes: file.buffer.length,
+        mime,
+        sizeBytes: buffer.length,
         checksum,
         uploadedBy: phone,
       },
@@ -50,10 +90,10 @@ export class DocumentsService {
 
     await this.audit.log({
       userPhone: phone,
-      action: 'document_uploaded',
+      action,
       entity: 'document',
       entityId: String(document.id),
-      newValue: { type, mime: verifiedMime, sizeBytes: file.buffer.length },
+      newValue: { type, mime, sizeBytes: buffer.length },
       ip,
       userAgent: ua,
     });
