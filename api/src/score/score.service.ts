@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 import { BusinessRulesService } from '../configuration/business-rules.service';
 import { BusinessRules } from '../configuration/business-rules.constants';
 import { todayInMexicoCity } from '../loans/loan-quote';
@@ -13,6 +14,7 @@ export interface CustomerScore {
   customerName: string | null;
   level: ScoreLevel;
   maxDaysLate: number;
+  isManualOverride: boolean;
 }
 
 @Injectable()
@@ -20,6 +22,7 @@ export class ScoreService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly businessRules: BusinessRulesService,
+    private readonly audit: AuditService,
   ) {}
 
   async getForCustomer(phone: string): Promise<CustomerScore> {
@@ -32,6 +35,7 @@ export class ScoreService {
       customer.phone,
       this.customerName(customer),
       rules,
+      customer.scoreOverride,
     );
   }
 
@@ -40,8 +44,50 @@ export class ScoreService {
     const rules = await this.businessRules.get();
     return Promise.all(
       customers.map((c) =>
-        this.computeScore(c.phone, this.customerName(c), rules),
+        this.computeScore(
+          c.phone,
+          this.customerName(c),
+          rules,
+          c.scoreOverride,
+        ),
       ),
+    );
+  }
+
+  async setOverride(
+    actorPhone: string,
+    targetPhone: string,
+    level: ScoreLevel | null,
+    ip: string,
+    ua: string,
+  ): Promise<CustomerScore> {
+    const customer = await this.prisma.customer.findUnique({
+      where: { phone: targetPhone },
+    });
+    if (!customer) throw new NotFoundException('Cliente no encontrado');
+
+    const updated = await this.prisma.customer.update({
+      where: { phone: targetPhone },
+      data: { scoreOverride: level },
+    });
+
+    await this.audit.log({
+      userPhone: actorPhone,
+      action: 'score_manually_adjusted',
+      entity: 'customer',
+      entityId: targetPhone,
+      prevValue: { scoreOverride: customer.scoreOverride },
+      newValue: { scoreOverride: level },
+      ip,
+      userAgent: ua,
+    });
+
+    const rules = await this.businessRules.get();
+    return this.computeScore(
+      updated.phone,
+      this.customerName(updated),
+      rules,
+      updated.scoreOverride,
     );
   }
 
@@ -59,6 +105,7 @@ export class ScoreService {
     phone: string,
     customerName: string | null,
     rules: BusinessRules,
+    scoreOverride: ScoreLevel | null,
   ): Promise<CustomerScore> {
     const loans = await this.prisma.loan.findMany({
       where: {
@@ -90,12 +137,15 @@ export class ScoreService {
     return {
       customerPhone: phone,
       customerName,
-      level: calculateScoreLevel(
-        maxDaysLate,
-        rules.yellowMaxDays,
-        rules.orangeMaxDays,
-      ),
+      level:
+        scoreOverride ??
+        calculateScoreLevel(
+          maxDaysLate,
+          rules.yellowMaxDays,
+          rules.orangeMaxDays,
+        ),
       maxDaysLate,
+      isManualOverride: scoreOverride !== null,
     };
   }
 }

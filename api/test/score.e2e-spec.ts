@@ -199,5 +199,83 @@ describe('Score (e2e)', () => {
     expect(mine).toBeDefined();
     expect(mine.level).toBe('RED');
     expect(mine.customerName).toBe('Score Test');
+    expect(mine.isManualOverride).toBe(false);
+  });
+
+  it('PATCH /admin/scores/:phone requiere token', async () => {
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/scores/${clientPhone}`)
+      .send({ level: 'GREEN' })
+      .expect(401);
+  });
+
+  it('PATCH /admin/scores/:phone rechaza a un rol distinto de ADMIN', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/scores/${clientPhone}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ level: 'GREEN' })
+      .expect(403);
+  });
+
+  it('PATCH /admin/scores/:phone rechaza un nivel inválido', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .patch(`/api/v1/admin/scores/${clientPhone}`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ level: 'PURPLE' })
+      .expect(400);
+  });
+
+  it('PATCH /admin/scores/:phone devuelve 404 si el cliente no existe', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .patch('/api/v1/admin/scores/5500000099')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ level: 'GREEN' })
+      .expect(404);
+  });
+
+  it('PATCH /admin/scores/:phone fija un override manual que gana sobre el cálculo real', async () => {
+    const adminToken = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .patch(`/api/v1/admin/scores/${clientPhone}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ level: 'GREEN' })
+      .expect(200);
+
+    expect(res.body.level).toBe('GREEN');
+    expect(res.body.isManualOverride).toBe(true);
+    expect(res.body.maxDaysLate).toBe(20);
+
+    const clientToken = await loginClient();
+    const mine = await request(app.getHttpServer())
+      .get('/api/v1/customers/me/score')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .expect(200);
+    expect(mine.body.level).toBe('GREEN');
+    expect(mine.body.isManualOverride).toBe(true);
+
+    const all = await request(app.getHttpServer())
+      .get('/api/v1/admin/scores')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    const mineInList = all.body.find(
+      (s: { customerPhone: string }) => s.customerPhone === clientPhone,
+    );
+    expect(mineInList.level).toBe('GREEN');
+    expect(mineInList.isManualOverride).toBe(true);
+  });
+
+  it('PATCH /admin/scores/:phone con level:null limpia el override y vuelve al cálculo real', async () => {
+    const adminToken = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .patch(`/api/v1/admin/scores/${clientPhone}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ level: null })
+      .expect(200);
+
+    expect(res.body.level).toBe('RED');
+    expect(res.body.isManualOverride).toBe(false);
   });
 });

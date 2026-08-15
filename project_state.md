@@ -167,6 +167,21 @@ Verificado 2026-08-15: `npm run build`/`lint`/`tsc -b` web en verde, `npm test` 
 
 **Fase 3 — reglas configurables: completa (Segmentos A+B).** Con esto el roadmap explícito de Fase 3 de la spec queda 100% cubierto (clientes, préstamos, cobradores, aprobaciones, correcciones, reglas, multas, score). BI y ubicaciones siguen siendo Fases 4/5.
 
+**Fase 3 — Ajuste manual de score, auditado (2026-08-15):** séptimo corte, confirmado con el usuario. La spec pide aparte de `score_rules` que el admin pueda "ajustar manualmente (auditado)" el score de un cliente — quedaba pendiente porque el score es 100% calculado en vivo (sin tabla `scores`), y no era obvio cómo debía convivir un ajuste manual con eso.
+
+Dos decisiones confirmadas con el usuario vía preguntas explícitas:
+- **Override permanente**: `Customer.scoreOverride` (nuevo enum `ScoreLevel` en Prisma, migración `20260815151822_customer_score_override`) gana siempre sobre el cálculo por días de atraso hasta que el admin lo quite explícitamente — no se pierde solo porque el cliente pague o se atrase más.
+- **Transparencia**: todas las respuestas de score (`GET /customers/me/score`, `GET /admin/scores`, `GET /admin/customers`) exponen `isManualOverride`/`isManualScoreOverride` para que quede claro cuándo el color mostrado no es el calculado.
+
+- `ScoreService.setOverride()` nuevo: `404` si el cliente no existe, persiste `scoreOverride` (`ScoreLevel | null`, `null` = limpiar), auditado (`score_manually_adjusted`, `prevValue`/`newValue`). `computeScore()` sigue calculando `maxDaysLate` real siempre (útil para el admin aunque el nivel mostrado esté forzado) pero el `level` devuelto es el override si existe.
+- `PATCH /api/v1/admin/scores/:phone` (`ScoreController`, ya existía con los `GET`), body `{level: 'GREEN'|'YELLOW'|'ORANGE'|'RED'|null}` (`class-validator` con `@ValidateIf` para permitir `null` explícito pero rechazar el campo ausente).
+- `AdminCustomersService`: el listado/detalle ahora expone `isManualScoreOverride` (reusa `ScoreService.getForCustomer()` que ya se llamaba ahí).
+- Frontend: `AdminCustomersPage` — detalle de cada cliente ahora tiene una sección "Score" con 4 botones (verde/amarillo/naranja/rojo) para fijar el override y un botón "Quitar ajuste manual" cuando hay uno activo; la lista muestra "· score manual" junto al cliente cuando aplica.
+
+Verificado 2026-08-15: `npm test` API 63/63 PASS (sin nuevos unit — el override vive en el `Service`, no en la función pura `calculateScoreLevel`, que no cambió), `npm run test:e2e` 107/107 PASS con `--runInBand` (101 anteriores + 6 nuevos en `score.e2e-spec.ts`: 401/403/400/404, fijar override que gana sobre el cálculo real, limpiar override y volver al cálculo real). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `PATCH` con nivel inválido → `400`, override `GREEN` aplicado y reflejado en `GET /admin/customers`, revertido (`level:null`) sin dejar residuo en un cliente real de la BD de dev. **No verificado visualmente en navegador** — extensión de Chrome sigue desconectada, mismo problema recurrente de toda la sesión.
+
+**Fase 3: 100% completa (7 cortes)**, incluyendo ambos puntos que la spec dejaba abiertos (`score_rules`/`business_rules` configurables y ajuste manual de score auditado). Próximo paso: Fase 4 (BI/ubicaciones) o pasada visual pendiente en browser (requiere reconectar la extensión de Chrome).
+
 ### Qué existe
 
 | Task | Estado | Detalle |

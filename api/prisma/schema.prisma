@@ -59,10 +59,11 @@ model Customer {
   ciudad             String?
   estado             String?
   referencias        String?  @db.VarChar(255)
-  isNewCustomer      Boolean  @default(false) @map("is_new_customer")
-  onboardingComplete Boolean  @default(false) @map("onboarding_complete")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  isNewCustomer      Boolean     @default(false) @map("is_new_customer")
+  onboardingComplete Boolean     @default(false) @map("onboarding_complete")
+  scoreOverride      ScoreLevel? @map("score_override")
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
 
   user User @relation(fields: [phone], references: [phone], onDelete: Cascade)
   loans Loan[]
@@ -206,6 +207,13 @@ enum Role {
   CLIENT
   COLLECTOR
   ADMIN
+}
+
+enum ScoreLevel {
+  GREEN
+  YELLOW
+  ORANGE
+  RED
 }
 
 enum UserStatus {

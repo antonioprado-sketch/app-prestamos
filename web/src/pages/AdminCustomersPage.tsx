@@ -14,8 +14,18 @@ interface CustomerSummary {
   isNewCustomer: boolean;
   onboardingComplete: boolean;
   scoreLevel: ScoreLevel;
+  isManualScoreOverride: boolean;
   latestLoanStatus: string | null;
 }
+
+const SCORE_LEVELS: ScoreLevel[] = ['GREEN', 'YELLOW', 'ORANGE', 'RED'];
+
+const SCORE_LABEL: Record<ScoreLevel, string> = {
+  GREEN: 'Verde',
+  YELLOW: 'Amarillo',
+  ORANGE: 'Naranja',
+  RED: 'Rojo',
+};
 
 interface CustomerDetail extends CustomerSummary {
   aval: string | null;
@@ -49,6 +59,7 @@ export function AdminCustomersPage() {
   const [detail, setDetail] = useState<CustomerDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [toggleLoading, setToggleLoading] = useState(false);
+  const [overrideLoading, setOverrideLoading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -92,6 +103,26 @@ export function AdminCustomersPage() {
     }
   };
 
+  const setScoreOverride = async (phone: string, level: ScoreLevel | null) => {
+    setOverrideLoading(true);
+    try {
+      const updated = await apiFetch<{ level: ScoreLevel; isManualOverride: boolean }>(
+        `/admin/scores/${phone}`,
+        { method: 'PATCH', body: JSON.stringify({ level }) },
+      );
+      setDetail((d) =>
+        d
+          ? { ...d, scoreLevel: updated.level, isManualScoreOverride: updated.isManualOverride }
+          : d,
+      );
+      load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'No se pudo ajustar el score');
+    } finally {
+      setOverrideLoading(false);
+    }
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
       <Card className="w-full max-w-3xl">
@@ -126,6 +157,7 @@ export function AdminCustomersPage() {
                       <p className="text-xs text-secondary">
                         {c.phone} · {c.isNewCustomer ? 'Cliente nuevo' : 'Cliente regular'}
                         {c.latestLoanStatus ? ` · ${c.latestLoanStatus}` : ''}
+                        {c.isManualScoreOverride ? ' · score manual' : ''}
                       </p>
                     </div>
                   </div>
@@ -199,6 +231,42 @@ export function AdminCustomersPage() {
                             ? 'Quitar tope de cliente nuevo'
                             : 'Marcar como cliente nuevo (aplica tope)'}
                         </Button>
+
+                        <div>
+                          <p className="mb-1 text-sm font-medium text-secondary">
+                            Score{' '}
+                            {detail.isManualScoreOverride && (
+                              <span className="text-xs font-normal text-warning">
+                                (ajuste manual)
+                              </span>
+                            )}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {SCORE_LEVELS.map((level) => (
+                              <Button
+                                key={level}
+                                type="button"
+                                variant={detail.scoreLevel === level ? 'secondary' : 'ghost'}
+                                loading={overrideLoading}
+                                onClick={() => setScoreOverride(detail.phone, level)}
+                                className="flex-1"
+                              >
+                                {SCORE_LABEL[level]}
+                              </Button>
+                            ))}
+                          </div>
+                          {detail.isManualScoreOverride && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              loading={overrideLoading}
+                              className="mt-2 w-full"
+                              onClick={() => setScoreOverride(detail.phone, null)}
+                            >
+                              Quitar ajuste manual (volver al cálculo automático)
+                            </Button>
+                          )}
+                        </div>
                       </>
                     )}
                   </div>

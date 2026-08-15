@@ -11,6 +11,7 @@ export interface AdminCustomerSummary {
   isNewCustomer: boolean;
   onboardingComplete: boolean;
   scoreLevel: string;
+  isManualScoreOverride: boolean;
   latestLoanStatus: string | null;
 }
 
@@ -150,6 +151,7 @@ export class AdminCustomersService {
       isNewCustomer: customer.isNewCustomer,
       onboardingComplete: customer.onboardingComplete,
       scoreLevel: scoreResult.level,
+      isManualScoreOverride: scoreResult.isManualOverride,
       latestLoanStatus: latestLoan?.status ?? null,
     };
   }
