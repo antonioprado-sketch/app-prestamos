@@ -229,7 +229,16 @@ Implementación:
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 124/124 PASS con `--runInBand` (118 anteriores + 6 nuevos de `locations.e2e-spec.ts`: 401/403, validación de rango, validación de `source`, registro con/sin `accuracy` opcional). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `POST /locations` válido → `201`, lat fuera de rango → `400` con mensaje claro. Datos de prueba limpiados después. No verificado visualmente (extensión de Chrome sigue desconectada) — el banner de consentimiento y la captura real del navegador no se probaron en un dispositivo real todavía.
 
-**Fase 4: 4 de 4 sub-features del roadmap de la spec completas** (cartera, pagos, llamar/WhatsApp, documentos de campo, ubicación backend+captura). Pendiente fuera de este roadmap, cortes aparte a confirmar: mapa admin (Leaflet+OSM) y vista de última ubicación del cliente en la cartera del cobrador — ambos dependen de que exista al menos una ubicación capturada real para probarse útilmente.
+**Vista de ubicación en la cartera del cobrador, quinto corte (2026-08-15):** confirmado con el usuario como el más chico de los dos pendientes tras el corte de captura (el otro era el mapa admin con Leaflet+OSM, que sigue sin confirmar — primera dependencia de mapas del proyecto, se dejó explícitamente fuera).
+
+- `LocationsService.findLatestForCustomer(phone)` — última ubicación por `capturedAt desc`, sin tabla/cache adicional.
+- `GET /api/v1/collector/loans/:id/location` en `CollectorLoansController`, mismo patrón de ownership (`collectorLoans.findOne` primero, 404 si el préstamo no es suyo) que ya usaban documentos y pagos.
+- **Bug real encontrado en el primer intento del e2e**: NestJS no serializa un `return null` de controller como el literal JSON `null` — devuelve `200` con body vacío, y `res.json()` en el cliente explota al parsear string vacío. Se corrigió envolviendo la respuesta (`{ location: T | null }`) en vez de devolver `null` en la raíz — patrón a repetir: nunca devolver `null`/`undefined` como cuerpo completo de una respuesta REST, siempre envuelto en un objeto.
+- Frontend: `CollectorLoansPage` — sección "Última ubicación conocida" junto a Llamar/WhatsApp, con enlace a OpenStreetMap (`openstreetmap.org/?mlat=...&mlon=...`) cuando hay datos, mensaje neutro si el cliente no compartió ubicación todavía. Sin librería de mapas embebida (eso es el corte de Leaflet+OSM, aparte).
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 127/127 PASS con `--runInBand` (124 anteriores + 3 nuevos en `collector-loans.e2e-spec.ts`). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: sin ubicación → `{"location":null}`, cliente comparte ubicación → `GET /collector/loans/:id/location` la refleja de inmediato. Datos de prueba limpiados después. No verificado visualmente.
+
+**Fase 4: 100% completa (5 cortes)** — cartera, pagos, llamar/WhatsApp, documentos de campo, ubicación (captura + vista del cobrador). Pendiente fuera de este roadmap, corte aparte a confirmar: mapa admin (Leaflet+OSM, `GET /admin/locations/map`).
 
 ### Qué existe
 

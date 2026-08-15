@@ -29,4 +29,29 @@ export class LocationsService {
       capturedAt: location.capturedAt,
     };
   }
+
+  async findLatestForCustomer(phone: string): Promise<{
+    location: {
+      lat: number;
+      lng: number;
+      accuracy: number | null;
+      capturedAt: Date;
+    } | null;
+  }> {
+    const location = await this.prisma.location.findFirst({
+      where: { customerPhone: phone },
+      orderBy: { capturedAt: 'desc' },
+    });
+    if (!location) return { location: null };
+
+    return {
+      location: {
+        lat: Number(location.lat),
+        lng: Number(location.lng),
+        accuracy:
+          location.accuracy === null ? null : Number(location.accuracy),
+        capturedAt: location.capturedAt,
+      },
+    };
+  }
 }

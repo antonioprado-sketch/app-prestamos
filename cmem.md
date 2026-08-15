@@ -202,11 +202,19 @@ confirmaron con el usuario 3 decisiones explícitas vía preguntas puntuales:
    dependencia de mapas del proyecto) y la vista de ubicación en la cartera del cobrador
    quedaron para cortes aparte, sin confirmar todavía.
 
-Con esto, las 4 sub-features del roadmap de Fase 4 quedaron completas (cartera, pagos,
-llamar/WhatsApp, documentos de campo, ubicación backend+captura). Fase 4 no está "cerrada
-del todo" en el sentido de Fase 3 — el mapa admin y la vista de ubicación del cobrador
-siguen pendientes, son extensiones naturales una vez que exista ubicación real capturada
-para probarlas útilmente.
+**Quinto corte — vista de ubicación en la cartera del cobrador**: el más chico de los dos
+pendientes tras el corte anterior. `GET /collector/loans/:id/location`, mismo patrón de
+ownership 404 que documentos/pagos. Bug real en el primer intento del e2e: NestJS no
+serializa `return null` de un controller como JSON `null` — manda `200` con body vacío,
+y `res.json()` del lado cliente explota parseando string vacío. Se corrigió envolviendo
+siempre en un objeto (`{ location: T | null }`) — patrón a repetir en cualquier endpoint
+que pueda "no tener nada que devolver": nunca `null`/`undefined` en la raíz de una
+respuesta REST.
+
+Con esto, Fase 4 quedó 100% completa (5 cortes): cartera, pagos, llamar/WhatsApp,
+documentos de campo, ubicación (captura + vista del cobrador). Pendiente fuera de este
+roadmap, corte aparte a confirmar: mapa admin (Leaflet+OSM, primera dependencia de mapas
+del proyecto).
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

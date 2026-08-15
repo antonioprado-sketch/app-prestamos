@@ -35,6 +35,13 @@ interface FieldDocument {
   createdAt: string;
 }
 
+interface LastLocation {
+  lat: number;
+  lng: number;
+  accuracy: number | null;
+  capturedAt: string;
+}
+
 const PAYABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -53,6 +60,10 @@ function whatsappHref(phone: string) {
   return `https://wa.me/52${phone}`;
 }
 
+function mapHref(lat: number, lng: number) {
+  return `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=17/${lat}/${lng}`;
+}
+
 export function CollectorLoansPage() {
   const [loans, setLoans] = useState<CollectorLoan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,6 +76,7 @@ export function CollectorLoansPage() {
   const [documentsByLoan, setDocumentsByLoan] = useState<Record<string, FieldDocument[]>>({});
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
+  const [locationByLoan, setLocationByLoan] = useState<Record<string, LastLocation | null>>({});
 
   const load = () => {
     setLoading(true);
@@ -91,6 +103,12 @@ export function CollectorLoansPage() {
       .catch(() => undefined);
   };
 
+  const loadLocation = (loanId: string) => {
+    apiFetch<{ location: LastLocation | null }>(`/collector/loans/${loanId}/location`)
+      .then(({ location }) => setLocationByLoan((prev) => ({ ...prev, [loanId]: location })))
+      .catch(() => undefined);
+  };
+
   const selectLoan = (id: string) => {
     const next = id === selectedId ? null : id;
     setSelectedId(next);
@@ -100,6 +118,7 @@ export function CollectorLoansPage() {
     if (next) {
       loadPayments(next);
       loadDocuments(next);
+      loadLocation(next);
     }
   };
 
@@ -208,6 +227,31 @@ export function CollectorLoansPage() {
                       >
                         WhatsApp
                       </a>
+                    </div>
+
+                    <div className="rounded-xl border border-gray-200 p-3">
+                      <p className="mb-1 text-sm font-medium text-secondary">
+                        Última ubicación conocida
+                      </p>
+                      {locationByLoan[loan.id] ? (
+                        <div className="flex items-center justify-between text-xs text-secondary">
+                          <span>
+                            {new Date(locationByLoan[loan.id]!.capturedAt).toLocaleString('es-MX')}
+                          </span>
+                          <a
+                            href={mapHref(locationByLoan[loan.id]!.lat, locationByLoan[loan.id]!.lng)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-semibold text-primary"
+                          >
+                            Ver en el mapa
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-secondary">
+                          El cliente no ha compartido su ubicación.
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">

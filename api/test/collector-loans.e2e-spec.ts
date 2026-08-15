@@ -264,4 +264,41 @@ describe('Collector loans (e2e)', () => {
     expect(document?.customerPhone).toBe(clientPhone);
     expect(document?.uploadedBy).toBe(collectorPhone);
   });
+
+  it('GET /collector/loans/:id/location devuelve location:null sin ubicación capturada', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/collector/loans/${loanId}/location`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .expect(200);
+    expect(res.body).toEqual({ location: null });
+  });
+
+  it('GET /collector/loans/:id/location requiere que el préstamo esté asignado a ese cobrador', async () => {
+    await request(app.getHttpServer())
+      .get(`/api/v1/collector/loans/${loanId}/location`)
+      .set('Authorization', `Bearer ${otherCollectorToken}`)
+      .expect(404);
+  });
+
+  it('GET /collector/loans/:id/location devuelve la última ubicación capturada del cliente', async () => {
+    const clientToken = await loginClient();
+    await request(app.getHttpServer())
+      .post('/api/v1/locations')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ lat: 19.4326, lng: -99.1332, accuracy: 10, source: 'LOGIN' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post('/api/v1/locations')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ lat: 19.5, lng: -99.2, accuracy: 8, source: 'REQUEST' })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/collector/loans/${loanId}/location`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .expect(200);
+
+    expect(res.body.location.lat).toBeCloseTo(19.5, 4);
+    expect(res.body.location.lng).toBeCloseTo(-99.2, 4);
+  });
 });

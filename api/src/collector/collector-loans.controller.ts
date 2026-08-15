@@ -16,6 +16,7 @@ import type { Request } from 'express';
 import { CollectorLoansService } from './collector-loans.service';
 import { DocumentsService } from '../documents/documents.service';
 import { DocumentValidationError } from '../documents/document-validation';
+import { LocationsService } from '../locations/locations.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -30,6 +31,7 @@ export class CollectorLoansController {
   constructor(
     private readonly collectorLoans: CollectorLoansService,
     private readonly documents: DocumentsService,
+    private readonly locations: LocationsService,
   ) {}
 
   @Get()
@@ -52,6 +54,15 @@ export class CollectorLoansController {
   ) {
     const loan = await this.collectorLoans.findOne(user.phone, id);
     return this.documents.findForLoan(BigInt(loan.id));
+  }
+
+  @Get(':id/location')
+  async findLocation(
+    @Param('id') id: string,
+    @CurrentUser() user: { phone: string },
+  ) {
+    const loan = await this.collectorLoans.findOne(user.phone, id);
+    return this.locations.findLatestForCustomer(loan.customerPhone);
   }
 
   @Post(':id/documents')
