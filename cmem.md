@@ -223,7 +223,31 @@ separado tras el build. `LocationsController` pasó de ruta fija (`/locations`) 
 
 Con esto, Fase 4 quedó 100% completa (6 cortes): cartera, pagos, llamar/WhatsApp,
 documentos de campo, ubicación (captura + vista del cobrador), mapa admin. Cierra el
-roadmap explícito de Fase 4 de la spec del todo. Próximo paso natural: Fase 5 (BI).
+roadmap explícito de Fase 4 de la spec del todo.
+
+## Fase 5 — BI, primer corte: KPIs núcleo financiero (2026-08-15)
+
+La spec de Fase 5 lista un set grande (capital, préstamos por estado, morosidad, multas,
+clientes, por cobrador, gráficas de tendencia, mapa de distribución). Alcance de este
+primer corte confirmado con el usuario: solo núcleo financiero, solo tiles de números
+(sin Recharts todavía, sin desglose por cobrador ni segmentación de clientes).
+
+`BiService.getFinancialKpis()` reusa piezas ya construidas en vez de reinventar: la
+misma `calculateLoanPenalty` de multa/score para "cartera vencida" y "multas
+acumuladas" (mismas `BusinessRulesService`), agregados SQL simples (`aggregate`,
+`groupBy`) para lo demás — sin librería BI pesada, como pedía la spec explícitamente.
+Se omitió deliberadamente "préstamos nuevos" del set de KPIs porque la spec no define
+una ventana de tiempo (¿diario? ¿semanal?) — documentado como pendiente en vez de
+inventar un valor arbitrario, mismo criterio de "no asumir" del resto del proyecto.
+
+`GET /api/v1/admin/bi/kpis` (`@Roles('ADMIN')`), `AdminBiPage` en `/admin/indicadores`.
+Testeado con un enfoque de deltas (antes/después de crear un préstamo con cuota
+backdateada) en vez de igualdad absoluta, porque el endpoint agrega sobre TODA la BD —
+más robusto frente a datos residuales de otros tests o de uso manual previo.
+
+Pendiente de Fase 5: desglose por cobrador, segmentación de clientes, gráficas de
+tendencia (Recharts, librería nueva) y mapa de distribución por zona (Leaflet, ya
+instalado desde el corte del mapa admin de Fase 4).
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

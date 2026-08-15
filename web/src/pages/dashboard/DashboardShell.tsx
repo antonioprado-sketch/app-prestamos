@@ -61,6 +61,11 @@ export function DashboardShell({ role }: { role: Role }) {
                 Ubicación de clientes
               </Button>
             </Link>
+            <Link to="/admin/indicadores" className="w-full max-w-xs">
+              <Button type="button" variant="ghost" className="w-full">
+                Indicadores
+              </Button>
+            </Link>
           </>
         )}
         <Button variant="ghost" onClick={() => logout()} className="mt-6">

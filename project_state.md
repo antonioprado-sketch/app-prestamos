@@ -249,7 +249,19 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 127/127 PAS
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 130/130 PASS con `--runInBand` (127 anteriores + 3 nuevos de `GET /admin/locations` en `locations.e2e-spec.ts`: 401/403, y que devuelve solo la última ubicación por cliente aunque existan varias). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS (sin tests nuevos — el mapa es visual, sin lógica propia más allá de la llamada a la API ya cubierta por el e2e del backend). `npm audit` en `web/` reporta la misma vulnerabilidad de `esbuild`/`vite` ya conocida y aceptada (dev-server, no afecta build de producción) — `leaflet` no agrega vulnerabilidades nuevas. Probado contra el stack Docker real: `GET /admin/locations` devuelve la última ubicación con nombre del cliente. Datos de prueba limpiados después. **No verificado visualmente** — extensión de Chrome sigue desconectada toda la sesión; el mapa en sí (renderizado de Leaflet, tiles de OSM cargando, marcadores) no se confirmó en un navegador real.
 
-**Fase 4: 100% completa (6 cortes)** — roadmap explícito de la spec (`Cobrador: cartera, pagos, ubicación, llamar/WhatsApp, documentos de campo`) + mapa admin cubiertos del todo. Próximo paso natural: Fase 5 (BI: KPIs y dashboards), a confirmar con el usuario.
+**Fase 4: 100% completa (6 cortes)** — roadmap explícito de la spec (`Cobrador: cartera, pagos, ubicación, llamar/WhatsApp, documentos de campo`) + mapa admin cubiertos del todo.
+
+## Fase 5 — BI (en curso)
+
+**KPIs núcleo financiero, primer corte (2026-08-15):** confirmado con el usuario. La spec de Fase 5 lista un set grande de KPIs (capital, préstamos por estado, morosidad, multas, clientes, por cobrador) + gráficas de tendencia + mapa de distribución. Alcance de este corte, confirmado explícitamente: solo el núcleo financiero, sin desglose por cobrador ni segmentación de clientes, y solo tiles de números (sin Recharts todavía).
+
+- `api/src/bi/bi.service.ts` — `getFinancialKpis()`: capital colocado (suma de `Loan.amount` en `APPROVED/ACTIVE/LIQUIDATED`), cobrado (suma de `Payment.amount`), pendiente (saldo restante de cuotas en préstamos `APPROVED/ACTIVE`), cartera vencida (monto de cuotas vencidas no pagadas, reusando `calculateLoanPenalty` ya existente), morosidad % (`vencida/pendiente`), tasa de recuperación % (`cobrado/colocado`), multas acumuladas (cálculo en vivo, mismas `BusinessRulesService` que ya usan multa/score) vs. multas cobradas (`Payment.penaltyApplied`), y conteo de préstamos por estado (`groupBy`). **Decisión de implementación, no de negocio**: se omitió deliberadamente "préstamos nuevos" del set de la spec porque requeriría definir una ventana de tiempo (¿diario? ¿semanal?) que no está especificada — se documenta como pendiente en vez de inventar un valor.
+- `GET /api/v1/admin/bi/kpis` (`@Roles('ADMIN')`).
+- Frontend: `AdminBiPage` (`/admin/indicadores`) — tiles agrupados por Capital / Cartera y riesgo / Multas / Préstamos por estado.
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 133/133 PASS con `--runInBand` (130 anteriores + 3 nuevos de `bi.e2e-spec.ts`: 401/403, y un test de deltas — crea un préstamo real con una cuota backdateada 5 días vencida y verifica que `capitalColocado`/`capitalPendiente`/`carteraVencida`/`multasAcumuladas`/`loansByStatus` se muevan exactamente los montos esperados antes/después, sin depender de que la BD esté vacía). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/kpis` devuelve un objeto consistente con el estado real de la BD de dev. No verificado visualmente.
+
+**Fase 5: primer corte hecho.** Pendiente confirmar con el usuario: desglose por cobrador, segmentación de clientes (nuevos/score/recurrencia), gráficas de tendencia (Recharts) y mapa de distribución por zona (ya hay Leaflet instalado desde Fase 4).
 
 ### Qué existe
 

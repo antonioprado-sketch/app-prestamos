@@ -12,6 +12,7 @@ import { AdminLoansPage } from './pages/AdminLoansPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
 import { AdminConfigurationPage } from './pages/AdminConfigurationPage';
 import { AdminLocationsPage } from './pages/AdminLocationsPage';
+import { AdminBiPage } from './pages/AdminBiPage';
 import { CollectorLoansPage } from './pages/CollectorLoansPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
@@ -82,6 +83,12 @@ export default function App() {
         path="/admin/ubicaciones"
         element={
           user?.role === 'ADMIN' ? <AdminLocationsPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/admin/indicadores"
+        element={
+          user?.role === 'ADMIN' ? <AdminBiPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
         }
       />
       <Route
