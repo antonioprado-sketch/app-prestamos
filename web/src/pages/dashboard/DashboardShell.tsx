@@ -31,11 +31,18 @@ export function DashboardShell({ role }: { role: Role }) {
           </Link>
         )}
         {role === 'ADMIN' && (
-          <Link to="/admin/solicitudes" className="mt-4 w-full max-w-xs">
-            <Button type="button" className="w-full">
-              Revisar solicitudes
-            </Button>
-          </Link>
+          <>
+            <Link to="/admin/solicitudes" className="mt-4 w-full max-w-xs">
+              <Button type="button" className="w-full">
+                Revisar solicitudes
+              </Button>
+            </Link>
+            <Link to="/admin/clientes" className="w-full max-w-xs">
+              <Button type="button" variant="ghost" className="w-full">
+                Clientes
+              </Button>
+            </Link>
+          </>
         )}
         <Button variant="ghost" onClick={() => logout()} className="mt-6">
           Cerrar sesión

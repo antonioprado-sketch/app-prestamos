@@ -138,6 +138,16 @@ Dos decisiones que la spec deja abiertas ("por reglas configurables") y se confi
 
 Verificado 2026-08-15: `npm test` API 61/61 PASS (57 anteriores + 4 nuevos de `score-calculation.spec.ts`), `npm run test:e2e` 87/87 PASS con `--runInBand` (80 anteriores + 7 nuevos de `score.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: cliente sin préstamos → `GREEN`; con préstamo `APPROVED` sin atraso → `GREEN`; `GET /admin/scores` lista al cliente con nombre y nivel correctos. Datos de prueba limpiados después. Pasada visual pendiente (extensión de Chrome desconectada toda la sesión).
 
+**Fase 3 — Gestión de clientes por admin (2026-08-15):** quinto corte de Fase 3, confirmado con el usuario. Cierra el hueco de que el admin no tenía forma de ver la lista de clientes ni ajustar el flag `isNewCustomer` manualmente.
+
+- `AdminCustomersService`/`AdminCustomersController` (mismo módulo `admin/`, ahora importa `ScoreModule` para reusar `ScoreService.getForCustomer()` en el listado):
+  - `GET /api/v1/admin/customers` — lista con nombre, `isNewCustomer`, `onboardingComplete`, `scoreLevel` (reusa el score ya construido) y el status del préstamo más reciente.
+  - `GET /api/v1/admin/customers/:phone` — detalle completo (dirección, aval, etc.) + lista de préstamos (reusa `toLoanDraftResult`) + lista de documentos. `404` si no existe.
+  - `PATCH /api/v1/admin/customers/:phone/new-client` — body `{isNewCustomer: boolean}`, auditado (`customer_new_client_updated`). **Sin campo nuevo en el schema**: reusa `Customer.isNewCustomer` que ya existía y que `LoansService.resolveMaxAmount()` ya consultaba — togglearlo cambia de inmediato si el cliente queda sujeto al tope de $3,000 (verificado en el e2e: tras poner `isNewCustomer=false`, una cotización de $10,000 ya no es rechazada).
+- Frontend: `AdminCustomersPage` nueva (`/admin/clientes`, protegida por rol `ADMIN`, enlazada desde `DashboardShell`) — lista con punto de color de score, detalle expandible con préstamos/documentos, botón para togglear cliente nuevo.
+
+Verificado 2026-08-15: `npm test` API 61/61 PASS, `npm run test:e2e` 94/94 PASS con `--runInBand` (87 anteriores + 7 nuevos de `admin-customers.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: cliente listado con score `GREEN`, toggle de `isNewCustomer` aplicado y verificado. Datos de prueba limpiados después. Pasada visual pendiente (extensión de Chrome desconectada toda la sesión).
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -209,6 +219,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 **Fase 2 "Cliente" completa**: cotizar → crear borrador → retomarlo → completar datos → subir documentos (INE+comprobante) → video de identidad → firmar pagaré → `SUBMITTED`. Todo el roadmap de Fase 2 de la spec (calculadora/quote, onboarding, documentos, video, pagaré, solicitud+estados) está construido y verificado contra el stack Docker real.
 
-**Fase 3 (Administrador) — cuatro cortes hechos**: revisión de solicitudes, cobradores (CRUD + asignación), payments (registrar pagos) y score (verde/amarillo/naranja/rojo, ver arriba). Falta del roadmap de Fase 3: reglas configurables (`score_rules`/`business_rules` — hoy `PENALTY_PER_DAY=$50` y los umbrales de score están hardcodeados, no editables por admin, ni existe el ajuste manual de score auditado que pide la spec), BI, ubicaciones. Cada uno debe confirmarse con el usuario como corte aparte antes de implementar, igual que los anteriores.
+**Fase 3 (Administrador) — cinco cortes hechos**: revisión de solicitudes, cobradores (CRUD + asignación), payments (registrar pagos), score (verde/amarillo/naranja/rojo) y gestión de clientes (ver arriba). Con esto el roadmap explícito de Fase 3 de la spec (clientes, préstamos, cobradores, aprobaciones, correcciones, reglas, multas, score) queda cubierto salvo **reglas configurables** (`score_rules`/`business_rules` — hoy `PENALTY_PER_DAY=$50` y los umbrales de score están hardcodeados, no editables por admin, ni existe el ajuste manual de score auditado que pide la spec). BI y ubicaciones son Fases 4/5 del roadmap, no Fase 3. Cada corte siguiente debe confirmarse con el usuario antes de implementar, igual que los anteriores.
 
 Pendiente no bloqueante: el video de identidad ya se probó visualmente con cámara real (ver arriba). El resto de las pantallas (login, registro, calculadora, onboarding, documentos, pagaré, `AdminLoansPage`) siguen sin una pasada visual real en navegador — todo verificado por curl/Node fetch/API — recomendable antes de seguir apilando UI, ya que el bug de Nginx (413 en subida de video) demostró que hay problemas que solo aparecen probando el flujo real de punta a punta, no con tests que le pegan directo a la API.

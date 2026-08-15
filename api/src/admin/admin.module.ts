@@ -4,10 +4,17 @@ import { AdminLoansController } from './admin-loans.controller';
 import { AdminLoansService } from './admin-loans.service';
 import { AdminCollectorsController } from './admin-collectors.controller';
 import { AdminCollectorsService } from './admin-collectors.service';
+import { AdminCustomersController } from './admin-customers.controller';
+import { AdminCustomersService } from './admin-customers.service';
+import { ScoreModule } from '../score/score.module';
 
 @Module({
-  imports: [JwtModule.register({})],
-  controllers: [AdminLoansController, AdminCollectorsController],
-  providers: [AdminLoansService, AdminCollectorsService],
+  imports: [JwtModule.register({}), ScoreModule],
+  controllers: [
+    AdminLoansController,
+    AdminCollectorsController,
+    AdminCustomersController,
+  ],
+  providers: [AdminLoansService, AdminCollectorsService, AdminCustomersService],
 })
 export class AdminModule {}

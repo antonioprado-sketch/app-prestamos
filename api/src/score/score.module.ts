@@ -7,5 +7,6 @@ import { ScoreService } from './score.service';
   imports: [JwtModule.register({})],
   controllers: [ScoreController],
   providers: [ScoreService],
+  exports: [ScoreService],
 })
 export class ScoreModule {}
