@@ -180,7 +180,25 @@ Dos decisiones confirmadas con el usuario vía preguntas explícitas:
 
 Verificado 2026-08-15: `npm test` API 63/63 PASS (sin nuevos unit — el override vive en el `Service`, no en la función pura `calculateScoreLevel`, que no cambió), `npm run test:e2e` 107/107 PASS con `--runInBand` (101 anteriores + 6 nuevos en `score.e2e-spec.ts`: 401/403/400/404, fijar override que gana sobre el cálculo real, limpiar override y volver al cálculo real). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `PATCH` con nivel inválido → `400`, override `GREEN` aplicado y reflejado en `GET /admin/customers`, revertido (`level:null`) sin dejar residuo en un cliente real de la BD de dev. **No verificado visualmente en navegador** — extensión de Chrome sigue desconectada, mismo problema recurrente de toda la sesión.
 
-**Fase 3: 100% completa (7 cortes)**, incluyendo ambos puntos que la spec dejaba abiertos (`score_rules`/`business_rules` configurables y ajuste manual de score auditado). Próximo paso: Fase 4 (BI/ubicaciones) o pasada visual pendiente en browser (requiere reconectar la extensión de Chrome).
+**Fase 3: 100% completa (7 cortes)**, incluyendo ambos puntos que la spec dejaba abiertos (`score_rules`/`business_rules` configurables y ajuste manual de score auditado).
+
+## Fase 4 — Cobrador (en curso)
+
+**Cartera del cobrador, primer corte (2026-08-15):** confirmado con el usuario. Hasta ahora el rol `COLLECTOR` solo tenía un dashboard placeholder ("Clientes asignados" sin pantalla real) — todo el backend de pagos ya soportaba `COLLECTOR` con ownership por `Loan.collectorId` (construido en el corte de payments de Fase 3), pero no existía UI para que el cobrador lo usara.
+
+Alcance acotado y confirmado con el usuario: solo ver la cartera propia y registrar pagos (reusando `POST /loans/:id/payments`, ya construido). **Fuera de este corte**: ubicación/mapa, llamar/WhatsApp, documentos de campo — son sub-features aparte del roadmap de Fase 4.
+
+- Nuevo módulo `api/src/collector/` (`CollectorLoansService`/`CollectorLoansController`), sin lógica de negocio nueva — reusa `toAdminLoanResult`/`ADMIN_LOAN_INCLUDE`/`AdminLoanResult` ya construidos en `admin-loans.service.ts` (se exportaron para esto, antes eran privados del módulo admin).
+  - `GET /api/v1/collector/loans` — todos los préstamos con `collectorId` del cobrador autenticado (resuelto de `phone` vía `Collector.findUnique`), sin filtrar por status (incluye históricos liquidados).
+  - `GET /api/v1/collector/loans/:id` — detalle; `404` (no `403`) si el préstamo existe pero no está asignado a ese cobrador, mismo patrón anti-enumeración del resto de la API.
+  - No se agregó endpoint de pago nuevo: el cobrador ya podía `POST/GET /loans/:id/payments` desde el corte de Fase 3 (RBAC + ownership ya lo permitían), solo faltaba la UI para llegar ahí.
+- Frontend: `CollectorLoansPage` nueva (`/collector/cartera`, protegida por rol `COLLECTOR`, enlazada desde `DashboardShell`) — lista de préstamos asignados, detalle expandible con historial de pagos y formulario de registro (mismo patrón que la sección de pagos de `AdminLoansPage`, sin las partes de revisión/asignación que son solo de admin).
+
+**Bug real encontrado en el e2e nuevo:** el test de registrar pago usaba un `idempotencyKey` de texto libre (`'collector-cartera-payment-1'`) en vez de un UUID — `RegisterPaymentDto` ya validaba `@IsUUID()` desde el corte de payments, así que la API devolvía `400` correctamente; el bug estaba en el test, no en el código de producción. Corregido usando `randomUUID()` como ya hacía `payments.e2e-spec.ts`.
+
+Verificado 2026-08-15: `npm test` API 63/63 PASS (sin unit nuevos — no hay lógica de negocio nueva, solo reuso de lo ya probado), `npm run test:e2e` 114/114 PASS con `--runInBand` (107 anteriores + 7 nuevos de `collector-loans.e2e-spec.ts`: 401/403, cartera propia vs. vacía para otro cobrador, detalle 200 vs. 404 por ownership, pago registrado desde la cartera). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real de punta a punta: cliente→préstamo→pagaré→aprobado→cobrador creado y asignado→`GET /collector/loans` lista el préstamo→`GET /collector/loans/:id` detalle→pago de $50 registrado desde el endpoint que usa la cartera→estado pasó de `APPROVED` a `ACTIVE`. Datos de prueba limpiados después. **No verificado visualmente en navegador** — extensión de Chrome sigue desconectada, mismo problema recurrente de toda la sesión.
+
+Pendiente de Fase 4 (roadmap de la spec, no de este corte): ubicación/mapa, llamar/WhatsApp, documentos de campo. Próximo corte debe confirmarse con el usuario antes de implementar.
 
 ### Qué existe
 

@@ -30,6 +30,13 @@ export function DashboardShell({ role }: { role: Role }) {
             </Button>
           </Link>
         )}
+        {role === 'COLLECTOR' && (
+          <Link to="/collector/cartera" className="mt-4 w-full max-w-xs">
+            <Button type="button" className="w-full">
+              Mi cartera
+            </Button>
+          </Link>
+        )}
         {role === 'ADMIN' && (
           <>
             <Link to="/admin/solicitudes" className="mt-4 w-full max-w-xs">

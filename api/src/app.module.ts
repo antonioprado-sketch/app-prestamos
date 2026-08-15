@@ -18,6 +18,7 @@ import { DocumentsModule } from './documents/documents.module';
 import { AdminModule } from './admin/admin.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ScoreModule } from './score/score.module';
+import { CollectorLoansModule } from './collector/collector-loans.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ScoreModule } from './score/score.module';
     AdminModule,
     PaymentsModule,
     ScoreModule,
+    CollectorLoansModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

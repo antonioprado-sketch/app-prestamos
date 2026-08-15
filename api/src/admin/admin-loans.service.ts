@@ -33,12 +33,14 @@ export interface AdminLoanResult extends LoanDraftResult {
   collectorName: string | null;
 }
 
-type LoanWithAdminRelations = LoanWithSchedule & {
+export type LoanWithAdminRelations = LoanWithSchedule & {
   customer: { nombres: string | null; apellidos: string | null };
   collector: { id: bigint; name: string } | null;
 };
 
-function toAdminLoanResult(loan: LoanWithAdminRelations): AdminLoanResult {
+export function toAdminLoanResult(
+  loan: LoanWithAdminRelations,
+): AdminLoanResult {
   const base = toLoanDraftResult(loan);
   const customerName = [loan.customer.nombres, loan.customer.apellidos]
     .filter(Boolean)
@@ -52,7 +54,11 @@ function toAdminLoanResult(loan: LoanWithAdminRelations): AdminLoanResult {
   };
 }
 
-const ADMIN_LOAN_INCLUDE = { schedule: true, customer: true, collector: true };
+export const ADMIN_LOAN_INCLUDE = {
+  schedule: true,
+  customer: true,
+  collector: true,
+};
 
 @Injectable()
 export class AdminLoansService {
