@@ -198,7 +198,14 @@ Alcance acotado y confirmado con el usuario: solo ver la cartera propia y regist
 
 Verificado 2026-08-15: `npm test` API 63/63 PASS (sin unit nuevos — no hay lógica de negocio nueva, solo reuso de lo ya probado), `npm run test:e2e` 114/114 PASS con `--runInBand` (107 anteriores + 7 nuevos de `collector-loans.e2e-spec.ts`: 401/403, cartera propia vs. vacía para otro cobrador, detalle 200 vs. 404 por ownership, pago registrado desde la cartera). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real de punta a punta: cliente→préstamo→pagaré→aprobado→cobrador creado y asignado→`GET /collector/loans` lista el préstamo→`GET /collector/loans/:id` detalle→pago de $50 registrado desde el endpoint que usa la cartera→estado pasó de `APPROVED` a `ACTIVE`. Datos de prueba limpiados después. **No verificado visualmente en navegador** — extensión de Chrome sigue desconectada, mismo problema recurrente de toda la sesión.
 
-Pendiente de Fase 4 (roadmap de la spec, no de este corte): ubicación/mapa, llamar/WhatsApp, documentos de campo. Próximo corte debe confirmarse con el usuario antes de implementar.
+**Llamar/WhatsApp, segundo corte (2026-08-15):** confirmado con el usuario como el más chico de los tres pendientes de Fase 4 — sin backend nuevo, el teléfono del cliente ya viajaba en `GET /collector/loans` desde el corte anterior.
+
+- `CollectorLoansPage`: dos enlaces (`tel:+52{phone}`, `https://wa.me/52{phone}`) en el detalle de cada préstamo, junto a los datos del cliente. Estilo idéntico al botón `ghost` existente (mismas clases Tailwind) para no introducir un componente nuevo por dos enlaces.
+- Alcance acotado a la cartera del cobrador (confirmado): la spec también lista "Llamar/WhatsApp" para cliente (soporte) y admin, pero eso queda fuera de este corte — no se tocó `AdminLoansPage` ni nada del lado cliente.
+
+Verificado 2026-08-15: `npm run build`/`lint`/`tsc -b` web en verde, `npm test` web 8/8 PASS (sin tests nuevos — son dos `<a href>` estáticos, sin lógica). Sin cambios de backend, no se re-corrieron los e2e de API. No verificado visualmente (extensión de Chrome sigue desconectada).
+
+Pendiente de Fase 4 (roadmap de la spec, no de este corte): ubicación/mapa (requiere definir el flujo de consentimiento de C15 antes de tocar código), documentos de campo. Próximo corte debe confirmarse con el usuario antes de implementar.
 
 ### Qué existe
 

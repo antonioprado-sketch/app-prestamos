@@ -37,6 +37,14 @@ const STATUS_LABEL: Record<string, string> = {
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 
+function telHref(phone: string) {
+  return `tel:+52${phone}`;
+}
+
+function whatsappHref(phone: string) {
+  return `https://wa.me/52${phone}`;
+}
+
 export function CollectorLoansPage() {
   const [loans, setLoans] = useState<CollectorLoan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -147,6 +155,23 @@ export function CollectorLoansPage() {
                       </span>
                       <span>Cuotas</span>
                       <span className="text-right">{loan.schedule.length}</span>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <a
+                        href={telHref(loan.customerPhone)}
+                        className="min-h-11 flex-1 rounded-xl bg-transparent px-4 py-2.5 text-center font-semibold text-primary transition-colors hover:bg-primary-light focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        Llamar
+                      </a>
+                      <a
+                        href={whatsappHref(loan.customerPhone)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-h-11 flex-1 rounded-xl bg-transparent px-4 py-2.5 text-center font-semibold text-primary transition-colors hover:bg-primary-light focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      >
+                        WhatsApp
+                      </a>
                     </div>
 
                     <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
