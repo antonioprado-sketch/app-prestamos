@@ -36,12 +36,24 @@ interface Collector {
   active: boolean;
 }
 
+interface Payment {
+  id: string;
+  amount: number;
+  penaltyApplied: number;
+  receivedAt: string;
+  notes: string | null;
+  createdBy: string;
+}
+
 const ASSIGNABLE_STATUSES = ['APPROVED', 'ACTIVE'];
+const PAYABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
 const STATUS_FILTERS = [
   { value: 'SUBMITTED', label: 'Enviadas (pendientes de revisión)' },
   { value: '', label: 'Todas' },
   { value: 'APPROVED', label: 'Aprobadas' },
+  { value: 'ACTIVE', label: 'Activas' },
+  { value: 'LIQUIDATED', label: 'Liquidadas' },
   { value: 'REJECTED', label: 'Rechazadas' },
   { value: 'REQUIRES_CORRECTION', label: 'Requieren corrección' },
   { value: 'DRAFT', label: 'Borradores' },
@@ -68,6 +80,11 @@ export function AdminLoansPage() {
   const [newCollectorResult, setNewCollectorResult] = useState<{ name: string; tempPassword: string } | null>(null);
   const [collectorFormLoading, setCollectorFormLoading] = useState(false);
   const [collectorError, setCollectorError] = useState<string | null>(null);
+
+  const [paymentsByLoan, setPaymentsByLoan] = useState<Record<string, Payment[]>>({});
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -146,9 +163,39 @@ export function AdminLoansPage() {
     setReasonText('');
   };
 
+  const loadPayments = (loanId: string) => {
+    apiFetch<Payment[]>(`/loans/${loanId}/payments`)
+      .then((payments) => setPaymentsByLoan((prev) => ({ ...prev, [loanId]: payments })))
+      .catch(() => undefined);
+  };
+
   const selectLoan = (id: string) => {
-    setSelectedId(id === selectedId ? null : id);
+    const next = id === selectedId ? null : id;
+    setSelectedId(next);
     resetAction();
+    setPaymentAmount('');
+    setPaymentError(null);
+    if (next) loadPayments(next);
+  };
+
+  const registerPayment = async (loanId: string) => {
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0) return;
+    setPaymentLoading(true);
+    setPaymentError(null);
+    try {
+      await apiFetch(`/loans/${loanId}/payments`, {
+        method: 'POST',
+        body: JSON.stringify({ amount, idempotencyKey: crypto.randomUUID() }),
+      });
+      setPaymentAmount('');
+      loadPayments(loanId);
+      load();
+    } catch (err) {
+      setPaymentError(err instanceof ApiError ? err.message : 'No se pudo registrar el pago');
+    } finally {
+      setPaymentLoading(false);
+    }
   };
 
   const approve = async (id: string) => {
@@ -317,6 +364,48 @@ export function AdminLoansPage() {
                             Asignar cobrador
                           </Button>
                         )}
+                      </div>
+                    )}
+
+                    {PAYABLE_STATUSES.includes(loan.status) && (
+                      <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
+                        <p className="text-sm font-medium text-secondary">Pagos</p>
+
+                        {paymentError && <Alert variant="error">{paymentError}</Alert>}
+
+                        {(paymentsByLoan[loan.id] ?? []).length === 0 ? (
+                          <p className="text-xs text-secondary">Sin pagos registrados.</p>
+                        ) : (
+                          <div className="flex flex-col gap-1">
+                            {(paymentsByLoan[loan.id] ?? []).map((p) => (
+                              <div key={p.id} className="flex justify-between text-xs text-secondary">
+                                <span>
+                                  {new Date(p.receivedAt).toLocaleDateString('es-MX')} · {p.createdBy}
+                                </span>
+                                <span className="font-mono">{currency.format(p.amount)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="flex gap-2">
+                          <Input
+                            label="Monto del pago"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={paymentAmount}
+                            onChange={(e) => setPaymentAmount(e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            loading={paymentLoading}
+                            disabled={!paymentAmount || Number(paymentAmount) <= 0}
+                            onClick={() => registerPayment(loan.id)}
+                          >
+                            Registrar
+                          </Button>
+                        </div>
                       </div>
                     )}
 

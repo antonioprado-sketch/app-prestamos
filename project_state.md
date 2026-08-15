@@ -107,6 +107,24 @@ Verificado 2026-08-15: `npm test` API 48/48 PASS, `npm run test:e2e` 60/60 PASS 
 
 Verificado 2026-08-15: `npm test` API 48/48 PASS, `npm run test:e2e` 69/69 PASS con `--runInBand` (60 anteriores + 5 nuevos de `admin-collectors.e2e-spec.ts` + 4 nuevos en `admin-loans.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: cobrador creado, préstamo real llevado a `APPROVED` y cobrador asignado (`collectorId`/`collectorName` correctos en la respuesta). **Nota de limpieza:** de paso se encontró y limpió un préstamo de prueba (`ppni-1326`, id `5`) que había quedado abandonado en la BD de dev desde una sesión anterior (la de la prueba de cámara real) — no bloqueaba nada pero ensuciaba `GET /admin/loans`.
 
+**Fase 3 — Payments: registrar pagos (2026-08-15):** tercer corte de Fase 3, confirmado con el usuario. Pieza que le da sentido real a tener préstamos aprobados y cobradores asignados.
+
+Decisión de arquitectura necesaria antes de implementar (analizada y confirmada con el usuario): la multa se había implementado antes como **cálculo en vivo sin tabla** (`loan-penalty.ts`), pero C7 exige que el pago cubra "multas acumuladas" primero — no hay nada que restar si la multa siempre se recalcula desde cero. Se resolvió agregando **un solo campo** `Loan.penaltyPaid DECIMAL(10,2)` (acumulador), sin construir la tabla `penalty_events`/worker cron completos de la spec (eso sigue fuera de alcance). La multa pendiente hoy = `calculateLoanPenalty(...).totalPenalty - penaltyPaid`.
+
+- Nuevo modelo `Payment` (migración `20260815053546_payments`): `amount`, `penaltyApplied`, `idempotencyKey` único, `notes`, `createdBy`.
+- `api/src/payments/payment-application.ts`: función pura `applyPayment(schedule, outstandingPenalty, amount)` — aplica C7 (multa → cuota vencida más antigua → vigente, por `seq` ascendente), 9/9 tests unitarios TDD (escritos y verificados en rojo antes de implementar).
+- `PaymentsService`/`PaymentsController`: `POST/GET /api/v1/loans/:id/payments`.
+  - Solo `ADMIN`/`COLLECTOR` registran (`RolesGuard`); el cobrador debe tener el préstamo asignado (`Loan.collectorId`), si no `403`. Cliente nunca registra sus propios pagos.
+  - `GET` visible para admin (todos), cobrador (solo asignados, `404` si no) y cliente (solo propios, `404` si no) — mismo patrón anti-enumeración que el resto de la API.
+  - Solo préstamos `APPROVED`/`ACTIVE` admiten pagos (`409` en cualquier otro estado, incluido `LIQUIDATED`).
+  - **Sobrepago rechazado** (decisión confirmada con el usuario): si el monto excede multa+cuotas pendientes, `400` antes de aplicar nada — no se inventó un concepto de "saldo a favor".
+  - `APPROVED` → `ACTIVE` en el primer pago (coincide con la decisión ya tomada al confirmar el corte de aprobación: "activarse" espera el primer desembolso/pago real).
+  - Cuando el pago cubre exactamente lo pendiente → `LIQUIDATED` + `liquidatedAt`.
+  - **Idempotencia real**: reenviar la misma `idempotencyKey` no vuelve a aplicar el pago, devuelve `alreadyProcessed:true` con el mismo resultado.
+- Frontend: `AdminLoansPage` — sección "Pagos" en el detalle de préstamos `APPROVED`/`ACTIVE`: lista de pagos registrados + formulario para registrar uno nuevo (genera `idempotencyKey` con `crypto.randomUUID()`). Se agregaron los filtros `ACTIVE`/`LIQUIDATED` al selector de estado que faltaban.
+
+Verificado 2026-08-15: `npm test` API 57/57 PASS (48 anteriores + 9 nuevos de `payment-application.spec.ts`), `npm run test:e2e` 80/80 PASS con `--runInBand` (69 anteriores + 11 nuevos de `payments.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: préstamo real aprobado, pago de $70 registrado con `admin`, `status` pasó de `APPROVED` a `ACTIVE` en la misma llamada. Datos de prueba limpiados después. Pasada visual del formulario de pagos en `AdminLoansPage` pendiente (extensión de Chrome seguía desconectada esta sesión).
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -178,6 +196,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 **Fase 2 "Cliente" completa**: cotizar → crear borrador → retomarlo → completar datos → subir documentos (INE+comprobante) → video de identidad → firmar pagaré → `SUBMITTED`. Todo el roadmap de Fase 2 de la spec (calculadora/quote, onboarding, documentos, video, pagaré, solicitud+estados) está construido y verificado contra el stack Docker real.
 
-**Fase 3 (Administrador) — dos cortes hechos**: revisión de solicitudes (aprobar/rechazar/pedir corrección) y cobradores (CRUD + asignación), ver arriba. Falta del roadmap de Fase 3: `payments` (registrar pagos reales — hoy no existe módulo de pagos; es lo que le da sentido a tener cobradores asignados), reglas configurables (`score_rules`/`business_rules`), score, BI, ubicaciones. Cada uno debe confirmarse con el usuario como corte aparte antes de implementar, igual que los anteriores.
+**Fase 3 (Administrador) — tres cortes hechos**: revisión de solicitudes, cobradores (CRUD + asignación) y payments (registrar pagos, ver arriba). Falta del roadmap de Fase 3: reglas configurables (`score_rules`/`business_rules` — hoy `PENALTY_PER_DAY=$50` está hardcodeado, no editable por admin), score (verde/amarillo/naranja/rojo), BI, ubicaciones. Cada uno debe confirmarse con el usuario como corte aparte antes de implementar, igual que los anteriores.
 
 Pendiente no bloqueante: el video de identidad ya se probó visualmente con cámara real (ver arriba). El resto de las pantallas (login, registro, calculadora, onboarding, documentos, pagaré, `AdminLoansPage`) siguen sin una pasada visual real en navegador — todo verificado por curl/Node fetch/API — recomendable antes de seguir apilando UI, ya que el bug de Nginx (413 en subida de video) demostró que hay problemas que solo aparecen probando el flujo real de punta a punta, no con tests que le pegan directo a la API.
