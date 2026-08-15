@@ -34,10 +34,11 @@ Copiar `.env.example` a `.env` y completar credenciales (MySQL, JWT, Gmail SMTP)
 
 ## Pruebas
 
-- API: `cd api && npm test` (unitarias) y `npm run test:e2e` (requiere MySQL arriba)
+- API: `cd api && npm test` (unitarias) y `npx jest --config ./test/jest-e2e.json --runInBand` (e2e, requiere MySQL arriba — el script `npm run test:e2e` sin `--runInBand` corre en paralelo y puede fallar por una carrera en el bootstrap del admin)
 - Web: `cd web && npm test`
 
 ## Documentación
 - Diseño y arquitectura: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`
 - Estado vivo del proyecto (qué está hecho, decisiones tomadas, próximos pasos): `project_state.md`
+- Resumen narrativo del historial de desarrollo (portable entre máquinas, para claude-mem): `cmem.md`
 - API: `http://localhost:3000/api/v1/docs` (Swagger, solo en dev)

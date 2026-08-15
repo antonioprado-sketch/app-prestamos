@@ -84,7 +84,7 @@ test e2e: se backdateaban fechas con `Date.now()` (instante UTC absoluto) en vez
 México, cada cuota mostraba un día menos de atraso — corregido reusando la misma función
 que ya usa producción para "hoy".
 
-## Fase 3 — Administrador (tres cortes hechos, en curso)
+## Fase 3 — Administrador (roadmap explícito cubierto, pausada a propósito)
 
 Cada corte confirmado con el usuario por separado, siguiendo el mismo patrón que Fase 2:
 
@@ -106,17 +106,32 @@ Cada corte confirmado con el usuario por separado, siguiendo el mismo patrón qu
    `idempotencyKey` único: reenvíos devuelven el mismo resultado sin reaplicar. Primer
    pago activa el préstamo (`APPROVED`→`ACTIVE`); pago que cubre todo lo pendiente
    liquida (`LIQUIDATED`).
+4. **Score** (verde/amarillo/naranja/rojo): mismo criterio que la multa — cálculo en vivo
+   (`score-calculation.ts`), sin `score_rules` configurable todavía. Umbrales fijos
+   confirmados con el usuario porque la spec los deja abiertos: 0 días de atraso=`GREEN`,
+   1–7=`YELLOW`, 8–15=`ORANGE`, 16+=`RED` (máximo entre los préstamos `APPROVED`/`ACTIVE`
+   del cliente). Sin ajuste manual del admin en este corte (la spec lo pide auditado) —
+   dejado fuera a propósito.
+5. **Gestión de clientes**: `GET /admin/customers` (lista con score), `GET
+   /admin/customers/:phone` (detalle + préstamos + documentos), `PATCH
+   /admin/customers/:phone/new-client` — reusa `Customer.isNewCustomer`, que ya existía y
+   que `resolveMaxAmount()` ya consultaba; sin campo nuevo en el schema.
 
-**Falta de Fase 3**: reglas configurables (`score_rules`/`business_rules` — hoy
-`PENALTY_PER_DAY=$50` está hardcodeado), score (verde/amarillo/naranja/rojo), BI,
-ubicaciones. Cada uno requiere confirmar alcance con el usuario antes de implementar.
+Con estos cinco cortes, el roadmap explícito de Fase 3 de la spec ("Administrador:
+clientes, préstamos, cobradores, aprobaciones, correcciones, reglas, multas, score")
+queda cubierto salvo **reglas configurables** (`score_rules`/`business_rules` — hoy
+`PENALTY_PER_DAY=$50` y los umbrales de score están hardcodeados). BI y ubicaciones son
+Fases 4/5 del roadmap, no Fase 3. El usuario decidió pausar Fase 3 acá explícitamente
+en vez de seguir con reglas configurables — no es que falte terminarlo, es una decisión
+tomada.
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 
 - **Función pura + Service wrapper**: lógica financiera (`loan-quote.ts`,
-  `loan-penalty.ts`, `payment-application.ts`) vive sin dependencias de Nest/Prisma, cada
-  una con su `.spec.ts` TDD (escrito y verificado en rojo antes de implementar). El
-  `Service` correspondiente solo la envuelve con acceso a BD/auditoría.
+  `loan-penalty.ts`, `payment-application.ts`, `score-calculation.ts`) vive sin
+  dependencias de Nest/Prisma, cada una con su `.spec.ts` TDD (escrito y verificado en
+  rojo antes de implementar). El `Service` correspondiente solo la envuelve con acceso a
+  BD/auditoría.
 - **RBAC por ownership, no solo por rol**: `RolesGuard` valida el rol, pero el `Service`
   siempre valida además que el recurso pertenece al actor (cliente ve solo lo propio,
   cobrador solo lo asignado) — 404 en vez de 403 para no filtrar existencia de IDs ajenos.

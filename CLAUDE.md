@@ -56,7 +56,8 @@ npx prisma migrate status
 - `PrismaModule` es `@Global()` — no reimportar `PrismaService` por feature module.
 - TDD: en el plan de Fase 1 cada task escribe primero el test que falla, luego la implementación. Mantener esa disciplina para tasks nuevas.
 - Todo cambio de funcionalidad va con su test unitario/e2e ejecutable con `npm test` / `npm run test:e2e`. Un cambio sin test no se da por terminado.
-- Lógica de negocio financiera (cotización, multas, aplicación de pagos) vive en funciones puras sin dependencias de Nest/Prisma (`loans/loan-quote.ts`, `loans/loan-penalty.ts`, `payments/payment-application.ts`), cada una con su `.spec.ts` de unit tests TDD. El `Service` correspondiente solo envuelve esa función pura con acceso a BD/auditoría — mantener este patrón al agregar reglas de negocio nuevas.
+- Lógica de negocio financiera (cotización, multas, aplicación de pagos, score) vive en funciones puras sin dependencias de Nest/Prisma (`loans/loan-quote.ts`, `loans/loan-penalty.ts`, `payments/payment-application.ts`, `score/score-calculation.ts`), cada una con su `.spec.ts` de unit tests TDD. El `Service` correspondiente solo envuelve esa función pura con acceso a BD/auditoría — mantener este patrón al agregar reglas de negocio nuevas.
+- RBAC por ownership, no solo por rol: `RolesGuard` valida el rol del token, pero el `Service` siempre valida además que el recurso pertenece al actor (cliente ve solo lo propio, cobrador solo lo asignado — `Loan.collectorId`). Cuando el actor no tiene acceso a un recurso que sí existe, devolver `404` (no `403`) para no filtrar la existencia de IDs ajenos — patrón ya usado en `loans`, `payments`, `admin-loans`.
 
 ## Reglas del protocolo `addv-web-app` aplicadas a este repo
 
