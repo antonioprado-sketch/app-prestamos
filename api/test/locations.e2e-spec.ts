@@ -114,4 +114,40 @@ describe('Locations (e2e)', () => {
       .send({ lat: 19.4326, lng: -99.1332, source: 'LOGIN' })
       .expect(201);
   });
+
+  it('GET /admin/locations requiere token', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/locations')
+      .expect(401);
+  });
+
+  it('GET /admin/locations rechaza a un rol distinto de ADMIN', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/locations')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+  });
+
+  it('GET /admin/locations devuelve la última ubicación por cliente, no el historial completo', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .post('/api/v1/locations')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ lat: 20.0, lng: -100.0, source: 'REQUEST' })
+      .expect(201);
+
+    const adminToken = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/admin/locations')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    const mine = res.body.filter(
+      (l: { customerPhone: string }) => l.customerPhone === clientPhone,
+    );
+    expect(mine).toHaveLength(1);
+    expect(mine[0].lat).toBeCloseTo(20.0, 4);
+    expect(mine[0].lng).toBeCloseTo(-100.0, 4);
+  });
 });

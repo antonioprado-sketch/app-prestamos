@@ -11,6 +11,7 @@ import { VideoIdentityPage } from './pages/VideoIdentityPage';
 import { AdminLoansPage } from './pages/AdminLoansPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
 import { AdminConfigurationPage } from './pages/AdminConfigurationPage';
+import { AdminLocationsPage } from './pages/AdminLocationsPage';
 import { CollectorLoansPage } from './pages/CollectorLoansPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
@@ -75,6 +76,12 @@ export default function App() {
         path="/admin/configuracion"
         element={
           user?.role === 'ADMIN' ? <AdminConfigurationPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/admin/ubicaciones"
+        element={
+          user?.role === 'ADMIN' ? <AdminLocationsPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
         }
       />
       <Route

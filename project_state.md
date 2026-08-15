@@ -238,7 +238,18 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 124/124 PAS
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 127/127 PASS con `--runInBand` (124 anteriores + 3 nuevos en `collector-loans.e2e-spec.ts`). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: sin ubicación → `{"location":null}`, cliente comparte ubicación → `GET /collector/loans/:id/location` la refleja de inmediato. Datos de prueba limpiados después. No verificado visualmente.
 
-**Fase 4: 100% completa (5 cortes)** — cartera, pagos, llamar/WhatsApp, documentos de campo, ubicación (captura + vista del cobrador). Pendiente fuera de este roadmap, corte aparte a confirmar: mapa admin (Leaflet+OSM, `GET /admin/locations/map`).
+**Fase 4: 100% completa (5 cortes)** — cartera, pagos, llamar/WhatsApp, documentos de campo, ubicación (captura + vista del cobrador).
+
+**Mapa admin, sexto corte — cierra Fase 4 del todo (2026-08-15):** confirmado con el usuario.
+
+- `LocationsService.findAllLatest()` — última ubicación por cliente (dedupe en memoria sobre `findMany` ordenado por `capturedAt desc`; a la escala del proyecto, ~10 usuarios, no hace falta una query agregada más sofisticada), con nombre del cliente vía `include`.
+- `GET /api/v1/admin/locations` (`@Roles('ADMIN')`) en el mismo `LocationsController` (se cambió `@Controller('api/v1/locations')` fijo a `@Controller('api/v1')` con rutas explícitas por método, mismo patrón que `ScoreController`, para poder tener `POST /locations` de cliente y `GET /admin/locations` de admin en un solo controller).
+- Frontend: `AdminLocationsPage` (`/admin/ubicaciones`) — primer uso de `leaflet` (npm, MIT, sin API key, tiles de OpenStreetMap) en el proyecto. **Cargado con `import()` dinámico** (mismo patrón que `@mediapipe/tasks-vision` en el video de identidad) para que su bundle (~44KB gzip) no vaya en el chunk principal — solo se descarga cuando un admin visita esta pantalla. Verificado en el build: quedó en `leaflet-src-*.js` como chunk separado, el bundle principal no creció.
+- Los íconos default de Leaflet no resuelven bien sus rutas relativas bajo bundlers — se importan explícitamente como assets (`marker-icon.png`, `marker-icon-2x.png`, `marker-shadow.png`) y se registran con `Icon.Default.mergeOptions()`, fix estándar documentado del propio proyecto Leaflet con Vite/Webpack.
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 130/130 PASS con `--runInBand` (127 anteriores + 3 nuevos de `GET /admin/locations` en `locations.e2e-spec.ts`: 401/403, y que devuelve solo la última ubicación por cliente aunque existan varias). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS (sin tests nuevos — el mapa es visual, sin lógica propia más allá de la llamada a la API ya cubierta por el e2e del backend). `npm audit` en `web/` reporta la misma vulnerabilidad de `esbuild`/`vite` ya conocida y aceptada (dev-server, no afecta build de producción) — `leaflet` no agrega vulnerabilidades nuevas. Probado contra el stack Docker real: `GET /admin/locations` devuelve la última ubicación con nombre del cliente. Datos de prueba limpiados después. **No verificado visualmente** — extensión de Chrome sigue desconectada toda la sesión; el mapa en sí (renderizado de Leaflet, tiles de OSM cargando, marcadores) no se confirmó en un navegador real.
+
+**Fase 4: 100% completa (6 cortes)** — roadmap explícito de la spec (`Cobrador: cartera, pagos, ubicación, llamar/WhatsApp, documentos de campo`) + mapa admin cubiertos del todo. Próximo paso natural: Fase 5 (BI: KPIs y dashboards), a confirmar con el usuario.
 
 ### Qué existe
 

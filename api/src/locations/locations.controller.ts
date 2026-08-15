@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -13,18 +14,24 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
-@Controller('api/v1/locations')
+@Controller('api/v1')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('CLIENT')
 export class LocationsController {
   constructor(private readonly locations: LocationsService) {}
 
-  @Post()
+  @Post('locations')
   @HttpCode(HttpStatus.CREATED)
+  @Roles('CLIENT')
   async record(
     @Body() dto: RecordLocationDto,
     @CurrentUser() user: { phone: string },
   ) {
     return this.locations.record(user.phone, dto);
+  }
+
+  @Get('admin/locations')
+  @Roles('ADMIN')
+  async findAllLatest() {
+    return this.locations.findAllLatest();
   }
 }

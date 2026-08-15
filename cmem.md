@@ -211,10 +211,19 @@ siempre en un objeto (`{ location: T | null }`) — patrón a repetir en cualqui
 que pueda "no tener nada que devolver": nunca `null`/`undefined` en la raíz de una
 respuesta REST.
 
-Con esto, Fase 4 quedó 100% completa (5 cortes): cartera, pagos, llamar/WhatsApp,
-documentos de campo, ubicación (captura + vista del cobrador). Pendiente fuera de este
-roadmap, corte aparte a confirmar: mapa admin (Leaflet+OSM, primera dependencia de mapas
-del proyecto).
+**Sexto corte — mapa admin, cierra Fase 4 del todo**: `GET /admin/locations` (última
+ubicación por cliente, dedupe en memoria — a esta escala no hace falta más) + primer uso
+de `leaflet` en el proyecto (npm, MIT, sin API key, tiles OpenStreetMap). Cargado con
+`import()` dinámico igual que `@mediapipe/tasks-vision` en el video de identidad, para
+que su bundle no infle el chunk principal — verificado que quedó en su propio chunk
+separado tras el build. `LocationsController` pasó de ruta fija (`/locations`) a
+`@Controller('api/v1')` con rutas explícitas por método (mismo patrón que
+`ScoreController`) para meter `POST /locations` (cliente) y `GET /admin/locations`
+(admin) en un solo controller.
+
+Con esto, Fase 4 quedó 100% completa (6 cortes): cartera, pagos, llamar/WhatsApp,
+documentos de campo, ubicación (captura + vista del cobrador), mapa admin. Cierra el
+roadmap explícito de Fase 4 de la spec del todo. Próximo paso natural: Fase 5 (BI).
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

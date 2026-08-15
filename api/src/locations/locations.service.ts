@@ -48,10 +48,58 @@ export class LocationsService {
       location: {
         lat: Number(location.lat),
         lng: Number(location.lng),
-        accuracy:
-          location.accuracy === null ? null : Number(location.accuracy),
+        accuracy: location.accuracy === null ? null : Number(location.accuracy),
         capturedAt: location.capturedAt,
       },
     };
+  }
+
+  /** Última ubicación conocida de cada cliente que haya compartido al menos una — para el mapa admin. */
+  async findAllLatest(): Promise<
+    {
+      customerPhone: string;
+      customerName: string | null;
+      lat: number;
+      lng: number;
+      capturedAt: Date;
+    }[]
+  > {
+    const locations = await this.prisma.location.findMany({
+      orderBy: { capturedAt: 'desc' },
+      include: {
+        customer: { select: { nombres: true, apellidos: true } },
+      },
+    });
+
+    const seen = new Set<string>();
+    const latest: {
+      customerPhone: string;
+      customerName: string | null;
+      lat: number;
+      lng: number;
+      capturedAt: Date;
+    }[] = [];
+
+    for (const location of locations) {
+      if (seen.has(location.customerPhone)) continue;
+      seen.add(location.customerPhone);
+
+      const customerName = [
+        location.customer.nombres,
+        location.customer.apellidos,
+      ]
+        .filter(Boolean)
+        .join(' ');
+
+      latest.push({
+        customerPhone: location.customerPhone,
+        customerName: customerName || null,
+        lat: Number(location.lat),
+        lng: Number(location.lng),
+        capturedAt: location.capturedAt,
+      });
+    }
+
+    return latest;
   }
 }
