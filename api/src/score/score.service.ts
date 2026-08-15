@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { BusinessRulesService } from '../configuration/business-rules.service';
+import { BusinessRules } from '../configuration/business-rules.constants';
 import { todayInMexicoCity } from '../loans/loan-quote';
 import { calculateLoanPenalty } from '../loans/loan-penalty';
 import { calculateScoreLevel, ScoreLevel } from './score-calculation';
@@ -15,20 +17,31 @@ export interface CustomerScore {
 
 @Injectable()
 export class ScoreService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly businessRules: BusinessRulesService,
+  ) {}
 
   async getForCustomer(phone: string): Promise<CustomerScore> {
     const customer = await this.prisma.customer.findUnique({
       where: { phone },
     });
     if (!customer) throw new NotFoundException('Cliente no encontrado');
-    return this.computeScore(customer.phone, this.customerName(customer));
+    const rules = await this.businessRules.get();
+    return this.computeScore(
+      customer.phone,
+      this.customerName(customer),
+      rules,
+    );
   }
 
   async getAll(): Promise<CustomerScore[]> {
     const customers = await this.prisma.customer.findMany();
+    const rules = await this.businessRules.get();
     return Promise.all(
-      customers.map((c) => this.computeScore(c.phone, this.customerName(c))),
+      customers.map((c) =>
+        this.computeScore(c.phone, this.customerName(c), rules),
+      ),
     );
   }
 
@@ -45,6 +58,7 @@ export class ScoreService {
   private async computeScore(
     phone: string,
     customerName: string | null,
+    rules: BusinessRules,
   ): Promise<CustomerScore> {
     const loans = await this.prisma.loan.findMany({
       where: {
@@ -64,6 +78,7 @@ export class ScoreService {
           status: s.status,
         })),
         today,
+        rules.penaltyPerDay,
       );
       for (const installment of penalty.overdueInstallments) {
         if (installment.daysLate > maxDaysLate) {
@@ -75,7 +90,11 @@ export class ScoreService {
     return {
       customerPhone: phone,
       customerName,
-      level: calculateScoreLevel(maxDaysLate),
+      level: calculateScoreLevel(
+        maxDaysLate,
+        rules.yellowMaxDays,
+        rules.orangeMaxDays,
+      ),
       maxDaysLate,
     };
   }

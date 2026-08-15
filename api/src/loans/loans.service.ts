@@ -8,6 +8,7 @@ import { Prisma } from '@prisma/client';
 import { createHash, randomBytes } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigurationService } from '../configuration/configuration.service';
+import { BusinessRulesService } from '../configuration/business-rules.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../storage/storage.service';
 import {
@@ -92,6 +93,7 @@ export class LoansService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigurationService,
+    private readonly businessRules: BusinessRulesService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
   ) {}
@@ -229,6 +231,7 @@ export class LoansService {
     if (!loan || loan.customerPhone !== phone) {
       throw new NotFoundException('Préstamo no encontrado');
     }
+    const { penaltyPerDay } = await this.businessRules.get();
     return calculateLoanPenalty(
       loan.schedule.map((entry) => ({
         seq: entry.seq,
@@ -236,6 +239,7 @@ export class LoansService {
         status: entry.status,
       })),
       todayInMexicoCity(),
+      penaltyPerDay,
     );
   }
 

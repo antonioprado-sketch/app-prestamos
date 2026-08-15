@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-14.
+Última actualización: 2026-08-15.
 
 ## Fase actual: Fase 2 — Cliente (en curso, sin plan escrito task-por-task)
 
@@ -147,6 +147,21 @@ Verificado 2026-08-15: `npm test` API 61/61 PASS (57 anteriores + 4 nuevos de `s
 - Frontend: `AdminCustomersPage` nueva (`/admin/clientes`, protegida por rol `ADMIN`, enlazada desde `DashboardShell`) — lista con punto de color de score, detalle expandible con préstamos/documentos, botón para togglear cliente nuevo.
 
 Verificado 2026-08-15: `npm test` API 61/61 PASS, `npm run test:e2e` 94/94 PASS con `--runInBand` (87 anteriores + 7 nuevos de `admin-customers.e2e-spec.ts`), corrido dos veces seguidas (idempotente). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: cliente listado con score `GREEN`, toggle de `isNewCustomer` aplicado y verificado. Datos de prueba limpiados después. Pasada visual pendiente (extensión de Chrome desconectada toda la sesión).
+
+**Fase 3 — Reglas configurables, Segmento A backend (2026-08-15):** sexto corte de Fase 3, confirmado con el usuario. Cierra el último punto pendiente del roadmap explícito de Fase 3 (`business_rules`/`score_rules`).
+
+Alcance confirmado con el usuario vía preguntas explícitas: multa **y** score configurables (no solo uno), backend+UI en el mismo corte (Segmento B queda para la siguiente confirmación), cambios **en vivo y retroactivos** a todo préstamo activo — consistente con que multa/score ya eran cálculo en vivo sin tabla histórica desde los cortes anteriores.
+
+- `api/src/configuration/business-rules.constants.ts`: nombres de clave centralizados (`penalty.per_day`, `score.yellow_max_days`, `score.orange_max_days`) y sus defaults (50/7/15), para no repetir strings mágicos entre los 4 puntos que los consumen.
+- `ConfigurationService.set()` nuevo (antes solo tenía `getNumber` de lectura) — upsert sobre la tabla `Configuration` ya existente desde Fase 1.
+- `BusinessRulesService` nuevo (en `ConfigurationModule`, `@Global()`): `get()` centraliza la lectura de las 3 claves en una sola llamada; `set()` valida (`penaltyPerDay>0`, `yellowMaxDays`/`orangeMaxDays>0`, `yellowMaxDays < orangeMaxDays`) antes de persistir las 3 juntas.
+- **Breaking change deliberado en las funciones puras** (rompe la firma, no default oculto): `calculateLoanPenalty(schedule, today, penaltyPerDay)` y `calculateScoreLevel(maxDaysLate, yellowMaxDays, orangeMaxDays)` ahora reciben los parámetros configurables en vez de leer constantes de módulo. TDD: specs actualizados primero (rojo), luego implementación. Se agregó un caso nuevo a cada spec probando valores distintos del default, para demostrar que el parámetro realmente se usa y no quedó vestigial.
+- Los 3 callers existentes (`LoansService.getPenalty`, `PaymentsService.register`, `ScoreService`) se actualizaron para resolver `BusinessRulesService.get()` antes de invocar las funciones puras.
+- `GET/PUT /api/v1/admin/configuration/business-rules` (`AdminConfigurationController`/`AdminConfigurationService`, mismo patrón de guard `JwtAuthGuard`+`RolesGuard`+`@Roles('ADMIN')`), auditado (`business_rules_updated`, guarda `prevValue`/`newValue`).
+
+Verificado 2026-08-15: `npm test` API 63/63 PASS (61 anteriores + 2 nuevos por los specs actualizados), `npm run test:e2e` 101/101 PASS con `--runInBand` (94 anteriores + 7 nuevos de `admin-configuration.e2e-spec.ts`). Build/lint/tsc en verde. Probado contra el stack Docker real: `GET` devuelve defaults, `PUT` con `yellowMaxDays>=orangeMaxDays` → `400`, `PUT` válido persiste y se refleja en `GET` inmediato, revertido a defaults tras la prueba. El e2e nuevo también prueba el efecto en vivo end-to-end: un préstamo con 3 días de atraso (`YELLOW` con el umbral default de 7) pasa a `ORANGE` apenas el admin baja `yellowMaxDays` a 2, sin tocar el préstamo.
+
+**Pendiente de este corte: Segmento B (frontend)** — pantalla admin para ver/editar `penaltyPerDay`/`yellowMaxDays`/`orangeMaxDays`. Confirmado que se hace en este mismo corte de Fase 3, falta implementarlo.
 
 ### Qué existe
 

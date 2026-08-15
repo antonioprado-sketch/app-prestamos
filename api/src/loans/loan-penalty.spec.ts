@@ -1,4 +1,6 @@
-import { calculateLoanPenalty, PENALTY_PER_DAY } from './loan-penalty';
+import { calculateLoanPenalty } from './loan-penalty';
+
+const PENALTY_PER_DAY = 50;
 
 function utcDate(iso: string): Date {
   return new Date(`${iso}T00:00:00.000Z`);
@@ -11,6 +13,7 @@ describe('calculateLoanPenalty', () => {
     const result = calculateLoanPenalty(
       [{ seq: 1, dueDate: utcDate('2026-08-27'), status: 'PENDING' }],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(0);
     expect(result.overdueInstallments).toHaveLength(0);
@@ -20,6 +23,7 @@ describe('calculateLoanPenalty', () => {
     const result = calculateLoanPenalty(
       [{ seq: 1, dueDate: today, status: 'PENDING' }],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(0);
   });
@@ -28,6 +32,7 @@ describe('calculateLoanPenalty', () => {
     const result = calculateLoanPenalty(
       [{ seq: 1, dueDate: utcDate('2026-08-19'), status: 'PENDING' }],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(PENALTY_PER_DAY);
     expect(result.overdueInstallments).toEqual([
@@ -39,6 +44,7 @@ describe('calculateLoanPenalty', () => {
     const result = calculateLoanPenalty(
       [{ seq: 1, dueDate: utcDate('2026-08-17'), status: 'PENDING' }],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(3 * PENALTY_PER_DAY);
   });
@@ -47,6 +53,7 @@ describe('calculateLoanPenalty', () => {
     const result = calculateLoanPenalty(
       [{ seq: 1, dueDate: utcDate('2026-08-10'), status: 'PAID' }],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(0);
   });
@@ -55,6 +62,7 @@ describe('calculateLoanPenalty', () => {
     const result = calculateLoanPenalty(
       [{ seq: 1, dueDate: utcDate('2026-08-19'), status: 'PARTIAL' }],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(PENALTY_PER_DAY);
   });
@@ -68,8 +76,19 @@ describe('calculateLoanPenalty', () => {
         { seq: 4, dueDate: utcDate('2026-08-10'), status: 'PAID' }, // pagada
       ],
       today,
+      PENALTY_PER_DAY,
     );
     expect(result.totalPenalty).toBe(1 * 50 + 3 * 50);
     expect(result.overdueInstallments.map((i) => i.seq)).toEqual([1, 2]);
+  });
+
+  it('usa el monto por día configurado en vez del valor fijo', () => {
+    const result = calculateLoanPenalty(
+      [{ seq: 1, dueDate: utcDate('2026-08-19'), status: 'PENDING' }],
+      today,
+      100,
+    );
+    expect(result.totalPenalty).toBe(100);
+    expect(result.overdueInstallments[0].penalty).toBe(100);
   });
 });

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { BusinessRulesService } from '../configuration/business-rules.service';
 import { todayInMexicoCity } from '../loans/loan-quote';
 import { calculateLoanPenalty } from '../loans/loan-penalty';
 import { LoanDraftResult, toLoanDraftResult } from '../loans/loans.service';
@@ -50,6 +51,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly businessRules: BusinessRulesService,
   ) {}
 
   async register(
@@ -96,6 +98,7 @@ export class PaymentsService {
       throw new ForbiddenException('No tienes asignado este préstamo');
     }
 
+    const { penaltyPerDay } = await this.businessRules.get();
     const outstandingPenalty = Math.max(
       0,
       round2(
@@ -106,6 +109,7 @@ export class PaymentsService {
             status: s.status,
           })),
           todayInMexicoCity(),
+          penaltyPerDay,
         ).totalPenalty - Number(loan.penaltyPaid),
       ),
     );

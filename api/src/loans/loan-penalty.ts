@@ -1,5 +1,3 @@
-export const PENALTY_PER_DAY = 50;
-
 export interface PenaltyScheduleEntry {
   seq: number;
   dueDate: Date;
@@ -27,6 +25,7 @@ function toDateString(date: Date): string {
 export function calculateLoanPenalty(
   schedule: PenaltyScheduleEntry[],
   today: Date,
+  penaltyPerDay: number,
 ): PenaltyResult {
   const overdueInstallments = schedule
     .filter((entry) => entry.status !== 'PAID')
@@ -41,7 +40,7 @@ export function calculateLoanPenalty(
       seq: entry.seq,
       dueDate: toDateString(entry.dueDate),
       daysLate,
-      penalty: daysLate * PENALTY_PER_DAY,
+      penalty: daysLate * penaltyPerDay,
     }));
 
   const totalPenalty = overdueInstallments.reduce(

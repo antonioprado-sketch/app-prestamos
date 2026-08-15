@@ -11,4 +11,12 @@ export class ConfigurationService {
     const value = Number(row.value);
     return Number.isFinite(value) ? value : fallback;
   }
+
+  async set(key: string, value: number, updatedBy: string): Promise<void> {
+    await this.prisma.configuration.upsert({
+      where: { key },
+      create: { key, value, updatedBy },
+      update: { value, updatedBy },
+    });
+  }
 }

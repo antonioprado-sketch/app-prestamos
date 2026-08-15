@@ -6,6 +6,8 @@ import { AdminCollectorsController } from './admin-collectors.controller';
 import { AdminCollectorsService } from './admin-collectors.service';
 import { AdminCustomersController } from './admin-customers.controller';
 import { AdminCustomersService } from './admin-customers.service';
+import { AdminConfigurationController } from './admin-configuration.controller';
+import { AdminConfigurationService } from './admin-configuration.service';
 import { ScoreModule } from '../score/score.module';
 
 @Module({
@@ -14,7 +16,13 @@ import { ScoreModule } from '../score/score.module';
     AdminLoansController,
     AdminCollectorsController,
     AdminCustomersController,
+    AdminConfigurationController,
   ],
-  providers: [AdminLoansService, AdminCollectorsService, AdminCustomersService],
+  providers: [
+    AdminLoansService,
+    AdminCollectorsService,
+    AdminCustomersService,
+    AdminConfigurationService,
+  ],
 })
 export class AdminModule {}
