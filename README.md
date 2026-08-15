@@ -30,7 +30,7 @@ Copiar `.env.example` a `.env` y completar credenciales (MySQL, JWT, Gmail SMTP)
    - Swagger (solo dev): http://localhost:3000/api/v1/docs
 6. Admin inicial: `admin` / `admin` (el sistema obliga a cambiarla en el primer login).
 
-> Nota: el servicio `worker` está definido en el compose desde Fase 1 pero su código (`main-worker.ts`) se implementa en Fase 2 — hasta entonces el contenedor se reinicia en bucle, es esperado.
+> Nota: el servicio `worker` está definido en el compose desde Fase 1 pero su código (`main-worker.ts`) todavía no existe (multas se calculan en vivo sin cron, ver `project_state.md`). El contenedor se deja **detenido** (`docker compose stop worker`) en vez de reiniciarse en bucle.
 
 ## Pruebas
 
@@ -39,4 +39,5 @@ Copiar `.env.example` a `.env` y completar credenciales (MySQL, JWT, Gmail SMTP)
 
 ## Documentación
 - Diseño y arquitectura: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`
+- Estado vivo del proyecto (qué está hecho, decisiones tomadas, próximos pasos): `project_state.md`
 - API: `http://localhost:3000/api/v1/docs` (Swagger, solo en dev)
