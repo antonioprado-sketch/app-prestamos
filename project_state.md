@@ -44,6 +44,12 @@ Frontend: `DocumentsPage` en `/documentos` (3 slots: INE frente/reverso, comprob
 
 Verificado 2026-08-14: 8 unit + 6 e2e nuevos de documents, 37/37 e2e total (corrida dos veces, idempotente), build/lint/test API y web en verde, subida+descarga real probada contra el stack Docker completo (no solo Supertest).
 
+**Pagaré PDF — cierre de la solicitud (2026-08-14/15, commit `4ba586e`):** `POST /api/v1/loans/:id/pagare` genera el PDF (pdfkit: folio, deudor, domicilio, aval, calendario de pagos, firma embebida, timestamp/IP — nunca la tasa, solo totales por R4/C9), lo guarda vía MinIO/`Document` (nuevo `DocumentType.PAGARE`, server-generated, nunca subido crudo por el cliente), y en la misma transacción Prisma pasa `Loan.status` de `DRAFT` a `SUBMITTED`. Decisiones confirmadas con el usuario: la firma cierra la solicitud (coincide con el flujo de la spec: "...pagaré → tu solicitud está siendo procesada") y el único prerequisito es onboarding completo (no se bloquea todavía por documentos ni video, que siguen pendientes de construir). Bloquea re-firma con `409` si el préstamo ya no está en `DRAFT` — evita pagarés duplicados sobre el mismo folio.
+
+Frontend: `PagarePage` en `/pagare` con canvas de firma (pointer events, funciona con mouse y touch), nombre completo, envía la firma como PNG data URL. `CalculatorPage` ahora oculta los botones de completar datos/documentos/pagaré una vez que el préstamo sale de `DRAFT` (muestra "Tu solicitud está siendo procesada" en su lugar).
+
+Verificado 2026-08-15: 5/5 e2e nuevos (`pagare.e2e-spec.ts`), 42/42 e2e total corrido dos veces (idempotente), build/lint/test API y web en verde. Probado contra el stack Docker real con el flujo completo: registro → crear préstamo → completar onboarding → firmar → PDF real descargado vía URL firmada (`%PDF`, 2550 bytes) → `GET /loans/:id` confirma `SUBMITTED`.
+
 ### Qué existe
 
 | Task | Estado | Detalle |
@@ -113,6 +119,6 @@ Verificado 2026-08-14 contra el stack real: `curl http://localhost/api/v1/health
 
 ## Próximo paso sugerido
 
-Continuar Fase 2: cotizar → crear borrador → retomarlo → completar datos → subir documentos, todo cerrado end-to-end. Siguiente corte natural: video de identidad (C17b: mínimos técnicos + detección facial MediaPipe en navegador — más complejo, no reutiliza directamente la infra de documents), pagaré PDF, y finalmente la transición de estado `DRAFT` → `SUBMITTED` del `Loan` (que hoy nunca cambia de estado tras crearse, ni siquiera cuando ya tiene datos+documentos). Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
+Flujo completo del cliente cerrado end-to-end: cotizar → crear borrador → retomarlo → completar datos → subir documentos → firmar pagaré → `SUBMITTED`. Fase 2 "Cliente" (roadmap de la spec: calculadora/quote, onboarding, documentos, video, pagaré, solicitud+estados) le falta solo el **video de identidad** (C17b: mínimos técnicos + detección facial MediaPipe en navegador — el más complejo de los pendientes, no reutiliza directamente la infra de documents ya construida) para estar completa. Después de eso, sigue Fase 3 (Administrador: aprobar/rechazar solicitudes `SUBMITTED`, asignar cobradores, reglas, multas, score — hoy nada de eso existe, las solicitudes quedan en `SUBMITTED` sin que nadie las revise). Confirmar cada corte con el usuario antes de implementar (sin plan escrito task-por-task para Fase 2 todavía).
 
 Pendiente no bloqueante: nunca se hizo una pasada visual real en navegador del flujo de auth ni de la calculadora (todo verificado por curl/API, sin extensión de Chrome disponible) — recomendable antes de seguir apilando UI.
