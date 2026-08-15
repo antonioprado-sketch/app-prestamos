@@ -160,6 +160,11 @@ export function CalculatorPage() {
                     Subir mis documentos
                   </Button>
                 </Link>
+                <Link to="/video">
+                  <Button type="button" variant="ghost" className="w-full">
+                    Grabar mi video de identidad
+                  </Button>
+                </Link>
                 <Link to="/pagare">
                   <Button type="button" variant="ghost" className="w-full">
                     Firmar mi pagaré

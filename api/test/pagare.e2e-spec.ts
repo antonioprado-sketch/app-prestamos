@@ -120,7 +120,9 @@ describe('Pagaré (e2e)', () => {
     const documents = await request(app.getHttpServer())
       .get('/api/v1/documents')
       .set('Authorization', `Bearer ${token}`);
-    expect(documents.body.some((d: { type: string }) => d.type === 'PAGARE')).toBe(true);
+    expect(
+      documents.body.some((d: { type: string }) => d.type === 'PAGARE'),
+    ).toBe(true);
   });
 
   it('rechaza firmar de nuevo un préstamo que ya no está en DRAFT', async () => {

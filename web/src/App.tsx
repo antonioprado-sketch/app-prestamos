@@ -7,6 +7,7 @@ import { CalculatorPage } from './pages/CalculatorPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { DocumentsPage } from './pages/DocumentsPage';
 import { PagarePage } from './pages/PagarePage';
+import { VideoIdentityPage } from './pages/VideoIdentityPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
 
@@ -40,6 +41,12 @@ export default function App() {
         path="/documentos"
         element={
           user?.role === 'CLIENT' ? <DocumentsPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/video"
+        element={
+          user?.role === 'CLIENT' ? <VideoIdentityPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
         }
       />
       <Route

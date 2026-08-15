@@ -1,14 +1,26 @@
 /** Tipos que el cliente sube directamente. PAGARE se genera server-side y nunca pasa por acá. */
-export type UploadableDocumentType = 'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF';
+export type UploadableDocumentType =
+  'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF' | 'VIDEO_IDENTITY';
 
 export class DocumentValidationError extends Error {}
 
-export const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_VIDEO_SIZE_BYTES = 50 * 1024 * 1024;
+
+export const MAX_DOCUMENT_SIZE_BYTES = MAX_IMAGE_SIZE_BYTES;
+
+const MAX_SIZE_BY_TYPE: Record<UploadableDocumentType, number> = {
+  INE_FRONT: MAX_IMAGE_SIZE_BYTES,
+  INE_BACK: MAX_IMAGE_SIZE_BYTES,
+  ADDRESS_PROOF: MAX_IMAGE_SIZE_BYTES,
+  VIDEO_IDENTITY: MAX_VIDEO_SIZE_BYTES,
+};
 
 const ALLOWED_MIME_BY_TYPE: Record<UploadableDocumentType, string[]> = {
   INE_FRONT: ['image/jpeg', 'image/png'],
   INE_BACK: ['image/jpeg', 'image/png'],
   ADDRESS_PROOF: ['image/jpeg', 'image/png', 'application/pdf'],
+  VIDEO_IDENTITY: ['video/webm', 'video/mp4'],
 };
 
 export function sniffMime(buffer: Buffer): string | null {
@@ -32,6 +44,18 @@ export function sniffMime(buffer: Buffer): string | null {
   if (buffer.length >= 4 && buffer.toString('ascii', 0, 4) === '%PDF') {
     return 'application/pdf';
   }
+  if (
+    buffer.length >= 4 &&
+    buffer[0] === 0x1a &&
+    buffer[1] === 0x45 &&
+    buffer[2] === 0xdf &&
+    buffer[3] === 0xa3
+  ) {
+    return 'video/webm';
+  }
+  if (buffer.length >= 8 && buffer.toString('ascii', 4, 8) === 'ftyp') {
+    return 'video/mp4';
+  }
   return null;
 }
 
@@ -43,9 +67,11 @@ export function validateDocument(
 ): string {
   if (buffer.length === 0)
     throw new DocumentValidationError('El archivo está vacío');
-  if (buffer.length > MAX_DOCUMENT_SIZE_BYTES) {
+
+  const maxSize = MAX_SIZE_BY_TYPE[type];
+  if (buffer.length > maxSize) {
     throw new DocumentValidationError(
-      'El archivo supera el máximo permitido de 5MB',
+      `El archivo supera el máximo permitido de ${Math.round(maxSize / (1024 * 1024))}MB`,
     );
   }
 
@@ -60,7 +86,10 @@ export function validateDocument(
     );
   }
 
-  if (declaredMime !== sniffed) {
+  // MediaRecorder declara mime con parámetros de códec (ej. "video/webm;codecs=vp9,opus");
+  // solo nos importa el tipo base para esta comparación anti-spoofing.
+  const declaredBaseMime = declaredMime.split(';')[0].trim();
+  if (declaredBaseMime !== sniffed) {
     throw new DocumentValidationError(
       'El contenido del archivo no coincide con el tipo declarado',
     );

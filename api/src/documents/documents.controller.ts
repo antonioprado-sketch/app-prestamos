@@ -22,7 +22,9 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+// Multer solo aplica un tope global de multipart; el tope real por tipo
+// (5MB imágenes, 50MB video) lo aplica validateDocument().
+const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 
 @Controller('api/v1/documents')
 export class DocumentsController {

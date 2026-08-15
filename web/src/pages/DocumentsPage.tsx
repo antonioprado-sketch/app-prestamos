@@ -124,8 +124,8 @@ export function DocumentsPage() {
           </div>
         )}
 
-        <Link to="/pagare" className="mt-6 block text-center text-primary">
-          Continuar y firmar el pagaré
+        <Link to="/video" className="mt-6 block text-center text-primary">
+          Continuar con el video de identidad
         </Link>
         <Link to="/calculadora" className="mt-2 block text-center text-sm text-secondary">
           Volver a mi solicitud

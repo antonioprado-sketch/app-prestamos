@@ -224,4 +224,5 @@ enum DocumentType {
   INE_BACK
   ADDRESS_PROOF
   PAGARE
+  VIDEO_IDENTITY
 }

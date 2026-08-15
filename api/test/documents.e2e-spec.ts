@@ -13,6 +13,15 @@ function jpegBuffer(): Buffer {
   return buf;
 }
 
+function webmBuffer(): Buffer {
+  const buf = Buffer.alloc(200, 0);
+  buf[0] = 0x1a;
+  buf[1] = 0x45;
+  buf[2] = 0xdf;
+  buf[3] = 0xa3;
+  return buf;
+}
+
 describe('Documents (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -128,5 +137,18 @@ describe('Documents (e2e)', () => {
       .get(`/api/v1/documents/${documentId}/signed-url`)
       .set('Authorization', `Bearer ${token}`)
       .expect(404);
+  });
+
+  it('sube un video de identidad (webm) hasta 50MB', async () => {
+    const token = await loginClient(clientPhone);
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/documents')
+      .set('Authorization', `Bearer ${token}`)
+      .field('type', 'VIDEO_IDENTITY')
+      .attach('file', webmBuffer(), { filename: 'video.webm', contentType: 'video/webm' })
+      .expect(201);
+
+    expect(res.body.type).toBe('VIDEO_IDENTITY');
+    expect(res.body.mime).toBe('video/webm');
   });
 });

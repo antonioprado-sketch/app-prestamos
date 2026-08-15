@@ -28,6 +28,21 @@ function pdf(size = 10): Buffer {
   return buf;
 }
 
+function webm(size = 20): Buffer {
+  const buf = Buffer.alloc(size, 0);
+  buf[0] = 0x1a;
+  buf[1] = 0x45;
+  buf[2] = 0xdf;
+  buf[3] = 0xa3;
+  return buf;
+}
+
+function mp4(size = 20): Buffer {
+  const buf = Buffer.alloc(size, 0);
+  buf.write('ftyp', 4, 'ascii');
+  return buf;
+}
+
 describe('validateDocument', () => {
   it('acepta un JPEG válido para INE_FRONT', () => {
     expect(validateDocument('INE_FRONT', 'image/jpeg', jpeg())).toBe(
@@ -72,6 +87,38 @@ describe('validateDocument', () => {
         Buffer.from('no es una imagen'),
       ),
     ).toThrow(DocumentValidationError);
+  });
+
+  it('acepta un WEBM válido para VIDEO_IDENTITY', () => {
+    expect(validateDocument('VIDEO_IDENTITY', 'video/webm', webm())).toBe(
+      'video/webm',
+    );
+  });
+
+  it('acepta el mime declarado con parámetros de códec (MediaRecorder)', () => {
+    expect(
+      validateDocument('VIDEO_IDENTITY', 'video/webm;codecs=vp9,opus', webm()),
+    ).toBe('video/webm');
+  });
+
+  it('acepta un MP4 válido para VIDEO_IDENTITY', () => {
+    expect(validateDocument('VIDEO_IDENTITY', 'video/mp4', mp4())).toBe(
+      'video/mp4',
+    );
+  });
+
+  it('permite hasta 50MB para VIDEO_IDENTITY (por encima del tope de imágenes)', () => {
+    const big = webm(MAX_DOCUMENT_SIZE_BYTES + 1);
+    expect(() =>
+      validateDocument('VIDEO_IDENTITY', 'video/webm', big),
+    ).not.toThrow();
+  });
+
+  it('rechaza video que excede el máximo de 50MB', () => {
+    const big = webm(50 * 1024 * 1024 + 1);
+    expect(() => validateDocument('VIDEO_IDENTITY', 'video/webm', big)).toThrow(
+      DocumentValidationError,
+    );
   });
 
   it('rechaza cuando el mime declarado no coincide con los magic bytes (spoofing)', () => {
