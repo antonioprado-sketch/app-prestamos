@@ -126,6 +126,25 @@ describe('validateDocument', () => {
       DocumentValidationError,
     );
   });
+
+  it('acepta un JPEG válido para COLLECTOR_DOC', () => {
+    expect(validateDocument('COLLECTOR_DOC', 'image/jpeg', jpeg())).toBe(
+      'image/jpeg',
+    );
+  });
+
+  it('rechaza video para COLLECTOR_DOC (solo fotos)', () => {
+    expect(() =>
+      validateDocument('COLLECTOR_DOC', 'video/webm', webm()),
+    ).toThrow(DocumentValidationError);
+  });
+
+  it('rechaza COLLECTOR_DOC que excede el máximo de 5MB', () => {
+    const big = jpeg(MAX_DOCUMENT_SIZE_BYTES + 1);
+    expect(() => validateDocument('COLLECTOR_DOC', 'image/jpeg', big)).toThrow(
+      DocumentValidationError,
+    );
+  });
 });
 
 describe('decodeSignaturePng', () => {

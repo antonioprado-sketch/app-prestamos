@@ -10,6 +10,14 @@ const TINY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
 const VALID_SIGNATURE = `data:image/png;base64,${TINY_PNG_BASE64}`;
 
+function jpegBuffer(): Buffer {
+  const buf = Buffer.alloc(100, 0);
+  buf[0] = 0xff;
+  buf[1] = 0xd8;
+  buf[2] = 0xff;
+  return buf;
+}
+
 describe('Collector loans (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -103,7 +111,10 @@ describe('Collector loans (e2e)', () => {
       .expect(201);
     const collectorLogin = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
-      .send({ phone: collectorPhone, password: collectorRes.body.tempPassword });
+      .send({
+        phone: collectorPhone,
+        password: collectorRes.body.tempPassword,
+      });
     collectorToken = collectorLogin.body.accessToken;
 
     await request(app.getHttpServer())
@@ -197,5 +208,54 @@ describe('Collector loans (e2e)', () => {
       .set('Authorization', `Bearer ${collectorToken}`)
       .expect(200);
     expect(res.body[0].status).toBe('ACTIVE');
+  });
+
+  it('GET /collector/loans/:id/documents devuelve lista vacía sin documentos', async () => {
+    const res = await request(app.getHttpServer())
+      .get(`/api/v1/collector/loans/${loanId}/documents`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .expect(200);
+    expect(res.body).toEqual([]);
+  });
+
+  it('POST /collector/loans/:id/documents requiere que el préstamo esté asignado a ese cobrador', async () => {
+    await request(app.getHttpServer())
+      .post(`/api/v1/collector/loans/${loanId}/documents`)
+      .set('Authorization', `Bearer ${otherCollectorToken}`)
+      .attach('file', jpegBuffer(), { filename: 'visita.jpg', contentType: 'image/jpeg' })
+      .expect(404);
+  });
+
+  it('POST /collector/loans/:id/documents rechaza contenido que no es una imagen real', async () => {
+    await request(app.getHttpServer())
+      .post(`/api/v1/collector/loans/${loanId}/documents`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .attach('file', Buffer.from('no es una imagen'), {
+        filename: 'visita.jpg',
+        contentType: 'image/jpeg',
+      })
+      .expect(400);
+  });
+
+  it('POST /collector/loans/:id/documents sube evidencia de visita y GET la refleja', async () => {
+    const uploadRes = await request(app.getHttpServer())
+      .post(`/api/v1/collector/loans/${loanId}/documents`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .attach('file', jpegBuffer(), { filename: 'visita.jpg', contentType: 'image/jpeg' })
+      .expect(201);
+    expect(uploadRes.body.type).toBe('COLLECTOR_DOC');
+
+    const listRes = await request(app.getHttpServer())
+      .get(`/api/v1/collector/loans/${loanId}/documents`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .expect(200);
+    expect(listRes.body).toHaveLength(1);
+    expect(listRes.body[0].id).toBe(uploadRes.body.id);
+
+    const document = await prisma.document.findUnique({
+      where: { id: BigInt(uploadRes.body.id) },
+    });
+    expect(document?.customerPhone).toBe(clientPhone);
+    expect(document?.uploadedBy).toBe(collectorPhone);
   });
 });

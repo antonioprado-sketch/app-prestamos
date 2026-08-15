@@ -27,6 +27,14 @@ interface Payment {
   createdBy: string;
 }
 
+interface FieldDocument {
+  id: string;
+  type: string;
+  mime: string;
+  sizeBytes: number;
+  createdAt: string;
+}
+
 const PAYABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -54,6 +62,9 @@ export function CollectorLoansPage() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [documentsByLoan, setDocumentsByLoan] = useState<Record<string, FieldDocument[]>>({});
+  const [documentUploading, setDocumentUploading] = useState(false);
+  const [documentError, setDocumentError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
@@ -74,12 +85,37 @@ export function CollectorLoansPage() {
       .catch(() => undefined);
   };
 
+  const loadDocuments = (loanId: string) => {
+    apiFetch<FieldDocument[]>(`/collector/loans/${loanId}/documents`)
+      .then((docs) => setDocumentsByLoan((prev) => ({ ...prev, [loanId]: docs })))
+      .catch(() => undefined);
+  };
+
   const selectLoan = (id: string) => {
     const next = id === selectedId ? null : id;
     setSelectedId(next);
     setPaymentAmount('');
     setPaymentError(null);
-    if (next) loadPayments(next);
+    setDocumentError(null);
+    if (next) {
+      loadPayments(next);
+      loadDocuments(next);
+    }
+  };
+
+  const uploadDocument = async (loanId: string, file: File) => {
+    setDocumentUploading(true);
+    setDocumentError(null);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      await apiFetch(`/collector/loans/${loanId}/documents`, { method: 'POST', body: form });
+      loadDocuments(loanId);
+    } catch (err) {
+      setDocumentError(err instanceof ApiError ? err.message : 'No se pudo subir la foto');
+    } finally {
+      setDocumentUploading(false);
+    }
   };
 
   const registerPayment = async (loanId: string) => {
@@ -212,6 +248,40 @@ export function CollectorLoansPage() {
                           </Button>
                         </div>
                       )}
+                    </div>
+
+                    <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
+                      <p className="text-sm font-medium text-secondary">Evidencia de visita</p>
+
+                      {documentError && <Alert variant="error">{documentError}</Alert>}
+
+                      {(documentsByLoan[loan.id] ?? []).length === 0 ? (
+                        <p className="text-xs text-secondary">Sin fotos subidas.</p>
+                      ) : (
+                        <div className="flex flex-col gap-1">
+                          {(documentsByLoan[loan.id] ?? []).map((d) => (
+                            <p key={d.id} className="text-xs text-secondary">
+                              {new Date(d.createdAt).toLocaleString('es-MX')}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+
+                      <label className="min-h-11 flex cursor-pointer items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-center font-semibold text-white transition-colors hover:bg-primary-dark">
+                        {documentUploading ? 'Subiendo…' : 'Tomar/subir foto'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          disabled={documentUploading}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            e.target.value = '';
+                            if (file) uploadDocument(loan.id, file);
+                          }}
+                        />
+                      </label>
                     </div>
                   </div>
                 )}

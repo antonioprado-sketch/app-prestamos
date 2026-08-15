@@ -175,9 +175,23 @@ usando el teléfono que ya devolvía `GET /collector/loans`. Acotado a la carter
 cobrador; la spec también lo lista para cliente (soporte) y admin, pero eso quedó fuera
 de este corte a propósito.
 
-Pendiente de Fase 4: ubicación/mapa (requiere definir el flujo de consentimiento de C15
-antes de tocar código — geolocalización nunca en background sin permiso) y documentos de
-campo.
+**Tercer corte — documentos de campo**: la spec ya anticipaba este tipo de documento en
+el modelo de datos original (`documents(... type ENUM(..., collector_doc, other) ...)`),
+solo faltaba habilitarlo. Nuevo `DocumentType.COLLECTOR_DOC` (imagen, 5MB, TDD). El
+cambio real de fondo fue en `DocumentsService`: `persist()` asumía que
+`customerPhone === uploadedBy` siempre (cierto mientras solo el cliente subía sus propios
+documentos) — se separaron ambos campos explícitamente para soportar que el cobrador suba
+en nombre del cliente. Nuevo `POST/GET /collector/loans/:id/documents`, mismo patrón de
+ownership 404 que ya usaba `payments`. Admin ve estos documentos gratis en
+`GET /admin/customers/:phone` (ya devolvía todos los documentos del cliente sin filtrar
+por tipo) — cero cambios ahí. Frontend: input de archivo con `capture="environment"` para
+abrir la cámara directo en mobile.
+
+Con esto, 3 de las 4 sub-features del roadmap de Fase 4 quedaron completas (cartera,
+pagos, llamar/WhatsApp, documentos de campo). Pendiente: **ubicación** — requiere definir
+el flujo de consentimiento de C15 antes de tocar código (geolocalización nunca en
+background sin permiso, aviso de privacidad explícito), corte más grande que los
+anteriores porque toca privacidad legal (LFPDPPP), no solo código.
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 
@@ -211,6 +225,12 @@ campo.
 - **`project_state.md`, `cmem.md` y `CLAUDE.md` se actualizan los tres antes de cada
   commit+push**, no solo al cerrar fase — regla explícita del usuario (2026-08-15). Es la
   única vía por la que el contexto viaja entre máquinas/sesiones.
+- **Actor vs. dueño del recurso son campos separados, no asumir que son el mismo**: el
+  schema de `documents` ya tenía `customerPhone` y `uploadedBy` como columnas distintas
+  desde Fase 1, pero el código los colapsaba en un solo parámetro hasta que hizo falta que
+  alguien subiera algo a nombre de otro (cobrador→cliente). Repasar este tipo de columnas
+  "de más" en el schema antes de asumir que un campo nuevo hace falta — a veces ya existe,
+  solo no estaba conectado.
 
 ## Estado de la extensión de Chrome
 

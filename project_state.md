@@ -205,7 +205,18 @@ Verificado 2026-08-15: `npm test` API 63/63 PASS (sin unit nuevos — no hay ló
 
 Verificado 2026-08-15: `npm run build`/`lint`/`tsc -b` web en verde, `npm test` web 8/8 PASS (sin tests nuevos — son dos `<a href>` estáticos, sin lógica). Sin cambios de backend, no se re-corrieron los e2e de API. No verificado visualmente (extensión de Chrome sigue desconectada).
 
-Pendiente de Fase 4 (roadmap de la spec, no de este corte): ubicación/mapa (requiere definir el flujo de consentimiento de C15 antes de tocar código), documentos de campo. Próximo corte debe confirmarse con el usuario antes de implementar.
+**Documentos de campo, tercer corte (2026-08-15):** el cobrador ahora puede subir evidencia fotográfica (una foto tomada en el momento de la visita) para un préstamo asignado. La spec (`documents(...type ENUM(..., collector_doc, other)...)`) ya anticipaba este tipo de documento en el modelo de datos original; solo faltaba habilitarlo.
+
+- Nuevo tipo `DocumentType.COLLECTOR_DOC` en Prisma (migración `20260815192311_collector_doc_type`), validado como imagen (`jpeg`/`png`, 5MB — mismo tope que INE) en `document-validation.ts`, TDD (specs primero).
+- `DocumentsService` se generalizó: `persist()` ahora separa `customerPhone` (dueño del documento) de `uploadedBy` (quien lo subió) — antes eran el mismo valor siempre porque solo el cliente subía sus propios documentos. Nuevo método `uploadForClient(actorPhone, customerPhone, loanId, file, ...)` para que el cobrador suba a nombre del cliente, y `findForLoan(loanId)` para listar por préstamo (filtrado a `COLLECTOR_DOC`). `DocumentsModule` ahora exporta `DocumentsService` para que `CollectorLoansModule` lo reuse.
+- `POST/GET /api/v1/collector/loans/:id/documents` en `CollectorLoansController` — reusa `CollectorLoansService.findOne()` para la validación de ownership (404 si el préstamo no está asignado a ese cobrador) antes de subir o listar, mismo patrón que ya se usaba para pagos.
+- El endpoint genérico `POST /documents` (cliente) sigue sin aceptar `COLLECTOR_DOC` — el DTO de esa ruta whitelist solo los 4 tipos que el cliente puede subir, `COLLECTOR_DOC` solo entra por la ruta del cobrador.
+- Admin ve estos documentos gratis en `GET /admin/customers/:phone` (ya devolvía la lista completa de documentos del cliente, sin filtrar por tipo) — no hizo falta tocar ese endpoint.
+- Frontend: `CollectorLoansPage` — sección "Evidencia de visita" con `<input type="file" accept="image/*" capture="environment">` (abre la cámara directo en mobile) y lista de fotos ya subidas por fecha.
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS (63 anteriores + 3 nuevos de `COLLECTOR_DOC` en `document-validation.spec.ts`), `npm run test:e2e` 118/118 PASS con `--runInBand` (114 anteriores + 4 nuevos en `collector-loans.e2e-spec.ts`: 404 por ownership, 400 por contenido inválido, upload+listado, verificado además que `customerPhone`/`uploadedBy` quedan separados en BD). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real de punta a punta: cobrador sube foto real (multipart), `GET .../documents` la lista, y aparece en `GET /admin/customers/:phone` junto al resto de documentos del cliente. Datos de prueba limpiados después. No verificado visualmente (extensión de Chrome sigue desconectada).
+
+**Fase 4: 3 de 4 sub-features del roadmap de la spec completas** (cartera, pagos, llamar/WhatsApp, documentos de campo). Falta solo **ubicación** (requiere definir el flujo de consentimiento de C15 antes de tocar código — geolocalización nunca en background sin permiso, aviso de privacidad explícito). Próximo corte debe confirmarse con el usuario antes de implementar.
 
 ### Qué existe
 

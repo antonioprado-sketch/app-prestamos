@@ -1,6 +1,10 @@
-/** Tipos que el cliente sube directamente. PAGARE se genera server-side y nunca pasa por acá. */
+/** Tipos que el cliente o el cobrador suben directamente. PAGARE se genera server-side y nunca pasa por acá. */
 export type UploadableDocumentType =
-  'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF' | 'VIDEO_IDENTITY';
+  | 'INE_FRONT'
+  | 'INE_BACK'
+  | 'ADDRESS_PROOF'
+  | 'VIDEO_IDENTITY'
+  | 'COLLECTOR_DOC';
 
 export class DocumentValidationError extends Error {}
 
@@ -14,6 +18,7 @@ const MAX_SIZE_BY_TYPE: Record<UploadableDocumentType, number> = {
   INE_BACK: MAX_IMAGE_SIZE_BYTES,
   ADDRESS_PROOF: MAX_IMAGE_SIZE_BYTES,
   VIDEO_IDENTITY: MAX_VIDEO_SIZE_BYTES,
+  COLLECTOR_DOC: MAX_IMAGE_SIZE_BYTES,
 };
 
 const ALLOWED_MIME_BY_TYPE: Record<UploadableDocumentType, string[]> = {
@@ -21,6 +26,7 @@ const ALLOWED_MIME_BY_TYPE: Record<UploadableDocumentType, string[]> = {
   INE_BACK: ['image/jpeg', 'image/png'],
   ADDRESS_PROOF: ['image/jpeg', 'image/png', 'application/pdf'],
   VIDEO_IDENTITY: ['video/webm', 'video/mp4'],
+  COLLECTOR_DOC: ['image/jpeg', 'image/png'],
 };
 
 export function sniffMime(buffer: Buffer): string | null {

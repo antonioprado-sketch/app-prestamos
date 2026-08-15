@@ -35,11 +35,39 @@ export class DocumentsService {
     const verifiedMime = validateDocument(type, file.mimetype, file.buffer);
     return this.persist(
       phone,
+      phone,
       type,
       null,
       file.buffer,
       verifiedMime,
       'document_uploaded',
+      ip,
+      ua,
+    );
+  }
+
+  /** Documento subido por el cobrador durante una visita, para el cliente dueño del préstamo. */
+  async uploadForClient(
+    actorPhone: string,
+    customerPhone: string,
+    loanId: bigint,
+    file: { buffer: Buffer; mimetype: string },
+    ip: string,
+    ua: string,
+  ) {
+    const verifiedMime = validateDocument(
+      'COLLECTOR_DOC',
+      file.mimetype,
+      file.buffer,
+    );
+    return this.persist(
+      customerPhone,
+      actorPhone,
+      'COLLECTOR_DOC',
+      loanId,
+      file.buffer,
+      verifiedMime,
+      'collector_document_uploaded',
       ip,
       ua,
     );
@@ -56,11 +84,22 @@ export class DocumentsService {
     ip: string,
     ua: string,
   ) {
-    return this.persist(phone, type, loanId, buffer, mime, action, ip, ua);
+    return this.persist(
+      phone,
+      phone,
+      type,
+      loanId,
+      buffer,
+      mime,
+      action,
+      ip,
+      ua,
+    );
   }
 
   private async persist(
-    phone: string,
+    customerPhone: string,
+    uploadedBy: string,
     type: DocumentType,
     loanId: bigint | null,
     buffer: Buffer,
@@ -71,25 +110,25 @@ export class DocumentsService {
   ) {
     const checksum = createHash('sha256').update(buffer).digest('hex');
     const ext = EXTENSION_BY_MIME[mime] ?? 'bin';
-    const storageKey = `customers/${phone}/${type.toLowerCase()}/${Date.now()}-${randomBytes(6).toString('hex')}.${ext}`;
+    const storageKey = `customers/${customerPhone}/${type.toLowerCase()}/${Date.now()}-${randomBytes(6).toString('hex')}.${ext}`;
 
     await this.storage.putObject(storageKey, buffer, mime);
 
     const document = await this.prisma.document.create({
       data: {
-        customerPhone: phone,
+        customerPhone,
         loanId: loanId ?? undefined,
         type,
         storageKey,
         mime,
         sizeBytes: buffer.length,
         checksum,
-        uploadedBy: phone,
+        uploadedBy,
       },
     });
 
     await this.audit.log({
-      userPhone: phone,
+      userPhone: uploadedBy,
       action,
       entity: 'document',
       entityId: String(document.id),
@@ -110,6 +149,20 @@ export class DocumentsService {
   async findMine(phone: string) {
     const documents = await this.prisma.document.findMany({
       where: { customerPhone: phone },
+      orderBy: { createdAt: 'desc' },
+    });
+    return documents.map((d) => ({
+      id: String(d.id),
+      type: d.type,
+      mime: d.mime,
+      sizeBytes: d.sizeBytes,
+      createdAt: d.createdAt,
+    }));
+  }
+
+  async findForLoan(loanId: bigint) {
+    const documents = await this.prisma.document.findMany({
+      where: { loanId, type: 'COLLECTOR_DOC' },
       orderBy: { createdAt: 'desc' },
     });
     return documents.map((d) => ({
