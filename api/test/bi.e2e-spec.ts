@@ -12,6 +12,8 @@ describe('BI (e2e)', () => {
   let prisma: PrismaService;
   const clientPhone = '5588001199';
   const recurrentClientPhone = '5588001188';
+  const collectorClientPhone = '5588001177';
+  const collectorPhone = '5588001166';
   const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
 
@@ -46,6 +48,8 @@ describe('BI (e2e)', () => {
     prisma = setupModule.get(PrismaService);
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
     await prisma.user.deleteMany({ where: { phone: recurrentClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: collectorClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: collectorPhone } });
     await setupApp.close();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -59,6 +63,8 @@ describe('BI (e2e)', () => {
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
     await prisma.user.deleteMany({ where: { phone: recurrentClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: collectorClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: collectorPhone } });
     await app.close();
   });
 
@@ -229,5 +235,103 @@ describe('BI (e2e)', () => {
       after.customers.clientesRecurrentes -
         before.customers.clientesRecurrentes,
     ).toBe(1);
+  });
+
+  it('GET /admin/bi/collectors requiere token', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/collectors')
+      .expect(401);
+  });
+
+  it('GET /admin/bi/collectors rechaza a un rol distinto de ADMIN', async () => {
+    const clientToken = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/collectors')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .expect(403);
+  });
+
+  it('GET /admin/bi/collectors refleja cartera, pagos registrados y cumplimiento de un cobrador', async () => {
+    const adminToken = await loginAdmin();
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: collectorClientPhone, password: 'Abcdef12!' });
+    const clientToken = await loginClient(collectorClientPhone);
+    await request(app.getHttpServer())
+      .patch('/api/v1/customers/me')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        nombres: 'Cobrador',
+        apellidos: 'BI',
+        aval: 'Aval',
+        avalPhone: '5500000000',
+        calle: 'Calle',
+        numero: '1',
+        colonia: 'Col',
+        cp: '06000',
+        ciudad: 'CDMX',
+        estado: 'CDMX',
+        referencias: 'Ref',
+      })
+      .expect(200);
+
+    const loan = await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+
+    const TINY_PNG_BASE64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+    await request(app.getHttpServer())
+      .post(`/api/v1/loans/${loan.body.id}/pagare`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        signature: `data:image/png;base64,${TINY_PNG_BASE64}`,
+        fullName: 'Cobrador BI',
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${loan.body.id}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    const collectorRes = await request(app.getHttpServer())
+      .post('/api/v1/admin/collectors')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ phone: collectorPhone, name: 'Cobrador BI Test' })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${loan.body.id}/assign-collector`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ collectorId: collectorRes.body.id })
+      .expect(200);
+    const collectorLogin = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({
+        phone: collectorPhone,
+        password: collectorRes.body.tempPassword,
+      });
+    const collectorToken = collectorLogin.body.accessToken;
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/loans/${loan.body.id}/payments`)
+      .set('Authorization', `Bearer ${collectorToken}`)
+      .send({ amount: 70, idempotencyKey: randomUUID() })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/collectors')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    const mine = res.body.find(
+      (c: { collectorId: string }) => c.collectorId === collectorRes.body.id,
+    );
+    expect(mine).toBeDefined();
+    expect(mine.carteraSize).toBe(1);
+    expect(mine.pagosRegistrados).toBe(1);
+    expect(mine.cumplimientoPct).toBe(100);
+    expect(mine.carteraVencida).toBe(0);
   });
 });

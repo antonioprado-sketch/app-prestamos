@@ -255,9 +255,15 @@ registrado un test anterior del mismo archivo — el delta de `totalClientes`/
 el patrón de deltas ya documentado: hay que rastrear bien qué fixture es realmente nuevo
 en cada punto del archivo, no solo comparar antes/después a ciegas.
 
-Pendiente de Fase 5: desglose por cobrador, gráficas de tendencia (Recharts, librería
-nueva) y mapa de distribución por zona (Leaflet, ya instalado desde el corte del mapa
-admin de Fase 4).
+**Tercer corte — desglose por cobrador**: a diferencia de la segmentación de clientes, la
+spec sí lista `GET /admin/bi/collectors` como ruta propia en la tabla de endpoints —
+implementado como endpoint aparte, no anidado en `/kpis`. `cumplimientoPct` reusa
+`calculateLoanPenalty` por cobrador (% de su cartera sin cuotas vencidas), `pagosRegistrados`
+usa `groupBy` sobre `Payment.createdBy` para evitar N+1 en vez de contar por cobrador uno
+por uno.
+
+Pendiente de Fase 5: gráficas de tendencia (Recharts, librería nueva) y mapa de
+distribución por zona (Leaflet, ya instalado desde el corte del mapa admin de Fase 4).
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

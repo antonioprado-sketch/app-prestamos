@@ -271,7 +271,15 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 133/133 PAS
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 134/134 PASS con `--runInBand` (133 anteriores + 1 nuevo: verifica que un cliente con más de un préstamo cuenta como recurrente, con un fixture aparte para no chocar con el préstamo sin liquidar del test anterior). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/kpis` devuelve `customers` con el desglose real de la BD de dev (5 clientes, 4 nuevos, todos score verde). No verificado visualmente.
 
-**Fase 5: dos cortes hechos.** Pendiente confirmar con el usuario: desglose por cobrador, gráficas de tendencia (Recharts) y mapa de distribución por zona (ya hay Leaflet instalado desde Fase 4).
+**Desglose por cobrador, tercer corte (2026-08-15):** confirmado con el usuario. A diferencia de la segmentación de clientes, la spec sí lista `GET /admin/bi/collectors` como ruta propia en la tabla de endpoints — se implementó como endpoint aparte (no anidado dentro de `/kpis`).
+
+- `BiService.getCollectorBreakdown()`: por cada `Collector`, `carteraSize` (préstamos `APPROVED`/`ACTIVE` asignados), `pagosRegistrados` (conteo de `Payment.createdBy === collector.phone`, vía `groupBy` para evitar N+1), `cumplimientoPct` (% de su cartera sin ninguna cuota vencida — reusa `calculateLoanPenalty`), `carteraVencida` (monto vencido de su cartera, mismo cálculo que el KPI global pero acotado a sus préstamos).
+- `GET /api/v1/admin/bi/collectors` (`@Roles('ADMIN')`).
+- Frontend: `AdminBiPage` agrega una tabla "Por cobrador" (nombre, cartera, pagos registrados, cumplimiento, cartera vencida), fetch en paralelo con los KPIs (`Promise.all`).
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 137/137 PASS con `--runInBand` (134 anteriores + 3 nuevos en `bi.e2e-spec.ts`: 401/403, y un fixture completo cliente→préstamo→aprobado→cobrador creado y asignado→pago registrado por el cobrador, verificando `carteraSize=1`, `pagosRegistrados=1`, `cumplimientoPct=100`, `carteraVencida=0`). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/collectors` devuelve `[]` (sin cobradores reales en la BD de dev en este momento — respuesta válida, no error). No verificado visualmente.
+
+**Fase 5: tres cortes hechos.** Pendiente confirmar con el usuario: gráficas de tendencia (Recharts, librería nueva) y mapa de distribución por zona (ya hay Leaflet instalado desde Fase 4).
 
 ### Qué existe
 

@@ -14,4 +14,9 @@ export class BiController {
   async getKpis() {
     return this.bi.getFinancialKpis();
   }
+
+  @Get('collectors')
+  async getCollectorBreakdown() {
+    return this.bi.getCollectorBreakdown();
+  }
 }

@@ -12,6 +12,16 @@ interface CustomerSegmentation {
   porScore: Record<string, number>;
 }
 
+interface CollectorBreakdown {
+  collectorId: string;
+  collectorName: string;
+  active: boolean;
+  carteraSize: number;
+  pagosRegistrados: number;
+  cumplimientoPct: number;
+  carteraVencida: number;
+}
+
 interface FinancialKpis {
   capitalColocado: number;
   capitalCobrado: number;
@@ -58,12 +68,19 @@ function StatTile({ label, value }: { label: string; value: string }) {
 
 export function AdminBiPage() {
   const [kpis, setKpis] = useState<FinancialKpis | null>(null);
+  const [collectors, setCollectors] = useState<CollectorBreakdown[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiFetch<FinancialKpis>('/admin/bi/kpis')
-      .then(setKpis)
+    Promise.all([
+      apiFetch<FinancialKpis>('/admin/bi/kpis'),
+      apiFetch<CollectorBreakdown[]>('/admin/bi/collectors'),
+    ])
+      .then(([kpisRes, collectorsRes]) => {
+        setKpis(kpisRes);
+        setCollectors(collectorsRes);
+      })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los KPIs'))
       .finally(() => setLoading(false));
   }, []);
@@ -140,6 +157,43 @@ export function AdminBiPage() {
                   <StatTile key={level} label={SCORE_LABEL[level] ?? level} value={String(count)} />
                 ))}
               </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium text-secondary">Por cobrador</p>
+              {collectors.length === 0 ? (
+                <p className="text-xs text-secondary">Sin cobradores registrados.</p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-xs text-secondary">
+                        <th className="p-3">Cobrador</th>
+                        <th className="p-3">Cartera</th>
+                        <th className="p-3">Pagos registrados</th>
+                        <th className="p-3">Cumplimiento</th>
+                        <th className="p-3">Cartera vencida</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {collectors.map((c) => (
+                        <tr key={c.collectorId} className="border-b border-gray-100 last:border-0">
+                          <td className="p-3 text-secondary">
+                            {c.collectorName}
+                            {!c.active && <span className="ml-1 text-xs">(inactivo)</span>}
+                          </td>
+                          <td className="p-3 font-mono text-secondary">{c.carteraSize}</td>
+                          <td className="p-3 font-mono text-secondary">{c.pagosRegistrados}</td>
+                          <td className="p-3 font-mono text-secondary">{percent(c.cumplimientoPct)}</td>
+                          <td className="p-3 font-mono text-secondary">
+                            {currency.format(c.carteraVencida)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         ) : null}

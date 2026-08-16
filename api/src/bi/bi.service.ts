@@ -18,6 +18,16 @@ export interface CustomerSegmentation {
   porScore: Record<string, number>;
 }
 
+export interface CollectorBreakdown {
+  collectorId: string;
+  collectorName: string;
+  active: boolean;
+  carteraSize: number;
+  pagosRegistrados: number;
+  cumplimientoPct: number;
+  carteraVencida: number;
+}
+
 export interface FinancialKpis {
   capitalColocado: number;
   capitalCobrado: number;
@@ -166,5 +176,65 @@ export class BiService {
       clientesRecurrentes,
       porScore,
     };
+  }
+
+  async getCollectorBreakdown(): Promise<CollectorBreakdown[]> {
+    const [collectors, paymentGroups, rules] = await Promise.all([
+      this.prisma.collector.findMany({
+        include: {
+          loans: {
+            where: { status: { in: [...OPEN_PORTFOLIO_STATUSES] } },
+            include: { schedule: true },
+          },
+        },
+      }),
+      this.prisma.payment.groupBy({ by: ['createdBy'], _count: true }),
+      this.businessRules.get(),
+    ]);
+
+    const paymentsByPhone = new Map<string, number>();
+    for (const group of paymentGroups) {
+      paymentsByPhone.set(group.createdBy, group._count);
+    }
+
+    const today = todayInMexicoCity();
+
+    return collectors.map((collector) => {
+      let carteraVencida = 0;
+      let loansOnTime = 0;
+
+      for (const loan of collector.loans) {
+        const penalty = calculateLoanPenalty(
+          loan.schedule.map((entry) => ({
+            seq: entry.seq,
+            dueDate: entry.dueDate,
+            status: entry.status,
+          })),
+          today,
+          rules.penaltyPerDay,
+        );
+        if (penalty.overdueInstallments.length === 0) loansOnTime++;
+
+        for (const overdue of penalty.overdueInstallments) {
+          const entry = loan.schedule.find((s) => s.seq === overdue.seq);
+          if (entry) {
+            carteraVencida += Number(entry.amount) - Number(entry.paidAmount);
+          }
+        }
+      }
+
+      return {
+        collectorId: String(collector.id),
+        collectorName: collector.name,
+        active: collector.active,
+        carteraSize: collector.loans.length,
+        pagosRegistrados: paymentsByPhone.get(collector.phone) ?? 0,
+        cumplimientoPct:
+          collector.loans.length > 0
+            ? round2((loansOnTime / collector.loans.length) * 100)
+            : 0,
+        carteraVencida: round2(carteraVencida),
+      };
+    });
   }
 }
