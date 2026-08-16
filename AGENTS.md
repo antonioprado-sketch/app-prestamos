@@ -4,7 +4,7 @@ Contexto operativo persistente para cualquier sesión de Codex en este repo. Est
 
 ## Estado del proyecto
 
-Fases 1-4 completas (fundaciones, cliente, administrador, cobrador). Fase 5 (BI) en curso: KPIs núcleo financiero y segmentación de clientes ya construidos (`GET /admin/bi/kpis`); pendiente desglose por cobrador, gráficas de tendencia (Recharts) y mapa de distribución por zona. Detalle completo corte por corte en `project_state.md`.
+Fases 1-4 completas (fundaciones, cliente, administrador, cobrador). Fase 5 (BI) en curso, 4 de 5 cortes hechos: KPIs núcleo financiero, segmentación de clientes, desglose por cobrador (`GET /admin/bi/kpis`, `/admin/bi/collectors`) y gráfica de tendencia semanal (`GET /admin/bi/trends`, Recharts). Pendiente: mapa de distribución por zona (Leaflet, ya instalado). Detalle completo corte por corte en `project_state.md`.
 
 ## Arquitectura
 
@@ -76,7 +76,7 @@ npx prisma migrate status
 - Los `Service` de `admin/` exportan sus helpers de mapeo Prisma→DTO (tipos + funciones) para que módulos con la misma forma de datos pero distinto scope de ownership (ej. `collector/`) los reusen en vez de duplicar el mapeo.
 - Un endpoint nunca devuelve `null`/`undefined` como cuerpo completo de la respuesta — NestJS lo serializa como `200` con body vacío, lo que rompe `res.json()` del lado cliente. Envolver siempre en un objeto, ej. `{ location: T | null }`.
 - Endpoints que agregan sobre toda la BD (ej. `GET /admin/bi/kpis`) se testean por delta (antes/después de un fixture conocido), nunca por igualdad absoluta.
-- Librerías pesadas del lado cliente que solo usa una pantalla concreta se cargan con `import()` dinámico dentro del componente — verificar en el build que terminan en su propio chunk.
+- Librerías pesadas del lado cliente que solo usa una pantalla concreta se cargan sin ir en el bundle principal — `import()` dinámico imperativo para APIs no-JSX (MediaPipe, Leaflet), `React.lazy()`+`Suspense` para librerías usadas como JSX (Recharts). Verificar en el build que terminan en su propio chunk.
 
 ## Reglas del protocolo `addv-web-app` aplicadas a este repo
 

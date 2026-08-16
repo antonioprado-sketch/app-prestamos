@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
+
+const WeeklyTrendChart = lazy(() => import('../components/WeeklyTrendChart'));
 
 interface CustomerSegmentation {
   totalClientes: number;
@@ -20,6 +22,11 @@ interface CollectorBreakdown {
   pagosRegistrados: number;
   cumplimientoPct: number;
   carteraVencida: number;
+}
+
+interface WeeklyTrendPoint {
+  weekStart: string;
+  capitalCobrado: number;
 }
 
 interface FinancialKpis {
@@ -69,6 +76,7 @@ function StatTile({ label, value }: { label: string; value: string }) {
 export function AdminBiPage() {
   const [kpis, setKpis] = useState<FinancialKpis | null>(null);
   const [collectors, setCollectors] = useState<CollectorBreakdown[]>([]);
+  const [trends, setTrends] = useState<WeeklyTrendPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -76,10 +84,12 @@ export function AdminBiPage() {
     Promise.all([
       apiFetch<FinancialKpis>('/admin/bi/kpis'),
       apiFetch<CollectorBreakdown[]>('/admin/bi/collectors'),
+      apiFetch<WeeklyTrendPoint[]>('/admin/bi/trends'),
     ])
-      .then(([kpisRes, collectorsRes]) => {
+      .then(([kpisRes, collectorsRes, trendsRes]) => {
         setKpis(kpisRes);
         setCollectors(collectorsRes);
+        setTrends(trendsRes);
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los KPIs'))
       .finally(() => setLoading(false));
@@ -101,6 +111,23 @@ export function AdminBiPage() {
           </div>
         ) : kpis ? (
           <div className="flex flex-col gap-6">
+            <div>
+              <p className="mb-2 text-sm font-medium text-secondary">
+                Capital cobrado — últimas 12 semanas
+              </p>
+              <div className="rounded-xl border border-gray-200 p-3">
+                <Suspense
+                  fallback={
+                    <div className="flex h-[260px] items-center justify-center">
+                      <Spinner />
+                    </div>
+                  }
+                >
+                  <WeeklyTrendChart data={trends} />
+                </Suspense>
+              </div>
+            </div>
+
             <div>
               <p className="mb-2 text-sm font-medium text-secondary">Capital</p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

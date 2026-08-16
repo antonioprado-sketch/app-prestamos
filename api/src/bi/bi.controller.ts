@@ -19,4 +19,9 @@ export class BiController {
   async getCollectorBreakdown() {
     return this.bi.getCollectorBreakdown();
   }
+
+  @Get('trends')
+  async getTrends() {
+    return this.bi.getWeeklyTrends();
+  }
 }

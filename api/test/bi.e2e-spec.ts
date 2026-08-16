@@ -14,6 +14,7 @@ describe('BI (e2e)', () => {
   const recurrentClientPhone = '5588001188';
   const collectorClientPhone = '5588001177';
   const collectorPhone = '5588001166';
+  const trendsClientPhone = '5588001155';
   const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
 
@@ -50,6 +51,7 @@ describe('BI (e2e)', () => {
     await prisma.user.deleteMany({ where: { phone: recurrentClientPhone } });
     await prisma.user.deleteMany({ where: { phone: collectorClientPhone } });
     await prisma.user.deleteMany({ where: { phone: collectorPhone } });
+    await prisma.user.deleteMany({ where: { phone: trendsClientPhone } });
     await setupApp.close();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -65,6 +67,7 @@ describe('BI (e2e)', () => {
     await prisma.user.deleteMany({ where: { phone: recurrentClientPhone } });
     await prisma.user.deleteMany({ where: { phone: collectorClientPhone } });
     await prisma.user.deleteMany({ where: { phone: collectorPhone } });
+    await prisma.user.deleteMany({ where: { phone: trendsClientPhone } });
     await app.close();
   });
 
@@ -333,5 +336,88 @@ describe('BI (e2e)', () => {
     expect(mine.pagosRegistrados).toBe(1);
     expect(mine.cumplimientoPct).toBe(100);
     expect(mine.carteraVencida).toBe(0);
+  });
+
+  it('GET /admin/bi/trends requiere token', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/trends')
+      .expect(401);
+  });
+
+  it('GET /admin/bi/trends rechaza a un rol distinto de ADMIN', async () => {
+    const clientToken = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/trends')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .expect(403);
+  });
+
+  it('GET /admin/bi/trends devuelve 12 semanas y refleja un pago nuevo en la semana actual', async () => {
+    const adminToken = await loginAdmin();
+
+    const before = await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/trends')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(before.body).toHaveLength(12);
+    const currentWeekBefore = before.body[11].capitalCobrado;
+    const expectedWeekStart = before.body[11].weekStart;
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: trendsClientPhone, password: 'Abcdef12!' });
+    const clientToken = await loginClient(trendsClientPhone);
+    await request(app.getHttpServer())
+      .patch('/api/v1/customers/me')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        nombres: 'Trends',
+        apellidos: 'Test',
+        aval: 'Aval',
+        avalPhone: '5500000000',
+        calle: 'Calle',
+        numero: '1',
+        colonia: 'Col',
+        cp: '06000',
+        ciudad: 'CDMX',
+        estado: 'CDMX',
+        referencias: 'Ref',
+      })
+      .expect(200);
+
+    const loan = await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ amount: 500, model: 'WEEKLY', openingDate: '2026-08-17' });
+
+    const TINY_PNG_BASE64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+    await request(app.getHttpServer())
+      .post(`/api/v1/loans/${loan.body.id}/pagare`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        signature: `data:image/png;base64,${TINY_PNG_BASE64}`,
+        fullName: 'BI Test',
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${loan.body.id}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/loans/${loan.body.id}/payments`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ amount: 35, idempotencyKey: randomUUID() })
+      .expect(201);
+
+    const after = await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/trends')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(after.body[11].weekStart).toBe(expectedWeekStart);
+    expect(after.body[11].capitalCobrado - currentWeekBefore).toBeCloseTo(
+      35,
+      2,
+    );
   });
 });

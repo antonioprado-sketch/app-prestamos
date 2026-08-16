@@ -279,7 +279,18 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 134/134 PAS
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 137/137 PASS con `--runInBand` (134 anteriores + 3 nuevos en `bi.e2e-spec.ts`: 401/403, y un fixture completo cliente→préstamo→aprobado→cobrador creado y asignado→pago registrado por el cobrador, verificando `carteraSize=1`, `pagosRegistrados=1`, `cumplimientoPct=100`, `carteraVencida=0`). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/collectors` devuelve `[]` (sin cobradores reales en la BD de dev en este momento — respuesta válida, no error). No verificado visualmente.
 
-**Fase 5: tres cortes hechos.** Pendiente confirmar con el usuario: gráficas de tendencia (Recharts, librería nueva) y mapa de distribución por zona (ya hay Leaflet instalado desde Fase 4).
+**Gráfica de tendencia, cuarto corte (2026-08-15):** confirmado con el usuario en dos preguntas explícitas (la spec solo decía "tendencia temporal", sin métrica ni ventana definida): capital cobrado por semana, últimas 12 semanas.
+
+- `BiService.getWeeklyTrends()`: agrupa `Payment.amount` en semanas lunes-domingo (hora Ciudad de México, reusa `todayInMexicoCity()`), devuelve siempre 12 puntos aunque no haya pagos en algunas semanas (`0`, no se omiten huecos).
+- `GET /api/v1/admin/bi/trends` (`@Roles('ADMIN')`).
+- Frontend: primer uso de **Recharts** en el proyecto (línea temporal). `WeeklyTrendChart.tsx` en componente aparte, cargado con `React.lazy()`+`Suspense` desde `AdminBiPage` (mismo criterio que Leaflet/MediaPipe) — verificado en el build que quedó en su propio chunk (~107KB gzip) sin inflar el bundle principal.
+- Bug de tipos encontrado en el build (no en runtime): los callbacks `formatter`/`labelFormatter` de `<Tooltip>` en Recharts 3.x tipan sus parámetros más laxo que antes (`ValueType | undefined`, `ReactNode`) — se corrigió coaccionando explícitamente (`Number(value)`, `String(label)`) en vez de tipar los parámetros como `number`/`string` directo.
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 140/140 PASS con `--runInBand` (137 anteriores + 3 nuevos en `bi.e2e-spec.ts`: 401/403, y verificación de que el array tiene 12 puntos y que un pago nuevo se refleja en el bucket de la semana actual). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/trends` devuelve 12 semanas consecutivas (lunes a lunes) terminando en la semana actual. No verificado visualmente (la gráfica en sí, renderizado de Recharts, no se confirmó en navegador).
+
+**Nota operativa de la sesión:** Docker Desktop se cayó a mitad de un `docker compose up` (pull de imagen interrumpido) durante este corte — se perdió momentáneamente la conexión a MySQL para los e2e. El usuario reinició Docker Desktop manualmente; el volumen de MySQL persistió (no se perdió el schema/datos). El contenedor `worker` arrancó solo al hacer `docker compose up -d` sin especificar servicio — se volvió a detener (`docker compose stop worker`) porque `main-worker.ts` sigue sin existir (mismo comportamiento ya documentado desde Fase 1, no es un bug nuevo).
+
+**Fase 5: 4 de 5 puntos del roadmap hechos.** Pendiente confirmar con el usuario: mapa de distribución por zona (Leaflet, ya instalado desde el corte del mapa admin de Fase 4) — cierra Fase 5 del todo.
 
 ### Qué existe
 

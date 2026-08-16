@@ -262,8 +262,25 @@ implementado como endpoint aparte, no anidado en `/kpis`. `cumplimientoPct` reus
 usa `groupBy` sobre `Payment.createdBy` para evitar N+1 en vez de contar por cobrador uno
 por uno.
 
-Pendiente de Fase 5: gráficas de tendencia (Recharts, librería nueva) y mapa de
-distribución por zona (Leaflet, ya instalado desde el corte del mapa admin de Fase 4).
+**Cuarto corte — gráfica de tendencia**: la spec solo decía "tendencia temporal" sin
+métrica ni ventana — se confirmaron ambas con el usuario (capital cobrado por semana,
+últimas 12 semanas) antes de tocar código. `getWeeklyTrends()` agrupa pagos en semanas
+lunes-domingo (hora CDMX), siempre 12 puntos aunque falten pagos en alguna semana.
+Primer uso de **Recharts** en el proyecto — mismo patrón de lazy-loading que
+Leaflet/MediaPipe: el gráfico vive en su propio componente (`WeeklyTrendChart.tsx`),
+cargado con `React.lazy()`+`Suspense` en vez de `import()` imperativo (porque Recharts
+se usa como JSX, no como API imperativa como Leaflet). Bug de tipos de Recharts 3.x en
+el build (no runtime): los callbacks de `<Tooltip>` tipan sus parámetros más laxo que
+antes, se corrigió coaccionando explícitamente en vez de tipar los parámetros directo.
+
+**Nota operativa**: Docker Desktop se cayó a mitad de un `docker compose up` durante este
+corte (pull de imagen interrumpido) — el usuario lo reinició manualmente, el volumen de
+MySQL persistió sin pérdida de datos/schema. El contenedor `worker` arrancó solo al no
+especificar servicio en el `up` y se volvió a detener (mismo comportamiento documentado
+desde Fase 1 — `main-worker.ts` no existe todavía, no es un bug nuevo).
+
+Pendiente de Fase 5: mapa de distribución por zona (Leaflet, ya instalado desde el corte
+del mapa admin de Fase 4) — cierra Fase 5 del todo.
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

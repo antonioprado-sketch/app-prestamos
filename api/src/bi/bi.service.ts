@@ -5,6 +5,10 @@ import { ScoreService } from '../score/score.service';
 import { todayInMexicoCity } from '../loans/loan-quote';
 import { calculateLoanPenalty } from '../loans/loan-penalty';
 
+const MS_PER_DAY = 86400000;
+const MS_PER_WEEK = MS_PER_DAY * 7;
+const TREND_WEEKS = 12;
+
 const DISBURSED_STATUSES = ['APPROVED', 'ACTIVE', 'LIQUIDATED'] as const;
 const OPEN_PORTFOLIO_STATUSES = ['APPROVED', 'ACTIVE'] as const;
 const ACTIVE_BORROWER_STATUSES = ['APPROVED', 'ACTIVE'] as const;
@@ -16,6 +20,11 @@ export interface CustomerSegmentation {
   clientesNuevos: number;
   clientesRecurrentes: number;
   porScore: Record<string, number>;
+}
+
+export interface WeeklyTrendPoint {
+  weekStart: string;
+  capitalCobrado: number;
 }
 
 export interface CollectorBreakdown {
@@ -236,5 +245,53 @@ export class BiService {
         carteraVencida: round2(carteraVencida),
       };
     });
+  }
+
+  /** Capital cobrado por semana, últimas TREND_WEEKS semanas (lunes a domingo, hora Ciudad de México). */
+  async getWeeklyTrends(): Promise<WeeklyTrendPoint[]> {
+    const today = todayInMexicoCity();
+    const daysSinceMonday = (today.getUTCDay() + 6) % 7;
+    const currentWeekStart = new Date(
+      today.getTime() - daysSinceMonday * MS_PER_DAY,
+    );
+    const earliestWeekStart = new Date(
+      currentWeekStart.getTime() - (TREND_WEEKS - 1) * MS_PER_WEEK,
+    );
+
+    const payments = await this.prisma.payment.findMany({
+      where: { receivedAt: { gte: earliestWeekStart } },
+      select: { amount: true, receivedAt: true },
+    });
+
+    const buckets = new Map<string, number>();
+    for (let i = 0; i < TREND_WEEKS; i++) {
+      const weekStart = new Date(earliestWeekStart.getTime() + i * MS_PER_WEEK);
+      buckets.set(weekStart.toISOString().slice(0, 10), 0);
+    }
+
+    for (const payment of payments) {
+      const weekIndex = Math.min(
+        Math.max(
+          Math.floor(
+            (payment.receivedAt.getTime() - earliestWeekStart.getTime()) /
+              MS_PER_WEEK,
+          ),
+          0,
+        ),
+        TREND_WEEKS - 1,
+      );
+      const weekStart = new Date(
+        earliestWeekStart.getTime() + weekIndex * MS_PER_WEEK,
+      );
+      const key = weekStart.toISOString().slice(0, 10);
+      buckets.set(key, (buckets.get(key) ?? 0) + Number(payment.amount));
+    }
+
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([weekStart, capitalCobrado]) => ({
+        weekStart,
+        capitalCobrado: round2(capitalCobrado),
+      }));
   }
 }
