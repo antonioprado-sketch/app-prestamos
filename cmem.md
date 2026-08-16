@@ -279,8 +279,19 @@ MySQL persistió sin pérdida de datos/schema. El contenedor `worker` arrancó s
 especificar servicio en el `up` y se volvió a detener (mismo comportamiento documentado
 desde Fase 1 — `main-worker.ts` no existe todavía, no es un bug nuevo).
 
-Pendiente de Fase 5: mapa de distribución por zona (Leaflet, ya instalado desde el corte
-del mapa admin de Fase 4) — cierra Fase 5 del todo.
+**Quinto corte — distribución por zona, cierra Fase 5 del todo**: mismo patrón que el
+corte de tendencia — la spec no definía qué es "zona" ni dónde mostrarla, se confirmó con
+el usuario antes de tocar código: agrupar por `Customer.ciudad`/`colonia` (dirección de
+onboarding ya existente, sin depender de que el cliente comparta ubicación GPS opcional),
+tabla en `AdminBiPage` en vez de sobre el mapa Leaflet. Reusa `ScoreService.getAll()`
+igual que la segmentación de clientes.
+
+Con esto, Fase 5 quedó **100% completa (5 cortes)**: KPIs financieros, segmentación de
+clientes, desglose por cobrador, tendencia semanal (Recharts) y distribución por zona.
+Roadmap explícito de la spec (`BI: KPIs y dashboards`) cerrado del todo. Patrón que se
+repitió en toda Fase 5: cada vez que la spec dejaba una métrica sin definir del todo
+(ventana de tiempo, granularidad, dónde mostrarla), preguntar antes de asumir — nunca se
+inventó un valor arbitrario.
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

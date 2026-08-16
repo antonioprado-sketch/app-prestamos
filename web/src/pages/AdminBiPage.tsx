@@ -29,6 +29,13 @@ interface WeeklyTrendPoint {
   capitalCobrado: number;
 }
 
+interface GeoZone {
+  ciudad: string;
+  colonia: string;
+  totalClientes: number;
+  porScore: Record<string, number>;
+}
+
 interface FinancialKpis {
   capitalColocado: number;
   capitalCobrado: number;
@@ -77,6 +84,7 @@ export function AdminBiPage() {
   const [kpis, setKpis] = useState<FinancialKpis | null>(null);
   const [collectors, setCollectors] = useState<CollectorBreakdown[]>([]);
   const [trends, setTrends] = useState<WeeklyTrendPoint[]>([]);
+  const [geoZones, setGeoZones] = useState<GeoZone[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -85,11 +93,13 @@ export function AdminBiPage() {
       apiFetch<FinancialKpis>('/admin/bi/kpis'),
       apiFetch<CollectorBreakdown[]>('/admin/bi/collectors'),
       apiFetch<WeeklyTrendPoint[]>('/admin/bi/trends'),
+      apiFetch<GeoZone[]>('/admin/bi/geo'),
     ])
-      .then(([kpisRes, collectorsRes, trendsRes]) => {
+      .then(([kpisRes, collectorsRes, trendsRes, geoRes]) => {
         setKpis(kpisRes);
         setCollectors(collectorsRes);
         setTrends(trendsRes);
+        setGeoZones(geoRes);
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudieron cargar los KPIs'))
       .finally(() => setLoading(false));
@@ -215,6 +225,47 @@ export function AdminBiPage() {
                           <td className="p-3 font-mono text-secondary">
                             {currency.format(c.carteraVencida)}
                           </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium text-secondary">Distribución por zona</p>
+              {geoZones.length === 0 ? (
+                <p className="text-xs text-secondary">
+                  Ningún cliente tiene ciudad/colonia registrada todavía.
+                </p>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-gray-200">
+                  <table className="w-full text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-xs text-secondary">
+                        <th className="p-3">Ciudad</th>
+                        <th className="p-3">Colonia</th>
+                        <th className="p-3">Clientes</th>
+                        <th className="p-3">Verde</th>
+                        <th className="p-3">Amarillo</th>
+                        <th className="p-3">Naranja</th>
+                        <th className="p-3">Rojo</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {geoZones.map((z) => (
+                        <tr
+                          key={`${z.ciudad}|${z.colonia}`}
+                          className="border-b border-gray-100 last:border-0"
+                        >
+                          <td className="p-3 text-secondary">{z.ciudad}</td>
+                          <td className="p-3 text-secondary">{z.colonia}</td>
+                          <td className="p-3 font-mono text-secondary">{z.totalClientes}</td>
+                          <td className="p-3 font-mono text-secondary">{z.porScore.GREEN ?? 0}</td>
+                          <td className="p-3 font-mono text-secondary">{z.porScore.YELLOW ?? 0}</td>
+                          <td className="p-3 font-mono text-secondary">{z.porScore.ORANGE ?? 0}</td>
+                          <td className="p-3 font-mono text-secondary">{z.porScore.RED ?? 0}</td>
                         </tr>
                       ))}
                     </tbody>

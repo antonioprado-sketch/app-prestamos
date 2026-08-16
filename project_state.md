@@ -290,7 +290,15 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 140/140 PAS
 
 **Nota operativa de la sesión:** Docker Desktop se cayó a mitad de un `docker compose up` (pull de imagen interrumpido) durante este corte — se perdió momentáneamente la conexión a MySQL para los e2e. El usuario reinició Docker Desktop manualmente; el volumen de MySQL persistió (no se perdió el schema/datos). El contenedor `worker` arrancó solo al hacer `docker compose up -d` sin especificar servicio — se volvió a detener (`docker compose stop worker`) porque `main-worker.ts` sigue sin existir (mismo comportamiento ya documentado desde Fase 1, no es un bug nuevo).
 
-**Fase 5: 4 de 5 puntos del roadmap hechos.** Pendiente confirmar con el usuario: mapa de distribución por zona (Leaflet, ya instalado desde el corte del mapa admin de Fase 4) — cierra Fase 5 del todo.
+**Distribución por zona, quinto corte — cierra Fase 5 (2026-08-15):** confirmado con el usuario en dos preguntas explícitas (la spec solo decía "distribución por zona (Leaflet)", sin definir qué es "zona" ni dónde mostrarla): agrupar por `Customer.ciudad`/`colonia` (dirección de onboarding, ya existente — no depende de que el cliente haya compartido ubicación GPS opcional), mostrado como tabla en `AdminBiPage` (no sobre el mapa Leaflet).
+
+- `BiService.getGeoDistribution()`: agrupa clientes por `ciudad`+`colonia`, cuenta total y desglose por nivel de score (reusa `ScoreService.getAll()`, mismo patrón que la segmentación de clientes). Clientes sin ciudad ni colonia se excluyen (no hay zona que asignarles); con una sola pero no la otra, la faltante se etiqueta `"Sin ciudad"`/`"Sin colonia"`.
+- `GET /api/v1/admin/bi/geo` (`@Roles('ADMIN')`, coincide exacto con el nombre de ruta que ya listaba la spec).
+- Frontend: `AdminBiPage` agrega tabla "Distribución por zona" (ciudad, colonia, total, y las 4 columnas de score).
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 143/143 PASS con `--runInBand` (140 anteriores + 3 nuevos en `bi.e2e-spec.ts`: 401/403, y un cliente con ciudad/colonia únicas nuevas aparece en su propia zona con `totalClientes=1` y `porScore.GREEN=1`). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/geo` devuelve la zona real de la BD de dev (`CDMX`/`Col`, 1 cliente, GREEN). No verificado visualmente.
+
+**Fase 5: 100% completa (5 cortes)** — KPIs financieros, segmentación de clientes, desglose por cobrador, gráfica de tendencia semanal (Recharts) y distribución por zona. Roadmap explícito de la spec (`BI: KPIs y dashboards`) cerrado del todo. Quedan Fases 6-9 del roadmap general (PWA, seguridad/QA, producción, escalabilidad), a confirmar con el usuario.
 
 ### Qué existe
 

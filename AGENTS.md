@@ -4,7 +4,7 @@ Contexto operativo persistente para cualquier sesión de Codex en este repo. Est
 
 ## Estado del proyecto
 
-Fases 1-4 completas (fundaciones, cliente, administrador, cobrador). Fase 5 (BI) en curso, 4 de 5 cortes hechos: KPIs núcleo financiero, segmentación de clientes, desglose por cobrador (`GET /admin/bi/kpis`, `/admin/bi/collectors`) y gráfica de tendencia semanal (`GET /admin/bi/trends`, Recharts). Pendiente: mapa de distribución por zona (Leaflet, ya instalado). Detalle completo corte por corte en `project_state.md`.
+Fases 1-5 completas (fundaciones, cliente, administrador, cobrador, BI). BI: KPIs núcleo financiero, segmentación de clientes, desglose por cobrador, gráfica de tendencia semanal (Recharts) y distribución por zona (`GET /admin/bi/kpis`, `/collectors`, `/trends`, `/geo`). Quedan Fases 6-9 del roadmap general (PWA, seguridad/QA, producción, escalabilidad), sin arrancar. Detalle completo corte por corte en `project_state.md`.
 
 ## Arquitectura
 

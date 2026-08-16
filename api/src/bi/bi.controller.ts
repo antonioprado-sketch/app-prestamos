@@ -24,4 +24,9 @@ export class BiController {
   async getTrends() {
     return this.bi.getWeeklyTrends();
   }
+
+  @Get('geo')
+  async getGeoDistribution() {
+    return this.bi.getGeoDistribution();
+  }
 }

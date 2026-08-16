@@ -15,6 +15,7 @@ describe('BI (e2e)', () => {
   const collectorClientPhone = '5588001177';
   const collectorPhone = '5588001166';
   const trendsClientPhone = '5588001155';
+  const geoClientPhone = '5588001144';
   const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
 
@@ -52,6 +53,7 @@ describe('BI (e2e)', () => {
     await prisma.user.deleteMany({ where: { phone: collectorClientPhone } });
     await prisma.user.deleteMany({ where: { phone: collectorPhone } });
     await prisma.user.deleteMany({ where: { phone: trendsClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: geoClientPhone } });
     await setupApp.close();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -68,6 +70,7 @@ describe('BI (e2e)', () => {
     await prisma.user.deleteMany({ where: { phone: collectorClientPhone } });
     await prisma.user.deleteMany({ where: { phone: collectorPhone } });
     await prisma.user.deleteMany({ where: { phone: trendsClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: geoClientPhone } });
     await app.close();
   });
 
@@ -419,5 +422,59 @@ describe('BI (e2e)', () => {
       35,
       2,
     );
+  });
+
+  it('GET /admin/bi/geo requiere token', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/geo')
+      .expect(401);
+  });
+
+  it('GET /admin/bi/geo rechaza a un rol distinto de ADMIN', async () => {
+    const clientToken = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/geo')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .expect(403);
+  });
+
+  it('GET /admin/bi/geo agrupa clientes nuevos por ciudad/colonia', async () => {
+    const adminToken = await loginAdmin();
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: geoClientPhone, password: 'Abcdef12!' });
+    const clientToken = await loginClient(geoClientPhone);
+    await request(app.getHttpServer())
+      .patch('/api/v1/customers/me')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        nombres: 'Geo',
+        apellidos: 'Test',
+        aval: 'Aval',
+        avalPhone: '5500000000',
+        calle: 'Calle',
+        numero: '1',
+        colonia: 'Colonia BI Test Única',
+        cp: '06000',
+        ciudad: 'Ciudad BI Test Única',
+        estado: 'CDMX',
+        referencias: 'Ref',
+      })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/admin/bi/geo')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+
+    const zone = res.body.find(
+      (z: { ciudad: string; colonia: string }) =>
+        z.ciudad === 'Ciudad BI Test Única' &&
+        z.colonia === 'Colonia BI Test Única',
+    );
+    expect(zone).toBeDefined();
+    expect(zone.totalClientes).toBe(1);
+    expect(zone.porScore.GREEN).toBe(1);
   });
 });

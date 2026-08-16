@@ -22,6 +22,13 @@ export interface CustomerSegmentation {
   porScore: Record<string, number>;
 }
 
+export interface GeoZone {
+  ciudad: string;
+  colonia: string;
+  totalClientes: number;
+  porScore: Record<string, number>;
+}
+
 export interface WeeklyTrendPoint {
   weekStart: string;
   capitalCobrado: number;
@@ -293,5 +300,45 @@ export class BiService {
         weekStart,
         capitalCobrado: round2(capitalCobrado),
       }));
+  }
+
+  /** Clientes agrupados por ciudad/colonia (dirección de onboarding), con desglose de score por zona. */
+  async getGeoDistribution(): Promise<GeoZone[]> {
+    const [customers, scores] = await Promise.all([
+      this.prisma.customer.findMany({
+        select: { phone: true, ciudad: true, colonia: true },
+      }),
+      this.score.getAll(),
+    ]);
+
+    const levelByPhone = new Map(scores.map((s) => [s.customerPhone, s.level]));
+    const zones = new Map<string, GeoZone>();
+
+    for (const customer of customers) {
+      if (!customer.ciudad && !customer.colonia) continue;
+
+      const ciudad = customer.ciudad ?? 'Sin ciudad';
+      const colonia = customer.colonia ?? 'Sin colonia';
+      const key = `${ciudad}|${colonia}`;
+
+      let zone = zones.get(key);
+      if (!zone) {
+        zone = {
+          ciudad,
+          colonia,
+          totalClientes: 0,
+          porScore: Object.fromEntries(SCORE_LEVELS.map((l) => [l, 0])),
+        };
+        zones.set(key, zone);
+      }
+
+      zone.totalClientes++;
+      const level = levelByPhone.get(customer.phone) ?? 'GREEN';
+      zone.porScore[level] = (zone.porScore[level] ?? 0) + 1;
+    }
+
+    return Array.from(zones.values()).sort(
+      (a, b) => b.totalClientes - a.totalClientes,
+    );
   }
 }
