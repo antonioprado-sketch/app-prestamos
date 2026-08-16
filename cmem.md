@@ -245,9 +245,19 @@ Testeado con un enfoque de deltas (antes/después de crear un préstamo con cuot
 backdateada) en vez de igualdad absoluta, porque el endpoint agrega sobre TODA la BD —
 más robusto frente a datos residuales de otros tests o de uso manual previo.
 
-Pendiente de Fase 5: desglose por cobrador, segmentación de clientes, gráficas de
-tendencia (Recharts, librería nueva) y mapa de distribución por zona (Leaflet, ya
-instalado desde el corte del mapa admin de Fase 4).
+**Segundo corte — segmentación de clientes**: agregado al mismo `GET /admin/bi/kpis`
+(spec agrupa clientes bajo la misma sección de KPIs, sin ruta aparte) — `totalClientes`,
+`clientesActivos`, `clientesNuevos` (reusa `Customer.isNewCustomer`), `clientesRecurrentes`
+(>1 préstamo), `porScore` (reusa `ScoreService.getAll()`). Bug real en el e2e (no en
+producción): el test asumía un cliente "nuevo en la BD" que en realidad ya lo había
+registrado un test anterior del mismo archivo — el delta de `totalClientes`/
+`clientesNuevos` no cuadraba porque ya estaba contado en el snapshot "antes". Refuerza
+el patrón de deltas ya documentado: hay que rastrear bien qué fixture es realmente nuevo
+en cada punto del archivo, no solo comparar antes/después a ciegas.
+
+Pendiente de Fase 5: desglose por cobrador, gráficas de tendencia (Recharts, librería
+nueva) y mapa de distribución por zona (Leaflet, ya instalado desde el corte del mapa
+admin de Fase 4).
 
 ## Patrones y convenciones que se repitieron (documentados en CLAUDE.md)
 

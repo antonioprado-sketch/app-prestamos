@@ -1,11 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BusinessRulesService } from '../configuration/business-rules.service';
+import { ScoreService } from '../score/score.service';
 import { todayInMexicoCity } from '../loans/loan-quote';
 import { calculateLoanPenalty } from '../loans/loan-penalty';
 
 const DISBURSED_STATUSES = ['APPROVED', 'ACTIVE', 'LIQUIDATED'] as const;
 const OPEN_PORTFOLIO_STATUSES = ['APPROVED', 'ACTIVE'] as const;
+const ACTIVE_BORROWER_STATUSES = ['APPROVED', 'ACTIVE'] as const;
+const SCORE_LEVELS = ['GREEN', 'YELLOW', 'ORANGE', 'RED'] as const;
+
+export interface CustomerSegmentation {
+  totalClientes: number;
+  clientesActivos: number;
+  clientesNuevos: number;
+  clientesRecurrentes: number;
+  porScore: Record<string, number>;
+}
 
 export interface FinancialKpis {
   capitalColocado: number;
@@ -17,6 +28,7 @@ export interface FinancialKpis {
   multasAcumuladas: number;
   multasCobradas: number;
   loansByStatus: Record<string, number>;
+  customers: CustomerSegmentation;
 }
 
 function round2(value: number): number {
@@ -28,25 +40,35 @@ export class BiService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly businessRules: BusinessRulesService,
+    private readonly score: ScoreService,
   ) {}
 
   async getFinancialKpis(): Promise<FinancialKpis> {
-    const [openLoans, paymentTotals, colocadoTotal, statusGroups, rules] =
-      await Promise.all([
-        this.prisma.loan.findMany({
-          where: { status: { in: [...OPEN_PORTFOLIO_STATUSES] } },
-          include: { schedule: true },
-        }),
-        this.prisma.payment.aggregate({
-          _sum: { amount: true, penaltyApplied: true },
-        }),
-        this.prisma.loan.aggregate({
-          where: { status: { in: [...DISBURSED_STATUSES] } },
-          _sum: { amount: true },
-        }),
-        this.prisma.loan.groupBy({ by: ['status'], _count: true }),
-        this.businessRules.get(),
-      ]);
+    const [
+      openLoans,
+      paymentTotals,
+      colocadoTotal,
+      statusGroups,
+      rules,
+      customers,
+    ] = await Promise.all([
+      this.prisma.loan.findMany({
+        where: { status: { in: [...OPEN_PORTFOLIO_STATUSES] } },
+        include: { schedule: true },
+      }),
+      this.prisma.payment.aggregate({
+        _sum: { amount: true, penaltyApplied: true },
+      }),
+      this.prisma.loan.aggregate({
+        where: { status: { in: [...DISBURSED_STATUSES] } },
+        _sum: { amount: true },
+      }),
+      this.prisma.loan.groupBy({ by: ['status'], _count: true }),
+      this.businessRules.get(),
+      this.prisma.customer.findMany({
+        select: { isNewCustomer: true, loans: { select: { status: true } } },
+      }),
+    ]);
 
     const today = todayInMexicoCity();
     let capitalPendiente = 0;
@@ -103,6 +125,46 @@ export class BiService {
       multasAcumuladas: round2(multasAcumuladas),
       multasCobradas: round2(multasCobradas),
       loansByStatus,
+      customers: await this.getCustomerSegmentation(customers),
+    };
+  }
+
+  private async getCustomerSegmentation(
+    customers: {
+      isNewCustomer: boolean;
+      loans: { status: string }[];
+    }[],
+  ): Promise<CustomerSegmentation> {
+    let clientesActivos = 0;
+    let clientesNuevos = 0;
+    let clientesRecurrentes = 0;
+
+    for (const customer of customers) {
+      if (customer.isNewCustomer) clientesNuevos++;
+      if (
+        customer.loans.some((l) =>
+          (ACTIVE_BORROWER_STATUSES as readonly string[]).includes(l.status),
+        )
+      ) {
+        clientesActivos++;
+      }
+      if (customer.loans.length > 1) clientesRecurrentes++;
+    }
+
+    const porScore: Record<string, number> = Object.fromEntries(
+      SCORE_LEVELS.map((level) => [level, 0]),
+    );
+    const scores = await this.score.getAll();
+    for (const s of scores) {
+      porScore[s.level] = (porScore[s.level] ?? 0) + 1;
+    }
+
+    return {
+      totalClientes: customers.length,
+      clientesActivos,
+      clientesNuevos,
+      clientesRecurrentes,
+      porScore,
     };
   }
 }

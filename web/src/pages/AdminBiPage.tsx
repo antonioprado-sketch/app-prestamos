@@ -4,6 +4,14 @@ import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 
+interface CustomerSegmentation {
+  totalClientes: number;
+  clientesActivos: number;
+  clientesNuevos: number;
+  clientesRecurrentes: number;
+  porScore: Record<string, number>;
+}
+
 interface FinancialKpis {
   capitalColocado: number;
   capitalCobrado: number;
@@ -14,6 +22,7 @@ interface FinancialKpis {
   multasAcumuladas: number;
   multasCobradas: number;
   loansByStatus: Record<string, number>;
+  customers: CustomerSegmentation;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -26,6 +35,13 @@ const STATUS_LABEL: Record<string, string> = {
   ACTIVE: 'Activas',
   LIQUIDATED: 'Liquidadas',
   CANCELLED: 'Canceladas',
+};
+
+const SCORE_LABEL: Record<string, string> = {
+  GREEN: 'Verde',
+  YELLOW: 'Amarillo',
+  ORANGE: 'Naranja',
+  RED: 'Rojo',
 };
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
@@ -103,6 +119,25 @@ export function AdminBiPage() {
                     label={STATUS_LABEL[status] ?? status}
                     value={String(count)}
                   />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium text-secondary">Clientes</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <StatTile label="Total" value={String(kpis.customers.totalClientes)} />
+                <StatTile label="Activos" value={String(kpis.customers.clientesActivos)} />
+                <StatTile label="Nuevos" value={String(kpis.customers.clientesNuevos)} />
+                <StatTile label="Recurrentes" value={String(kpis.customers.clientesRecurrentes)} />
+              </div>
+            </div>
+
+            <div>
+              <p className="mb-2 text-sm font-medium text-secondary">Clientes por score</p>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {Object.entries(kpis.customers.porScore).map(([level, count]) => (
+                  <StatTile key={level} label={SCORE_LABEL[level] ?? level} value={String(count)} />
                 ))}
               </div>
             </div>

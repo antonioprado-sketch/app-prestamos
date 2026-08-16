@@ -261,7 +261,17 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 130/130 PAS
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 133/133 PASS con `--runInBand` (130 anteriores + 3 nuevos de `bi.e2e-spec.ts`: 401/403, y un test de deltas — crea un préstamo real con una cuota backdateada 5 días vencida y verifica que `capitalColocado`/`capitalPendiente`/`carteraVencida`/`multasAcumuladas`/`loansByStatus` se muevan exactamente los montos esperados antes/después, sin depender de que la BD esté vacía). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/kpis` devuelve un objeto consistente con el estado real de la BD de dev. No verificado visualmente.
 
-**Fase 5: primer corte hecho.** Pendiente confirmar con el usuario: desglose por cobrador, segmentación de clientes (nuevos/score/recurrencia), gráficas de tendencia (Recharts) y mapa de distribución por zona (ya hay Leaflet instalado desde Fase 4).
+**Segmentación de clientes, segundo corte (2026-08-15):** confirmado con el usuario. Se agregó al mismo `GET /admin/bi/kpis` (la spec agrupa "clientes activos/nuevos/score/recurrencia" bajo la misma sección 13 de KPIs, sin ruta aparte en la tabla de endpoints) en vez de crear un endpoint nuevo.
+
+- `BiService.getCustomerSegmentation()`: `totalClientes`, `clientesActivos` (con préstamo `APPROVED`/`ACTIVE`), `clientesNuevos` (reusa `Customer.isNewCustomer`, ya existente), `clientesRecurrentes` (más de un préstamo, cualquier estado), `porScore` (reusa `ScoreService.getAll()`, mismo servicio que ya usa `AdminCustomersPage`/`AdminLoansPage`).
+- Respuesta anidada: `{ ...kpis financieros, customers: { ... } }`.
+- Frontend: `AdminBiPage` — dos secciones de tiles nuevas ("Clientes" y "Clientes por score").
+
+**Bug real encontrado en el e2e** (no en producción): la primera versión del test asumía que el cliente de prueba era nuevo en la BD, pero un test anterior del mismo archivo ya lo había registrado — el delta de `totalClientes`/`clientesNuevos` esperado no coincidía porque el cliente ya estaba contado en el snapshot "antes". Corregido quitando esas dos aserciones inválidas (el resto de los deltas, sí correctos, se mantuvieron). Recordatorio del patrón ya documentado: los tests de endpoints que agregan sobre toda la BD deben aislar bien qué fixture es realmente nuevo en cada momento del archivo, no solo comparar antes/después a ciegas.
+
+Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 134/134 PASS con `--runInBand` (133 anteriores + 1 nuevo: verifica que un cliente con más de un préstamo cuenta como recurrente, con un fixture aparte para no chocar con el préstamo sin liquidar del test anterior). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/kpis` devuelve `customers` con el desglose real de la BD de dev (5 clientes, 4 nuevos, todos score verde). No verificado visualmente.
+
+**Fase 5: dos cortes hechos.** Pendiente confirmar con el usuario: desglose por cobrador, gráficas de tendencia (Recharts) y mapa de distribución por zona (ya hay Leaflet instalado desde Fase 4).
 
 ### Qué existe
 

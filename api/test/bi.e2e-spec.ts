@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
@@ -10,13 +11,14 @@ describe('BI (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   const clientPhone = '5588001199';
+  const recurrentClientPhone = '5588001188';
   const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
 
-  async function loginClient(): Promise<string> {
+  async function loginClient(phone = clientPhone): Promise<string> {
     const res = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
-      .send({ phone: clientPhone, password: 'Abcdef12!' });
+      .send({ phone, password: 'Abcdef12!' });
     return res.body.accessToken;
   }
 
@@ -43,6 +45,7 @@ describe('BI (e2e)', () => {
     await setupApp.init();
     prisma = setupModule.get(PrismaService);
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: recurrentClientPhone } });
     await setupApp.close();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -55,13 +58,12 @@ describe('BI (e2e)', () => {
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: recurrentClientPhone } });
     await app.close();
   });
 
   it('GET /admin/bi/kpis requiere token', async () => {
-    await request(app.getHttpServer())
-      .get('/api/v1/admin/bi/kpis')
-      .expect(401);
+    await request(app.getHttpServer()).get('/api/v1/admin/bi/kpis').expect(401);
   });
 
   it('GET /admin/bi/kpis rechaza a un rol distinto de ADMIN', async () => {
@@ -139,7 +141,10 @@ describe('BI (e2e)', () => {
     const after = await getKpis(adminToken);
 
     expect(after.capitalColocado - before.capitalColocado).toBeCloseTo(1000, 2);
-    expect(after.capitalPendiente - before.capitalPendiente).toBeCloseTo(1400, 2);
+    expect(after.capitalPendiente - before.capitalPendiente).toBeCloseTo(
+      1400,
+      2,
+    );
     expect(after.carteraVencida - before.carteraVencida).toBeCloseTo(
       Number(schedule[0].amount),
       2,
@@ -150,5 +155,79 @@ describe('BI (e2e)', () => {
     );
     const beforeApproved = before.loansByStatus.APPROVED ?? 0;
     expect(after.loansByStatus.APPROVED - beforeApproved).toBe(1);
+
+    expect(
+      after.customers.clientesActivos - before.customers.clientesActivos,
+    ).toBe(1);
+    expect(
+      after.customers.clientesRecurrentes -
+        before.customers.clientesRecurrentes,
+    ).toBe(0);
+    const beforeYellow = before.customers.porScore.YELLOW ?? 0;
+    expect(after.customers.porScore.YELLOW - beforeYellow).toBe(1);
+  });
+
+  it('un cliente con más de un préstamo cuenta como recurrente', async () => {
+    const adminToken = await loginAdmin();
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: recurrentClientPhone, password: 'Abcdef12!' });
+    const clientToken = await loginClient(recurrentClientPhone);
+    await request(app.getHttpServer())
+      .patch('/api/v1/customers/me')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        nombres: 'Recurrente',
+        apellidos: 'Test',
+        aval: 'Aval',
+        avalPhone: '5500000000',
+        calle: 'Calle',
+        numero: '1',
+        colonia: 'Col',
+        cp: '06000',
+        ciudad: 'CDMX',
+        estado: 'CDMX',
+        referencias: 'Ref',
+      })
+      .expect(200);
+    const before = await getKpis(adminToken);
+
+    const loan1 = await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+
+    const TINY_PNG_BASE64 =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+    await request(app.getHttpServer())
+      .post(`/api/v1/loans/${loan1.body.id}/pagare`)
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        signature: `data:image/png;base64,${TINY_PNG_BASE64}`,
+        fullName: 'BI Test',
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/loans/${loan1.body.id}/approve`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    await request(app.getHttpServer())
+      .post(`/api/v1/loans/${loan1.body.id}/payments`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ amount: 1400, idempotencyKey: randomUUID() })
+      .expect(201);
+
+    const loan2 = await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({ amount: 500, model: 'WEEKLY', openingDate: '2026-08-17' })
+      .expect(201);
+    expect(loan2.body.id).not.toBe(loan1.body.id);
+
+    const after = await getKpis(adminToken);
+    expect(
+      after.customers.clientesRecurrentes -
+        before.customers.clientesRecurrentes,
+    ).toBe(1);
   });
 });
