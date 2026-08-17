@@ -2,9 +2,9 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-17 (Fase 6 completa).
+Última actualización: 2026-08-17 (Fase 7 en curso, primer corte).
 
-## Fase actual: Fase 6 — PWA (100% completa). Siguen Fases 7-9 del roadmap general (seguridad/QA, producción, escalabilidad), a confirmar con el usuario.
+## Fase actual: Fase 7 — Seguridad y QA (en curso, sin plan escrito task-por-task). Fases 1-6 completas.
 
 Fase 1 completa: `docs/superpowers/plans/2026-08-13-fase1-fundaciones.md` (10/10 tasks). Spec de diseño: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`. Fase 2 (calculadora/quote, onboarding por pasos, documentos, video, pagaré PDF, solicitud + estados) se está construyendo incrementalmente sin plan escrito previo — cada corte se confirma con el usuario antes de implementar.
 
@@ -331,6 +331,21 @@ Verificado 2026-08-17: 10/10 tests e2e nuevos (`notifications.e2e-spec.ts`), **1
 **Arreglado aparte (2026-08-17, mismo día):** el test de `loan-quote.spec.ts` con fecha hardcodeada (`2026-08-15`, ya en el pasado) se corrigió moviendo `openingDate` un mes exacto (`2026-09-15`) y recalculando a mano las 10 fechas esperadas del calendario quincenal (el algoritmo es periódico por mes calendario, así que desplazar el ancla un mes desplaza toda la secuencia el mismo mes). `npm test` API 66/66 PASS de nuevo. Commit aparte, no mezclado con notificaciones.
 
 Con esto, **Fase 6 queda 100% completa (3 cortes)**: instalación + caching, onboarding guiado, Web Push. Roadmap explícito de la spec (`PWA: instalación, push, caching, onboarding guiado`) cerrado del todo.
+
+## Fase 7 — Seguridad y QA (en curso)
+
+Fase grande sin plan escrito task-por-task ("auditoría, pruebas, accesibilidad" — spec sección 8/9). Al arrancar se auditó el estado actual contra la sección 9 de la spec antes de proponer nada: bloqueo por fuerza bruta (5 intentos), URLs firmadas de documentos (5 min), RBAC+ownership 404, validación global, Argon2id, headers `helmet()` y `class-validator` ya estaban implementados desde fases anteriores. Se encontraron dos brechas reales: el refresh token viajaba en el body JSON y el frontend lo guardaba en `localStorage` (la spec pide cookie `HttpOnly+Secure+SameSite`, línea 331-332 de la spec) y `helmet()` corría con la CSP por defecto sin revisar. Confirmado con el usuario vía pregunta explícita: arrancar por el refresh token a cookie (el hallazgo de mayor impacto real, aunque el cambio más invasivo).
+
+**Primer corte — refresh token a cookie HttpOnly (2026-08-17):**
+
+- Backend: `cookie-parser` nuevo (`app.use(cookieParser())` en `main.ts`). `AuthController` (`login`/`refresh`/`change-password`) ahora recibe `@Res({ passthrough: true })` y separa `refreshToken` del resto del body con destructuring antes de devolver la respuesta — el token nunca llega al JSON, se manda solo vía `res.cookie()`. `refresh`/`logout` leen el token de `req.cookies.refreshToken` en vez de un DTO de body — se borró `dto/refresh.dto.ts` (ya no se usa). Opciones de cookie centralizadas en `auth/refresh-cookie.ts` (`refreshCookieOptions()`/`clearRefreshCookieOptions()`): `httpOnly`, `sameSite: 'strict'`, `secure` solo en `NODE_ENV=production` (dev sigue sobre HTTP plano), `path: '/api/v1/auth'` (la cookie no viaja en cada request, solo hace falta en los tres endpoints de auth que la leen).
+- Frontend: `apiFetch`/`refreshTokens()` (`web/src/lib/api.ts`) agregan `credentials: 'include'` para que el navegador mande la cookie sola; se borró todo el manejo manual de `refreshToken` en `localStorage` (`store/auth.tsx`: `login`/`logout`/`changePassword`) — el frontend ya no ve ni toca el refresh token en ningún momento.
+- **Bug real encontrado en el primer intento del e2e** (no producción): los tests e2e de Nest se arman con `Test.createTestingModule({imports:[AppModule]}).compile()` + `createNestApplication()`, que **no** pasa por `main.ts`'s `bootstrap()` — `cookie-parser` nunca se registraba en el `TestingModule`, así que `req.cookies` quedaba `undefined` y todo `/auth/refresh` fallaba con `401` silenciosamente (dos de los tests viejos "pasaban" igual porque esperaban justamente 401, sin darse cuenta de que era por la razón equivocada). Se agregó `app.use(cookieParser())` al `beforeAll` de `auth.e2e-spec.ts`, mismo patrón que ya usa `app.useGlobalPipes(new ValidationPipe())` ahí. Nota para cualquier corte futuro que dependa de middleware de Express agregado en `main.ts`: los e2e no lo heredan solos, hay que replicarlo en el `beforeAll` del test.
+- `auth.e2e-spec.ts` reescrito para el flujo por cookie: usa `request.agent(app.getHttpServer())` para persistir cookies entre llamadas dentro de un mismo test (como haría un navegador real), y `readCookie()` para leer/parsear `Set-Cookie` en los casos que arman la cookie a mano. Nuevo caso: `POST /auth/refresh` sin cookie devuelve `401`.
+
+Verificado 2026-08-17: 12/12 tests de `auth.e2e-spec.ts` (1 nuevo), **154/154 e2e total** corrido dos veces seguidas con `--runInBand` (idempotente). `npm test` API 66/66 PASS. Build/lint/tsc API y web en verde, `npm test` web 20/20 PASS (sin tests nuevos del lado web — es un cambio de transporte, no de UI). Probado contra el stack Docker real vía Nginx con `curl` + cookie jar: login devuelve `Set-Cookie: refreshToken=...; HttpOnly; SameSite=Strict; Path=/api/v1/auth` y el body **sin** `refreshToken`; refresh con la cookie devuelve `200` + nuevo `accessToken`; refresh sin cookie `401`; logout limpia la cookie (`Expires=...1970...`) y el refresh posterior vuelve a dar `401`. Usuario de prueba borrado después.
+
+Pendiente de Fase 7: CSP/headers endurecidos, suite de tests de seguridad explícita (fuerza bruta, manipulación de roles, acceso a documentos ajenos — mayormente ya cubierto por tests de ownership existentes pero sin consolidar como categoría propia), auditoría de accesibilidad WCAG 2.2 AA, E2E de navegador real (Playwright, todavía no existe en el proyecto). Próximo corte a confirmar con el usuario.
 
 ### Qué existe
 

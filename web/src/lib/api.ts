@@ -18,17 +18,13 @@ export function setAccessToken(token: string | null) {
 }
 
 async function refreshTokens() {
-  const refreshToken = localStorage.getItem('refreshToken');
-  if (!refreshToken) throw new ApiError(401, 'Sin sesión');
   const res = await fetch(`${BASE}/auth/refresh`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refreshToken }),
+    credentials: 'include',
   });
   if (!res.ok) throw new ApiError(401, 'Sesión expirada');
   const data = await res.json();
   setAccessToken(data.accessToken);
-  localStorage.setItem('refreshToken', data.refreshToken);
   return data;
 }
 
@@ -37,6 +33,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
   const doFetch = (token?: string) =>
     fetch(`${BASE}${path}`, {
       ...options,
+      credentials: 'include',
       headers: {
         ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),

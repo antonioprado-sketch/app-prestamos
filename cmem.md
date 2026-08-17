@@ -475,3 +475,38 @@ antes de escribir el nuevo valor esperado, no solo "ajustado hasta que pasara").
 
 Con esto, **Fase 6 queda 100% completa (3 cortes)**: instalación + caching, onboarding
 guiado, Web Push.
+
+## Fase 7 — Seguridad y QA, primer corte: refresh token a cookie HttpOnly (2026-08-17)
+
+Fase 7 ("seguridad y QA completo") es grande y sin plan escrito. Antes de proponer nada
+se auditó el estado actual contra la sección 9 de la spec: la mayoría ya estaba cubierto
+desde fases anteriores (bloqueo por fuerza bruta, URLs firmadas de 5 min, RBAC+ownership
+404, `helmet()`, Argon2id). Se encontraron dos brechas reales: el refresh token viajaba
+en el body JSON del login y el frontend lo guardaba en `localStorage` (robable por XSS —
+la spec pide cookie `HttpOnly+Secure+SameSite`), y la CSP de `helmet()` nunca se revisó
+ni ajustó. El usuario confirmó arrancar por el refresh token (mayor impacto real de
+seguridad, aunque el cambio más invasivo de los cuatro candidatos presentados).
+
+**Cambio**: `cookie-parser` en `main.ts`; `AuthController` separa `refreshToken` del
+resto del body con destructuring antes de responder — nunca llega al JSON, solo vía
+`res.cookie()` (`httpOnly`, `sameSite: strict`, `secure` solo en producción, `path`
+acotado a `/api/v1/auth` para no viajar en cada request). Frontend: `credentials:
+'include'` en todos los fetch, se borró todo el manejo manual de `refreshToken` en
+`localStorage`.
+
+**Bug real en el primer intento del e2e**: los tests de Nest arman el `TestingModule`
+directo (`Test.createTestingModule({imports:[AppModule]}).compile()`), sin pasar nunca
+por `main.ts`'s `bootstrap()` — `cookie-parser` nunca se registraba ahí, así que
+`req.cookies` quedaba `undefined` y `/auth/refresh` fallaba `401` en silencio. Dos tests
+viejos "pasaban" igual porque esperaban justo `401`, sin que nadie notara que era por la
+razón equivocada — el bug solo se hizo visible al escribir un test que esperaba `200`
+real. Lección para cortes futuros: cualquier middleware de Express agregado en `main.ts`
+hay que replicarlo a mano en el `beforeAll` de los e2e que lo necesiten, no se hereda solo.
+
+12/12 tests de auth (1 nuevo), 154/154 e2e total (dos corridas, idempotente), 66/66 unit,
+20/20 web. Probado contra el stack Docker real vía Nginx con `curl`+cookie jar: ciclo
+completo login→refresh→logout verificado con las cookies reales (Set-Cookie con los
+atributos correctos, body sin refreshToken, 401 sin cookie, cookie limpiada en logout).
+
+Pendiente de Fase 7: CSP/headers endurecidos, suite de tests de seguridad explícita,
+accesibilidad WCAG 2.2 AA, E2E de navegador (Playwright, no existe todavía).

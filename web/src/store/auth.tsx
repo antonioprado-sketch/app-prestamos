@@ -40,38 +40,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (phone: string, password: string) => {
-    const res = await apiFetch<{ accessToken: string; refreshToken: string; user: AuthUser }>(
+    const res = await apiFetch<{ accessToken: string; user: AuthUser }>(
       '/auth/login',
       { method: 'POST', body: JSON.stringify({ phone, password }) },
     );
     setAccessToken(res.accessToken);
-    localStorage.setItem('refreshToken', res.refreshToken);
     setUser(res.user);
     if (res.user.role === 'CLIENT') captureLocation('LOGIN');
     return res.user;
   };
 
   const logout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
-    await apiFetch('/auth/logout', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    }).catch(() => undefined);
+    await apiFetch('/auth/logout', { method: 'POST' }).catch(() => undefined);
     setAccessToken(null);
-    localStorage.removeItem('refreshToken');
     setUser(null);
   };
 
   const changePassword = async (current: string, next: string) => {
-    const res = await apiFetch<{ accessToken: string; refreshToken: string }>(
-      '/auth/change-password',
-      {
-        method: 'POST',
-        body: JSON.stringify({ currentPassword: current, newPassword: next }),
-      },
-    );
+    const res = await apiFetch<{ accessToken: string }>('/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword: current, newPassword: next }),
+    });
     setAccessToken(res.accessToken);
-    localStorage.setItem('refreshToken', res.refreshToken);
     setUser((u) => (u ? { ...u, mustChangePassword: false } : u));
   };
 
