@@ -368,3 +368,28 @@ cierre de esta sesión: **no configurado** (`configured: false` en `/api/sync/st
 Requiere token + user id + Hub URL desde cmem.ai → Connect; el usuario no llegó a
 proveerlos en esta sesión. Nota de privacidad importante si se retoma: cloud sync sube
 narrativas de observaciones y texto completo de prompts a la cuenta cmem.ai del usuario.
+
+## Fase 6 — PWA, primer corte: instalación + caching (2026-08-15)
+
+Roadmap de Fase 6 tiene cuatro puntos (instalación, push, caching, onboarding guiado);
+confirmado con el usuario que instalación+caching es el más chico, se hace primero. El
+scaffold de `vite-plugin-pwa` ya existía desde Fase 1 (Task 7) pero solo precacheaba el
+shell — sin `workbox.runtimeCaching` ni soporte explícito iOS.
+
+- `web/index.html`: meta tags `apple-mobile-web-app-*` + `apple-touch-icon` (Safari
+  ignora el manifest para standalone, necesita sus propios tags), `viewport-fit=cover`.
+- `web/public/manifest.webmanifest`: campos que faltaban (`id`, `scope`,
+  `orientation`, `categories`). Íconos se dejaron sin `purpose: maskable` porque no se
+  generaron variantes con zona de seguridad — declararlo hubiera sido falso.
+- `web/vite.config.ts`: `NetworkFirst` acotado a GET de `/api/v1/**` excluyendo
+  `/api/v1/auth/**` (tokens nunca en disco), TTL 5 min, `networkTimeoutSeconds: 5`.
+  `navigateFallback: '/index.html'` con `/api/` en la denylist para que las rutas de
+  React Router sigan cargando el shell sin conexión. Verificado en el `dist/sw.js`
+  compilado, no solo en la config fuente.
+
+Verificado: build/lint/tsc web en verde, `npm test` web 8/8 PASS (sin tests nuevos, es
+config de build). `vite preview` real: manifest y `sw.js` sirven con `Content-Type`
+correcto. No verificado instalando en dispositivo real (extensión Chrome desconectada).
+
+Pendiente de Fase 6: Web Push (VAPID — el corte más grande, requiere modelo
+`Notification` + endpoints + service worker con push handler), onboarding guiado.

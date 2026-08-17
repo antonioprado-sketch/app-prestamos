@@ -298,7 +298,20 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 140/140 PAS
 
 Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 143/143 PASS con `--runInBand` (140 anteriores + 3 nuevos en `bi.e2e-spec.ts`: 401/403, y un cliente con ciudad/colonia únicas nuevas aparece en su propia zona con `totalClientes=1` y `porScore.GREEN=1`). Build/lint/tsc API y web en verde, `npm test` web 8/8 PASS. Probado contra el stack Docker real: `GET /admin/bi/geo` devuelve la zona real de la BD de dev (`CDMX`/`Col`, 1 cliente, GREEN). No verificado visualmente.
 
-**Fase 5: 100% completa (5 cortes)** — KPIs financieros, segmentación de clientes, desglose por cobrador, gráfica de tendencia semanal (Recharts) y distribución por zona. Roadmap explícito de la spec (`BI: KPIs y dashboards`) cerrado del todo. Quedan Fases 6-9 del roadmap general (PWA, seguridad/QA, producción, escalabilidad), a confirmar con el usuario.
+**Fase 5: 100% completa (5 cortes)** — KPIs financieros, segmentación de clientes, desglose por cobrador, gráfica de tendencia semanal (Recharts) y distribución por zona. Roadmap explícito de la spec (`BI: KPIs y dashboards`) cerrado del todo.
+
+## Fase 6 — PWA (en curso)
+
+**Instalación + caching, primer corte (2026-08-15):** confirmado con el usuario como el más chico de los cuatro puntos del roadmap (instalación, push, caching, onboarding guiado). El scaffold de `vite-plugin-pwa` ya existía desde Fase 1 (Task 7) pero sin caching en tiempo de ejecución configurado (solo precacheaba el shell de la app) y sin soporte explícito para iOS.
+
+- `web/index.html`: `<link rel="apple-touch-icon">` (reusa `icon-192.png`, no se generó un asset nuevo — no hay herramienta de imagen en este entorno para crear uno con el padding correcto), meta tags `apple-mobile-web-app-*` (Safari/iOS ignora el manifest para el modo standalone, necesita sus propios meta tags), `viewport-fit=cover`.
+- `web/public/manifest.webmanifest`: se agregaron campos que faltaban (`id`, `scope`, `orientation: portrait`, `categories`). Se dejaron los íconos como `purpose` implícito `"any"` — no se declararon como `maskable` porque no se generaron variantes con zona de seguridad, sería falso.
+- `web/vite.config.ts` — `workbox.runtimeCaching`: `NetworkFirst` acotado a **GET de `/api/v1/**` excluyendo `/api/v1/auth/**`** (nunca cachear tokens/credenciales en disco), TTL corto (5 min) y `networkTimeoutSeconds: 5` (cae a caché solo si la red tarda). `navigateFallback: '/index.html'` (con `/api/` en la denylist) para que las rutas de React Router sigan cargando el shell si el usuario navega sin conexión.
+- Verificado en el `dist/sw.js` generado que el runtime caching y el `navigateFallback` quedaron embebidos correctamente (grep sobre el archivo compilado, no solo la config fuente).
+
+Verificado 2026-08-15: `npm run build`/`lint`/`tsc -b` web en verde, `npm test` web 8/8 PASS (sin tests nuevos — es configuración de build, no lógica de aplicación). `vite preview` real: manifest servido con `Content-Type` correcto, `sw.js` responde `200`. No verificado en un dispositivo real instalando la PWA (extensión de Chrome sigue desconectada).
+
+Pendiente de Fase 6: Web Push (VAPID, el corte más grande — requiere modelo `Notification`, endpoints `/notifications`, service worker con push handler), onboarding guiado. Próximo corte a confirmar con el usuario.
 
 ### Qué existe
 
