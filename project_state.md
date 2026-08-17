@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-15.
+Última actualización: 2026-08-17.
 
 ## Fase actual: Fase 2 — Cliente (en curso, sin plan escrito task-por-task)
 
@@ -311,7 +311,11 @@ Verificado 2026-08-15: `npm test` API 66/66 PASS, `npm run test:e2e` 143/143 PAS
 
 Verificado 2026-08-15: `npm run build`/`lint`/`tsc -b` web en verde, `npm test` web 8/8 PASS (sin tests nuevos — es configuración de build, no lógica de aplicación). `vite preview` real: manifest servido con `Content-Type` correcto, `sw.js` responde `200`. No verificado en un dispositivo real instalando la PWA (extensión de Chrome sigue desconectada).
 
-Pendiente de Fase 6: Web Push (VAPID, el corte más grande — requiere modelo `Notification`, endpoints `/notifications`, service worker con push handler), onboarding guiado. Próximo corte a confirmar con el usuario.
+**Onboarding guiado, segundo corte (2026-08-17):** alcance confirmado con el usuario vía preguntas explícitas — tour de producto (no checklist de pasos pendientes), solo rol `CLIENT` (cobrador/admin quedan fuera de este corte). `WelcomeTour` (`web/src/components/WelcomeTour.tsx`): modal-carrusel de 4 slides (cotiza → completa tus datos → video de identidad → firma tu pagaré), se muestra una sola vez la primera vez que el cliente entra a `/app/cliente`, "Omitir" siempre visible. Persistencia en `localStorage` (`web/src/lib/tour.ts`, clave `onboardingTourSeen`) — mismo patrón dismissible-vía-localStorage que `LocationConsentBanner` (Fase 4), sin dependencia nueva ni backend. Se descartó spotlight/tooltips sobre elementos de la UI porque el dashboard del cliente es una sola pantalla con un botón — el flujo real que hay que explicar cruza varias rutas (calculadora→onboarding→documentos→video→pagaré), así que un carrusel explicativo cubre mejor ese caso que resaltar partes de una pantalla vacía.
+
+4/4 tests nuevos (`WelcomeTour.test.tsx`: primera vez se muestra y avanza, Omitir cierra y marca visto, no se muestra si ya fue visto, llega hasta "Empezar"), 12/12 tests web total. Build/lint/tsc web en verde. No verificado visualmente en navegador (extensión de Chrome sin sesión conectada en este corte).
+
+Pendiente de Fase 6: Web Push (VAPID — el corte más grande, requiere modelo `Notification`, endpoints `/notifications`, service worker con push handler). Único punto pendiente del roadmap de Fase 6.
 
 ### Qué existe
 

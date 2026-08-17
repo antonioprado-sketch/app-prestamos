@@ -393,3 +393,23 @@ correcto. No verificado instalando en dispositivo real (extensión Chrome descon
 
 Pendiente de Fase 6: Web Push (VAPID — el corte más grande, requiere modelo
 `Notification` + endpoints + service worker con push handler), onboarding guiado.
+
+## Fase 6 — PWA, segundo corte: onboarding guiado (2026-08-17)
+
+El usuario pidió explícitamente "onboarding guiado primero, push después". Spec solo
+listaba la palabra sin definir tipo — se confirmó con el usuario vía preguntas: **tour
+de producto** (no checklist de pasos pendientes) y **solo rol cliente** (cobrador/admin
+quedan fuera).
+
+Al revisar el dashboard del cliente (`DashboardShell`) para diseñar el tour, se vio que
+es una sola pantalla casi vacía (un botón) — spotlight/tooltips sobre elementos no tenía
+mucho que resaltar ahí. El flujo real a explicar cruza varias rutas (calculadora→
+onboarding→documentos→video→pagaré), así que se optó por un **modal-carrusel de 4
+slides** (`WelcomeTour.tsx`) en vez de spotlight sobre la UI — mismo concepto de "tour"
+pero adaptado a que el contenido a explicar no vive en una sola pantalla.
+
+Persistencia con el mismo patrón ya usado por `LocationConsentBanner` (Fase 4):
+`localStorage` con una clave dedicada (`web/src/lib/tour.ts`), sin backend ni
+dependencia nueva, "Omitir" siempre visible. 4/4 tests nuevos, 12/12 web total.
+
+Con esto, Fase 6 queda con **solo Web Push pendiente** para cerrarse del todo.
