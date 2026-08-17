@@ -510,3 +510,31 @@ atributos correctos, body sin refreshToken, 401 sin cookie, cookie limpiada en l
 
 Pendiente de Fase 7: CSP/headers endurecidos, suite de tests de seguridad explícita,
 accesibilidad WCAG 2.2 AA, E2E de navegador (Playwright, no existe todavía).
+
+## Fase 7, segundo corte: suite de tests de seguridad explícita (2026-08-17)
+
+El usuario pidió seguir con este punto directamente. Se auditó qué de las tres
+categorías que pide la spec (fuerza bruta, manipulación de roles, acceso a recursos
+ajenos) ya tenía cobertura: acceso a recursos ajenos sí (disperso por módulo, patrón
+ownership-404 ya establecido desde Fase 2), fuerza bruta **no tenía ningún test** pese a
+estar implementada desde Fase 1, manipulación de roles tampoco tenía nada explícito.
+
+Se creó `test/security.e2e-spec.ts` consolidando las tres categorías en un solo archivo
+con propósito de auditoría — decisión deliberada de **no duplicar** la matriz completa
+de ownership ya cubierta por módulo, solo agregar 2 casos representativos como ancla.
+
+El hallazgo más interesante del corte fue de diseño, no de bug: al revisar
+`RolesGuard` para escribir el test de "manipulación de rol" se confirmó que el JWT
+**nunca** lleva el rol como claim (`TokensService.issue()` solo firma `{ sub: phone }`)
+— `RolesGuard` hace `prisma.user.findUnique` por cada request para leer el rol actual.
+Esto significa que un token robado/manipulado no puede escalar privilegios modificando
+el payload (ni siquiera haría falta manipular la firma, el campo no existe), y que un
+cambio de rol de un usuario (o una baja) toma efecto **inmediatamente** en su próxima
+request, sin esperar a que expire o se revoque el access token de 15 min. Era una
+propiedad de diseño correcta ya presente desde Fase 1, simplemente nunca se había
+verificado con un test explícito ni quedaba documentada como tal — el test nuevo la deja
+protegida contra una regresión futura (ej. alguien "optimizando" el guard para leer el
+rol del JWT en vez de la BD, rompiendo esta garantía sin darse cuenta).
+
+6/6 tests nuevos, 160/160 e2e total (dos corridas, idempotente), 66/66 unit. Sin cambios
+de código fuente — solo tests, no hizo falta tocar Docker.
