@@ -538,3 +538,41 @@ rol del JWT en vez de la BD, rompiendo esta garantía sin darse cuenta).
 
 6/6 tests nuevos, 160/160 e2e total (dos corridas, idempotente), 66/66 unit. Sin cambios
 de código fuente — solo tests, no hizo falta tocar Docker.
+
+## Fase 7, tercer corte: CSP y headers de seguridad (2026-08-17)
+
+El hallazgo central de este corte fue de arquitectura, no de código: al ir a configurar
+la CSP se cayó en la cuenta de que `helmet()` en la API **no protege el HTML real de la
+SPA** — Nginx sirve `web/dist` directo como archivos estáticos, sin pasar nunca por la
+API. Una CSP "estricta" solo en `helmet()` (que era el estado antes de este corte) era
+casi cosmética para el riesgo real de XSS, porque el documento que un atacante querría
+inyectar no pasa por ahí. La CSP que importa tiene que vivir en Nginx.
+
+Antes de escribir la política se grepeó `web/src` completo buscando toda referencia a
+dominios externos, en vez de adivinar un allowlist y arreglarlo a los golpes: apareció
+`storage.googleapis.com`+`cdn.jsdelivr.net` (modelo/wasm de MediaPipe, ya documentado
+desde Fase 2) y `tile.openstreetmap.org` (Leaflet, desde Fase 4) — nada de fuentes
+externas (Inter cae a `system-ui`) ni scripts/estilos inline (`dist/index.html`
+verificado sin inline, todo `<script src>`). Con eso se armó una CSP `'self'`-por-defecto
+con esos tres dominios agregados solo donde hacen falta (`img-src`, `connect-src`,
+`worker-src`), más `data:`/`blob:` para el preview de firma (canvas) y video grabado.
+
+**Rollout en dos pasos, no directo a bloqueo** — dado el riesgo real de romper features
+ya verificadas con cámara real (video identidad) o el mapa (Fase 4), se desplegó primero
+como `Content-Security-Policy-Report-Only` y se probó con `claude-in-chrome` contra el
+stack Docker corriendo de verdad: login, mapa de ubicaciones (tiles cargando completos) y
+video de identidad (WASM de MediaPipe cargando y corriendo, verificado por su propio log
+interno de inicialización de OpenGL) — cero violaciones de CSP en consola en ningún caso.
+Recién ahí se pasó a bloqueo real (`Content-Security-Policy`) y se repitieron las mismas
+tres pruebas con el mismo resultado limpio. El único error visto en pantalla ("no se pudo
+acceder a la cámara") es esperado en un navegador automatizado sin cámara real, no tiene
+relación con la CSP.
+
+En la API, `helmet()`'s CSP quedó condicional a `NODE_ENV`: estricta en producción (API
+JSON puro, `default-src 'none'`), **desactivada del todo en dev** porque Swagger UI se
+monta en la API misma y necesita inline. Se agregaron también `X-Frame-Options`,
+`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` (cámara+geolocalización
+acotadas, resto denegado) en Nginx.
+
+No verificado en runtime real de `docker-compose.prod.yml` (no estaba levantado esta
+sesión) — la rama de producción de `main.ts` se validó solo por código/build.
