@@ -463,12 +463,15 @@ contenedor), suscripción y notificación probadas de punta a punta vía Nginx c
 usuario real, fila verificada en MySQL directo, `sw.js` servido por Nginx confirmado con
 el listener `push` embebido.
 
-**Hallazgo aparte, no arreglado**: al correr `npm test` de la API salió a la luz un test
-pre-existente y no relacionado (`loan-quote.spec.ts`, caso quincenal) con una fecha
-hardcodeada (`2026-08-15`) que ya pasó respecto a la fecha real de esta sesión
-(2026-08-17) — test rot por fecha fija, no un bug de este corte. No se tocó porque
-arreglarlo bien requiere recalcular las 10 fechas de calendario esperadas del mismo test,
-y no era parte de lo pedido — queda para que el usuario decida en otra sesión.
+**Hallazgo aparte, arreglado en commit separado**: al correr `npm test` de la API salió a
+la luz un test pre-existente y no relacionado (`loan-quote.spec.ts`, caso quincenal) con
+una fecha hardcodeada (`2026-08-15`) que ya había pasado respecto a la fecha real de esta
+sesión (2026-08-17) — test rot por fecha fija, no un bug de este corte. A pedido del
+usuario se arregló aparte: se movió `openingDate` un mes exacto (`2026-09-15`) y se
+recalcularon a mano las 10 fechas esperadas del calendario (el algoritmo de
+`calculateQuote` para el modelo quincenal es periódico por mes calendario — desplazar el
+ancla un mes desplaza toda la secuencia el mismo mes, verificado entrada por entrada
+antes de escribir el nuevo valor esperado, no solo "ajustado hasta que pasara").
 
 Con esto, **Fase 6 queda 100% completa (3 cortes)**: instalación + caching, onboarding
 guiado, Web Push.

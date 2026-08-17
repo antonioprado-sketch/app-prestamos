@@ -69,16 +69,16 @@ describe('calculateQuote — quincenal', () => {
     const result = calculateQuote({
       amount: 1000,
       model: 'BIWEEKLY',
-      openingDate: '2026-08-15',
+      openingDate: '2026-09-15',
       maxAmount: null,
     });
     expect(result.total).toBe(1400);
     expect(result.payment).toBe(140);
     expect(result.lastPayment).toBe(140);
     expect(result.schedule).toHaveLength(10);
-    expect(result.schedule[0].dueDate).toBe('2026-08-31');
-    expect(result.schedule[1].dueDate).toBe('2026-09-15');
-    expect(result.schedule[9].dueDate).toBe('2027-01-15');
+    expect(result.schedule[0].dueDate).toBe('2026-09-30');
+    expect(result.schedule[1].dueDate).toBe('2026-10-15');
+    expect(result.schedule[9].dueDate).toBe('2027-02-15');
   });
 
   it('acepta el último día del mes como apertura', () => {
