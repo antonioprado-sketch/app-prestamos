@@ -425,9 +425,7 @@ describe('BI (e2e)', () => {
   });
 
   it('GET /admin/bi/geo requiere token', async () => {
-    await request(app.getHttpServer())
-      .get('/api/v1/admin/bi/geo')
-      .expect(401);
+    await request(app.getHttpServer()).get('/api/v1/admin/bi/geo').expect(401);
   });
 
   it('GET /admin/bi/geo rechaza a un rol distinto de ADMIN', async () => {

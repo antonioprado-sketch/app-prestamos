@@ -7,28 +7,16 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png'],
       manifest: false,
-      workbox: {
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [
-          {
-            // Solo lecturas (GET) de la API, nunca /auth (tokens no deben cachearse
-            // en disco) ni escrituras — network-first con caída a caché si no hay red.
-            urlPattern: ({ url, request }) =>
-              request.method === 'GET' &&
-              url.pathname.startsWith('/api/v1/') &&
-              !url.pathname.startsWith('/api/v1/auth/'),
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'api-get-cache',
-              networkTimeoutSeconds: 5,
-              expiration: { maxEntries: 100, maxAgeSeconds: 5 * 60 },
-              cacheableResponse: { statuses: [200] },
-            },
-          },
-        ],
+      // El caching de runtime y el navigateFallback viven en src/sw.ts (mismo
+      // comportamiento que antes) — injectManifest es necesario para poder agregar
+      // los listeners 'push'/'notificationclick' que generateSW no permite.
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
   ],

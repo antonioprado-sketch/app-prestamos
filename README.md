@@ -12,23 +12,28 @@ Copiar `.env.example` a `.env` y completar credenciales (MySQL, JWT, Gmail SMTP)
 ## Ejecución (dev)
 
 1. Copiar `.env.example` → `.env` en la raíz y en `api/`, completar credenciales (MySQL, JWT).
-2. Compilar el frontend (Nginx sirve `web/dist` como archivos estáticos, no lo construye el compose):
+2. Web Push (notificaciones): generar un par de claves VAPID una sola vez y usarlas en los tres lados —
+   ```bash
+   cd api && npx web-push generate-vapid-keys
+   ```
+   Pegar `Public Key`/`Private Key` en `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` de `.env` (raíz) y de `api/.env`, y la misma `Public Key` en `VITE_VAPID_PUBLIC_KEY` de `web/.env` (copiar antes desde `web/.env.example`). Sin esto, el envío de push se simula (log) en vez de fallar — no bloquea el resto de la app.
+3. Compilar el frontend (Nginx sirve `web/dist` como archivos estáticos, no lo construye el compose):
    ```bash
    cd web && npm ci && npm run build
    ```
-3. Levantar el stack:
+4. Levantar el stack:
    ```bash
    docker compose -f docker-compose.dev.yml up -d --build
    ```
-4. Aplicar las migraciones de Prisma contra la base del compose (una sola vez, o tras cambios de schema):
+5. Aplicar las migraciones de Prisma contra la base del compose (una sola vez, o tras cambios de schema):
    ```bash
    cd api && npx prisma migrate deploy
    ```
-5. Verificar:
+6. Verificar:
    - Frontend: http://localhost
    - API: http://localhost/api/v1/health y http://localhost/api/v1/health/ready
    - Swagger (solo dev): http://localhost:3000/api/v1/docs
-6. Admin inicial: `admin` / `admin` (el sistema obliga a cambiarla en el primer login).
+7. Admin inicial: `admin` / `admin` (el sistema obliga a cambiarla en el primer login).
 
 > Nota: el servicio `worker` está definido en el compose desde Fase 1 pero su código (`main-worker.ts`) todavía no existe (multas se calculan en vivo sin cron, ver `project_state.md`). El contenedor se deja **detenido** (`docker compose stop worker`) en vez de reiniciarse en bucle.
 

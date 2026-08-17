@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import {
   LoanDraftResult,
   LoanWithSchedule,
@@ -65,6 +66,7 @@ export class AdminLoansService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async findAll(status?: string): Promise<AdminLoanResult[]> {
@@ -114,6 +116,16 @@ export class AdminLoansService {
       userAgent: ua,
     });
 
+    await this.notifications
+      .create({
+        userPhone: loan.customerPhone,
+        type: 'loan_approved',
+        title: 'Tu solicitud fue aprobada',
+        body: `Tu préstamo ${loan.folio} fue aprobado. Pronto un cobrador se pondrá en contacto.`,
+        metadata: { loanId: String(loan.id) },
+      })
+      .catch(() => undefined);
+
     return toAdminLoanResult(updated);
   }
 
@@ -143,6 +155,16 @@ export class AdminLoansService {
       userAgent: ua,
     });
 
+    await this.notifications
+      .create({
+        userPhone: loan.customerPhone,
+        type: 'loan_rejected',
+        title: 'Tu solicitud fue rechazada',
+        body: reason,
+        metadata: { loanId: String(loan.id) },
+      })
+      .catch(() => undefined);
+
     return toAdminLoanResult(updated);
   }
 
@@ -171,6 +193,16 @@ export class AdminLoansService {
       ip,
       userAgent: ua,
     });
+
+    await this.notifications
+      .create({
+        userPhone: loan.customerPhone,
+        type: 'loan_requires_correction',
+        title: 'Tu solicitud necesita una corrección',
+        body: reason,
+        metadata: { loanId: String(loan.id) },
+      })
+      .catch(() => undefined);
 
     return toAdminLoanResult(updated);
   }
@@ -209,6 +241,20 @@ export class AdminLoansService {
       ip,
       userAgent: ua,
     });
+
+    const customerName =
+      [loan.customer.nombres, loan.customer.apellidos]
+        .filter(Boolean)
+        .join(' ') || loan.customerPhone;
+    await this.notifications
+      .create({
+        userPhone: collector.phone,
+        type: 'loan_assigned',
+        title: 'Nuevo préstamo asignado',
+        body: `Se te asignó el préstamo ${loan.folio} de ${customerName}.`,
+        metadata: { loanId: String(loan.id) },
+      })
+      .catch(() => undefined);
 
     return toAdminLoanResult(updated);
   }

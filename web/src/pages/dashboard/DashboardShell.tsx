@@ -4,6 +4,8 @@ import { useAuth } from '../../store/auth';
 import { Button } from '../../components/ui/Button';
 import { LocationConsentBanner } from '../../components/LocationConsentBanner';
 import { WelcomeTour } from '../../components/WelcomeTour';
+import { PushConsentBanner } from '../../components/PushConsentBanner';
+import { NotificationsBell } from '../../components/NotificationsBell';
 
 const titles: Record<Role, string> = {
   CLIENT: 'Panel del Cliente',
@@ -22,9 +24,15 @@ export function DashboardShell({ role }: { role: Role }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-50">
+      {(role === 'CLIENT' || role === 'COLLECTOR') && (
+        <header className="flex justify-end border-b border-gray-200 bg-white p-2">
+          <NotificationsBell />
+        </header>
+      )}
       <main className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
         {role === 'CLIENT' && <WelcomeTour />}
         {role === 'CLIENT' && <LocationConsentBanner />}
+        {(role === 'CLIENT' || role === 'COLLECTOR') && <PushConsentBanner />}
         <h1 className="text-xl font-bold text-secondary">{titles[role]}</h1>
         <p className="text-secondary">{messages[role]}</p>
         {role === 'CLIENT' && (

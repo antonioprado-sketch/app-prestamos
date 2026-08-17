@@ -25,6 +25,8 @@ model User {
   refreshTokens RefreshToken[]
   auditLogs   AuditLog[]
   approvedLoans Loan[] @relation("LoanApprover")
+  notifications Notification[]
+  pushSubscriptions PushSubscription[]
 
   @@map("users")
 }
@@ -217,6 +219,36 @@ model Configuration {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("configuration")
+}
+
+model Notification {
+  id        BigInt    @id @default(autoincrement())
+  userPhone String    @map("user_phone") @db.VarChar(15)
+  type      String    @db.VarChar(50)
+  title     String    @db.VarChar(150)
+  body      String    @db.VarChar(500)
+  metadata  Json?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userPhone], references: [phone], onDelete: Cascade)
+
+  @@index([userPhone, createdAt])
+  @@map("notifications")
+}
+
+model PushSubscription {
+  id        BigInt   @id @default(autoincrement())
+  userPhone String   @map("user_phone") @db.VarChar(15)
+  endpoint  String   @unique @db.VarChar(500)
+  p256dh    String   @db.VarChar(255)
+  auth      String   @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userPhone], references: [phone], onDelete: Cascade)
+
+  @@index([userPhone])
+  @@map("push_subscriptions")
 }
 
 enum Role {

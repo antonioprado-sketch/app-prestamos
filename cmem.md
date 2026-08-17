@@ -413,3 +413,62 @@ Persistencia con el mismo patrón ya usado por `LocationConsentBanner` (Fase 4):
 dependencia nueva, "Omitir" siempre visible. 4/4 tests nuevos, 12/12 web total.
 
 Con esto, Fase 6 queda con **solo Web Push pendiente** para cerrarse del todo.
+
+## Fase 6 — PWA, tercer corte: Web Push, cierra la fase (2026-08-17)
+
+Al analizar el corte se encontró que **nada de notificaciones existía en el proyecto**
+(ni modelo, ni módulo, ni email conectado a ningún evento) pese a que C14 de la spec ya
+anticipaba "Email + in-app como canal primario desde el inicio". El roadmap de Fase 6
+solo pedía Web Push explícitamente — se confirmó con el usuario vía preguntas
+explícitas construir el **sistema completo** (modelo `Notification` + lista in-app con
+badge/leído + Web Push), no solo el mecanismo VAPID, porque sin in-app el push no tiene
+dónde registrar qué se envió ni badge real. Email quedó fuera a propósito (ya existe
+`EmailService` con Nodemailer/Gmail desde Fase 1, pero no está conectado a ningún evento
+de negocio — conectarlo es trabajo aparte). Triggers confirmados: solicitud
+aprobada/rechazada/corrección, pago registrado, nueva asignación a cobrador. Roles:
+cliente y cobrador (coincide con C14).
+
+**Decisión de esquema deliberada, distinta de la spec literal**: la spec ponía
+`channel`/`status` como enums en la misma fila de `notifications` (pensando en in-app/
+email/push como entradas separadas). Se simplificó a una sola fila in-app por evento
+(fuente de verdad para lista/badge/leído) con el push como intento best-effort sobre esa
+misma notificación — evita inventar semántica de "estado por canal" que el resto del
+proyecto no usa en ningún otro lado, mismo criterio de "adaptar la spec a las
+convenciones ya usadas" que ya se aplicó en Fase 1 con `Loan`/`LoanSchedule` (BigInt en
+vez de UUID, enums uppercase).
+
+**Cambio de arquitectura PWA real**: `vite-plugin-pwa` pasó de `generateSW` a
+`injectManifest` — `generateSW` no permite agregar listeners `push`/`notificationclick`
+personalizados, así que hubo que escribir el service worker a mano
+(`web/src/sw.ts`) usando los paquetes `workbox-*` directamente, reimplementando el mismo
+runtime caching y `navigateFallback` del primer corte de Fase 6 (mismo comportamiento,
+ahora explícito en código en vez de config declarativa). Problema de tipos encontrado:
+`ServiceWorkerGlobalScope` (lib `webworker`) choca con el lib `DOM` que usa el resto del
+frontend — no se armó un tsconfig aparte para un solo archivo, se excluyó `src/sw.ts`
+del `tsc -b` de la app (trade-off aceptado, esbuild igual lo bundlea sin ese type-check).
+
+**Bug real en el primer intento del e2e** (no producción): `idempotencyKey` de texto
+libre en vez de UUID en el test de "pago registrado" — mismo bug ya documentado en el
+primer corte de Fase 4 (Cobrador), volvió a aparecer por no revisar el DTO antes de
+escribir el fixture. Otro bug del primer intento: `class-validator` con `@ValidateNested()`
+solo, sin `@IsDefined()`, deja pasar un `keys` completamente ausente en el body (no lo
+marca inválido), causando un `500` en vez de `400` cuando faltaba el objeto anidado —
+hubo que agregar `@IsDefined()` explícito antes de `@ValidateNested()`.
+
+10/10 tests e2e nuevos, 153/153 e2e total (dos corridas seguidas, idempotente), 20/20
+tests web (8 nuevos: `NotificationsBell`, `PushConsentBanner`). Probado contra el stack
+Docker real: rebuild del contenedor `api` necesitó el mismo gotcha ya documentado del
+volumen anónimo de `node_modules` (`npm install` manual + `prisma generate` dentro del
+contenedor), suscripción y notificación probadas de punta a punta vía Nginx con un
+usuario real, fila verificada en MySQL directo, `sw.js` servido por Nginx confirmado con
+el listener `push` embebido.
+
+**Hallazgo aparte, no arreglado**: al correr `npm test` de la API salió a la luz un test
+pre-existente y no relacionado (`loan-quote.spec.ts`, caso quincenal) con una fecha
+hardcodeada (`2026-08-15`) que ya pasó respecto a la fecha real de esta sesión
+(2026-08-17) — test rot por fecha fija, no un bug de este corte. No se tocó porque
+arreglarlo bien requiere recalcular las 10 fechas de calendario esperadas del mismo test,
+y no era parte de lo pedido — queda para que el usuario decida en otra sesión.
+
+Con esto, **Fase 6 queda 100% completa (3 cortes)**: instalación + caching, onboarding
+guiado, Web Push.

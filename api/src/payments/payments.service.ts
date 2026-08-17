@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { BusinessRulesService } from '../configuration/business-rules.service';
 import { todayInMexicoCity } from '../loans/loan-quote';
 import { calculateLoanPenalty } from '../loans/loan-penalty';
@@ -52,6 +53,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly audit: AuditService,
     private readonly businessRules: BusinessRulesService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async register(
@@ -194,6 +196,16 @@ export class PaymentsService {
       ip,
       userAgent: ua,
     });
+
+    await this.notifications
+      .create({
+        userPhone: loan.customerPhone,
+        type: 'payment_registered',
+        title: 'Pago registrado',
+        body: `Registramos tu pago de $${input.amount.toFixed(2)} MXN.`,
+        metadata: { loanId: String(loan.id), paymentId: String(payment.id) },
+      })
+      .catch(() => undefined);
 
     return {
       paymentId: String(payment.id),
