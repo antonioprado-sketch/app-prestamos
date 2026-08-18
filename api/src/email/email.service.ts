@@ -1,34 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import { EmailConfigService } from './email-config.service';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private transporter: nodemailer.Transporter | null = null;
 
-  constructor() {
-    const user = process.env.GMAIL_USER;
-    const pass = process.env.GMAIL_APP_PASSWORD;
-    if (user && pass) {
-      this.transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
-        auth: { user, pass },
-      });
-    }
-  }
+  constructor(private readonly emailConfig: EmailConfigService) {}
 
   async send(to: string, subject: string, html: string) {
-    if (!this.transporter) {
+    const resolved = await this.emailConfig.getResolved();
+    if (!resolved) {
       this.logger.log(`[email-simulado] to=${to} subject=${subject}`);
       return { simulated: true };
     }
-    return this.transporter.sendMail({
-      from: process.env.GMAIL_USER,
-      to,
-      subject,
-      html,
+    const transporter = nodemailer.createTransport({
+      host: resolved.host,
+      port: resolved.port,
+      secure: resolved.secure,
+      auth: { user: resolved.user, pass: resolved.pass },
     });
+    return transporter.sendMail({ from: resolved.user, to, subject, html });
   }
 }

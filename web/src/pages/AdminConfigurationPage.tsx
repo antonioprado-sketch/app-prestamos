@@ -12,6 +12,22 @@ interface BusinessRules {
   orangeMaxDays: number;
 }
 
+interface EmailConfig {
+  host: string;
+  port: number;
+  secure: boolean;
+  user: string;
+  hasPassword: boolean;
+}
+
+const EMAIL_DEFAULTS: EmailConfig = {
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  user: '',
+  hasPassword: false,
+};
+
 export function AdminConfigurationPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,11 +39,29 @@ export function AdminConfigurationPage() {
     orangeMaxDays: 0,
   });
 
+  const [emailConfig, setEmailConfig] = useState<EmailConfig>(EMAIL_DEFAULTS);
+  const [emailPass, setEmailPass] = useState('');
+  const [emailLoading, setEmailLoading] = useState(true);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [emailSuccess, setEmailSuccess] = useState(false);
+
+  const [testTo, setTestTo] = useState('');
+  const [testText, setTestText] = useState('');
+  const [testLoading, setTestLoading] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
+  const [testResult, setTestResult] = useState<string | null>(null);
+
   useEffect(() => {
     apiFetch<BusinessRules>('/admin/configuration/business-rules')
       .then(setForm)
       .catch((err) => setError(err instanceof ApiError ? err.message : 'No se pudo cargar la configuración'))
       .finally(() => setLoading(false));
+
+    apiFetch<EmailConfig>('/admin/configuration/email')
+      .then(setEmailConfig)
+      .catch((err) => setEmailError(err instanceof ApiError ? err.message : 'No se pudo cargar la configuración de correo'))
+      .finally(() => setEmailLoading(false));
   }, []);
 
   const setField = (field: keyof BusinessRules) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -61,8 +95,69 @@ export function AdminConfigurationPage() {
     }
   };
 
+  const setEmailField =
+    (field: 'host' | 'user') => (e: React.ChangeEvent<HTMLInputElement>) => {
+      setEmailConfig((c) => ({ ...c, [field]: e.target.value }));
+      setEmailSuccess(false);
+    };
+
+  const setEmailPort = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    setEmailConfig((c) => ({ ...c, port: Number.isFinite(value) ? value : 0 }));
+    setEmailSuccess(false);
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEmailSaving(true);
+    setEmailError(null);
+    setEmailSuccess(false);
+    try {
+      const body: Record<string, unknown> = {
+        host: emailConfig.host,
+        port: emailConfig.port,
+        secure: emailConfig.secure,
+        user: emailConfig.user,
+      };
+      if (emailPass) body.pass = emailPass;
+      const updated = await apiFetch<EmailConfig>('/admin/configuration/email', {
+        method: 'PUT',
+        body: JSON.stringify(body),
+      });
+      setEmailConfig(updated);
+      setEmailPass('');
+      setEmailSuccess(true);
+    } catch (err) {
+      setEmailError(err instanceof ApiError ? err.message : 'No se pudo guardar la configuración de correo');
+    } finally {
+      setEmailSaving(false);
+    }
+  };
+
+  const handleTestEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setTestLoading(true);
+    setTestError(null);
+    setTestResult(null);
+    try {
+      const res = await apiFetch<{ simulated: boolean }>('/admin/configuration/email/test', {
+        method: 'POST',
+        body: JSON.stringify({ to: testTo, text: testText }),
+      });
+      setTestResult(
+        res.simulated
+          ? 'Simulado: no hay credenciales reales activas, se registró en el log del servidor en vez de enviarse de verdad.'
+          : `Correo real enviado a ${testTo}.`,
+      );
+    } catch (err) {
+      setTestError(err instanceof ApiError ? err.message : 'No se pudo enviar el correo de prueba');
+    } finally {
+      setTestLoading(false);
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
+    <main className="flex min-h-screen flex-col items-center gap-4 bg-gray-50 p-4">
       <Card className="w-full max-w-md">
         <h1 className="mb-1 text-center text-xl font-bold text-secondary">Reglas de negocio</h1>
         <p className="mb-6 text-center text-sm text-secondary">
@@ -114,6 +209,112 @@ export function AdminConfigurationPage() {
               Guardar cambios
             </Button>
           </form>
+        )}
+      </Card>
+
+      <Card className="w-full max-w-md">
+        <h1 className="mb-1 text-center text-xl font-bold text-secondary">Correo (SMTP)</h1>
+        <p className="mb-6 text-center text-sm text-secondary">
+          Credenciales para notificaciones por correo (ej. recuperar contraseña). Se guardan
+          cifradas — la contraseña nunca se vuelve a mostrar una vez guardada.
+        </p>
+
+        {emailLoading ? (
+          <div className="flex justify-center py-8">
+            <Spinner />
+          </div>
+        ) : (
+          <>
+            <form onSubmit={handleEmailSubmit} className="flex flex-col gap-4">
+              {emailError && <Alert variant="error">{emailError}</Alert>}
+              {emailSuccess && <Alert variant="success">Configuración de correo actualizada.</Alert>}
+
+              <Input
+                label="Servidor SMTP"
+                value={emailConfig.host}
+                onChange={setEmailField('host')}
+                required
+              />
+              <Input
+                label="Puerto"
+                type="number"
+                step="1"
+                min="1"
+                value={emailConfig.port}
+                onChange={setEmailPort}
+                required
+              />
+              <div className="flex items-center gap-2">
+                <input
+                  id="email-secure"
+                  type="checkbox"
+                  checked={emailConfig.secure}
+                  onChange={(e) => {
+                    setEmailConfig((c) => ({ ...c, secure: e.target.checked }));
+                    setEmailSuccess(false);
+                  }}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="email-secure" className="text-sm text-secondary">
+                  Conexión segura (SSL, puerto 465). Desmarca para STARTTLS (puerto 587).
+                </label>
+              </div>
+              <Input
+                label="Usuario / correo remitente"
+                type="email"
+                value={emailConfig.user}
+                onChange={setEmailField('user')}
+                required
+              />
+              <Input
+                label="Contraseña (App Password de Gmail)"
+                type="password"
+                value={emailPass}
+                onChange={(e) => {
+                  setEmailPass(e.target.value);
+                  setEmailSuccess(false);
+                }}
+                placeholder={emailConfig.hasPassword ? 'Ya guardada — deja vacío para conservarla' : ''}
+              />
+              <p className="text-xs text-secondary">
+                {emailConfig.hasPassword
+                  ? 'Contraseña configurada.'
+                  : 'Sin contraseña configurada — el correo se simula (queda en el log) hasta que guardes una.'}
+              </p>
+
+              <Button type="submit" loading={emailSaving} className="w-full">
+                Guardar credenciales
+              </Button>
+            </form>
+
+            <div className="mt-6 border-t border-gray-200 pt-4">
+              <h2 className="mb-1 text-sm font-semibold text-secondary">Enviar correo de prueba</h2>
+              <p className="mb-3 text-xs text-secondary">
+                Manda un correo real con las credenciales guardadas arriba, para validar que
+                funcionan antes de depender de ellas.
+              </p>
+              <form onSubmit={handleTestEmail} className="flex flex-col gap-3">
+                {testError && <Alert variant="error">{testError}</Alert>}
+                {testResult && <Alert variant="success">{testResult}</Alert>}
+                <Input
+                  label="Correo destinatario"
+                  type="email"
+                  value={testTo}
+                  onChange={(e) => setTestTo(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Texto del mensaje"
+                  value={testText}
+                  onChange={(e) => setTestText(e.target.value)}
+                  required
+                />
+                <Button type="submit" variant="ghost" loading={testLoading} className="w-full">
+                  Enviar prueba
+                </Button>
+              </form>
+            </div>
+          </>
         )}
       </Card>
     </main>

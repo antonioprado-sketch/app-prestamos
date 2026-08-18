@@ -17,6 +17,7 @@ Copiar `.env.example` a `.env` y completar credenciales (MySQL, JWT, Gmail SMTP)
    cd api && npx web-push generate-vapid-keys
    ```
    Pegar `Public Key`/`Private Key` en `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY` de `.env` (raíz) y de `api/.env`, y la misma `Public Key` en `VITE_VAPID_PUBLIC_KEY` de `web/.env` (copiar antes desde `web/.env.example`). Sin esto, el envío de push se simula (log) en vez de fallar — no bloquea el resto de la app.
+   Correo (Gmail SMTP): las credenciales se configuran desde el panel admin (Reglas de negocio → Correo), no hace falta tocar `.env` para eso. Sí es obligatorio `EMAIL_ENCRYPTION_KEY` en `.env` (raíz) y en `api/.env` — es la clave que cifra la contraseña guardada, generar una vez con `openssl rand -base64 32` y no perderla (si cambia, las credenciales ya guardadas dejan de poder desencriptarse).
 3. Compilar el frontend (Nginx sirve `web/dist` como archivos estáticos, no lo construye el compose):
    ```bash
    cd web && npm ci && npm run build

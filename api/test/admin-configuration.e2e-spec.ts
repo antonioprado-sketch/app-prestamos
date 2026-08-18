@@ -219,3 +219,184 @@ describe('Admin configuration - business rules (e2e)', () => {
     expect(after.body.maxDaysLate).toBe(3);
   });
 });
+
+describe('Admin configuration - email (e2e)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  const clientPhone = '5599112255';
+  const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
+  const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
+
+  async function loginClient(): Promise<string> {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: clientPhone, password: 'Abcdef12!' });
+    return res.body.accessToken;
+  }
+
+  async function loginAdmin(): Promise<string> {
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: adminPhone, password: adminPassword });
+    return res.body.accessToken;
+  }
+
+  async function resetEmailConfig(): Promise<void> {
+    await prisma.configuration.deleteMany({ where: { key: 'email.smtp' } });
+  }
+
+  beforeAll(async () => {
+    const setupModule: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    const setupApp = setupModule.createNestApplication();
+    await setupApp.init();
+    prisma = setupModule.get(PrismaService);
+    await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await setupApp.close();
+
+    const moduleFixture: TestingModule = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
+    app = moduleFixture.createNestApplication();
+    app.useGlobalPipes(new ValidationPipe());
+    await app.init();
+
+    await resetEmailConfig();
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: clientPhone, password: 'Abcdef12!' });
+  });
+
+  afterAll(async () => {
+    await resetEmailConfig();
+    await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await app.close();
+  });
+
+  afterEach(async () => {
+    await resetEmailConfig();
+  });
+
+  it('GET /admin/configuration/email requiere token', async () => {
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/configuration/email')
+      .expect(401);
+  });
+
+  it('GET /admin/configuration/email rechaza a un rol distinto de ADMIN', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .get('/api/v1/admin/configuration/email')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+  });
+
+  it('GET /admin/configuration/email devuelve valores por defecto sin contraseña configurada', async () => {
+    const token = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/admin/configuration/email')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+
+    expect(res.body).toEqual({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      user: '',
+      hasPassword: false,
+    });
+  });
+
+  it('PUT /admin/configuration/email nunca devuelve la contraseña en la respuesta', async () => {
+    const token = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .put('/api/v1/admin/configuration/email')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        user: 'bot@example.com',
+        pass: 'app-password-secreto',
+      })
+      .expect(200);
+
+    expect(res.body).toEqual({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      user: 'bot@example.com',
+      hasPassword: true,
+    });
+    expect(JSON.stringify(res.body)).not.toContain('app-password-secreto');
+  });
+
+  it('la contraseña queda cifrada en la base de datos, no en texto plano', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .put('/api/v1/admin/configuration/email')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        user: 'bot@example.com',
+        pass: 'app-password-secreto',
+      })
+      .expect(200);
+
+    const row = await prisma.configuration.findUnique({
+      where: { key: 'email.smtp' },
+    });
+    expect(JSON.stringify(row?.value)).not.toContain('app-password-secreto');
+  });
+
+  it('PUT /admin/configuration/email sin pass conserva la contraseña ya guardada', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .put('/api/v1/admin/configuration/email')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        user: 'bot@example.com',
+        pass: 'app-password-secreto',
+      })
+      .expect(200);
+
+    const res = await request(app.getHttpServer())
+      .put('/api/v1/admin/configuration/email')
+      .set('Authorization', `Bearer ${token}`)
+      .send({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        user: 'bot@example.com',
+      })
+      .expect(200);
+
+    expect(res.body.port).toBe(587);
+    expect(res.body.secure).toBe(false);
+    expect(res.body.hasPassword).toBe(true);
+  });
+
+  it('POST /admin/configuration/email/test exige que ya haya credenciales guardadas', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/configuration/email/test')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ to: 'destinatario@example.com', text: 'Prueba' })
+      .expect(400);
+  });
+
+  it('POST /admin/configuration/email/test valida el correo destinatario', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/configuration/email/test')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ to: 'no-es-un-correo', text: 'Prueba' })
+      .expect(400);
+  });
+});

@@ -36,6 +36,7 @@ jobs:
       MINIO_ROOT_USER: minioadmin
       MINIO_ROOT_PASSWORD: minioadmin123
       MINIO_BUCKET: documentos
+      EMAIL_ENCRYPTION_KEY: test-email-encryption-key
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -122,6 +123,7 @@ jobs:
           TZ=America/Mexico_City
           GMAIL_USER=
           GMAIL_APP_PASSWORD=
+          EMAIL_ENCRYPTION_KEY=test-email-encryption-key
           VAPID_PUBLIC_KEY=
           VAPID_PRIVATE_KEY=
           VAPID_SUBJECT=mailto:admin@example.com
