@@ -3,6 +3,7 @@ dist/
 build/
 .env
 .env.local
+test.md
 *.log
 coverage/
 .DS_Store

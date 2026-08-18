@@ -45,8 +45,9 @@ export function LoginPage() {
           {error && <Alert variant="error">{error}</Alert>}
           <Input
             label="Teléfono"
-            type="tel"
-            inputMode="numeric"
+            type="text"
+            autoCapitalize="none"
+            autoCorrect="off"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             required

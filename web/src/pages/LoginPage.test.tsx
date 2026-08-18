@@ -15,6 +15,6 @@ describe('LoginPage', () => {
     );
     expect(screen.getByText(/Prestamitos/i)).toBeTruthy();
     expect(screen.getByLabelText(/Teléfono/i)).toBeTruthy();
-    expect(screen.getByLabelText(/Contraseña/i)).toBeTruthy();
+    expect(screen.getByLabelText('Contraseña')).toBeTruthy();
   });
 });
