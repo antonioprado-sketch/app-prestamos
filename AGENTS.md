@@ -4,7 +4,7 @@ Contexto operativo persistente para cualquier sesión de Codex en este repo. Est
 
 ## Estado del proyecto
 
-Fases 1-5 completas (fundaciones, cliente, administrador, cobrador, BI). BI: KPIs núcleo financiero, segmentación de clientes, desglose por cobrador, gráfica de tendencia semanal (Recharts) y distribución por zona (`GET /admin/bi/kpis`, `/collectors`, `/trends`, `/geo`). Quedan Fases 6-9 del roadmap general (PWA, seguridad/QA, producción, escalabilidad), sin arrancar. Detalle completo corte por corte en `project_state.md`.
+Fases 1-5 completas (fundaciones, cliente, administrador, cobrador, BI). BI: KPIs núcleo financiero, segmentación de clientes, desglose por cobrador, gráfica de tendencia semanal (Recharts) y distribución por zona (`GET /admin/bi/kpis`, `/collectors`, `/trends`, `/geo`). Quedan Fases 6-9 del roadmap general (PWA, seguridad/QA, producción, escalabilidad), sin arrancar. **Pendiente de confirmar e implementar (décimo corte): gestión de usuarios para el admin** — lista unificada de usuarios, gestión de cobradores (crear/activar/desactivar), reset de contraseña y cambio de rol CLIENT↔COLLECTOR; propuesta completa en `project_state.md`. Detalle completo corte por corte en `project_state.md`.
 
 ## Arquitectura
 
@@ -78,6 +78,7 @@ npx prisma migrate status
 - Un endpoint nunca devuelve `null`/`undefined` como cuerpo completo de la respuesta — NestJS lo serializa como `200` con body vacío, lo que rompe `res.json()` del lado cliente. Envolver siempre en un objeto, ej. `{ location: T | null }`.
 - Endpoints que agregan sobre toda la BD (ej. `GET /admin/bi/kpis`) se testean por delta (antes/después de un fixture conocido), nunca por igualdad absoluta.
 - Librerías pesadas del lado cliente que solo usa una pantalla concreta se cargan sin ir en el bundle principal — `import()` dinámico imperativo para APIs no-JSX (MediaPipe, Leaflet), `React.lazy()`+`Suspense` para librerías usadas como JSX (Recharts). Verificar en el build que terminan en su propio chunk. El WASM y el modelo de MediaPipe (video de identidad) son **autocontenidos** (`/mediapipe/*`, copiados de `node_modules` en el build, excluidos del precache PWA) — nunca volver a apuntarlos a CDNs (`web/scripts/copy-mediapipe-wasm.mjs`).
+- **Estado de usuario vs login**: `AuthService.login()` no valida `INACTIVE` y en éxito fuerza `status: 'ACTIVE'` — antes de implementar "desactivar usuarios" (gestión de usuarios, décimo corte propuesto) hay que bloquear `INACTIVE` en el login y mantener `Collector.active`/`User.status` sincronizados. Los modelos ya tienen todo (`role`, `status`, `mustChangePassword`, `active`), no hace falta migración.
 
 ## Reglas del protocolo `addv-web-app` aplicadas a este repo
 

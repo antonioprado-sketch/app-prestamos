@@ -46,6 +46,10 @@ El destino de producción es un **VPS de Hostinger** (no GitHub Pages ni ningún
 - En el VPS se corre el entorno de producción: `docker compose -f docker-compose.prod.yml up -d --build` + migraciones (`cd api && npx prisma migrate deploy`). Requiere los mismos `.env` (MySQL, JWT, MinIO, VAPID, `EMAIL_ENCRYPTION_KEY`) y TLS vía Nginx (certificado en el VPS; ver `docker/nginx/nginx.prod.conf`).
 - Pendiente de Fase 8 del roadmap: TLS/HTTPS real en el VPS, firewall, backups de MySQL + MinIO con restauración probada, y exponer MinIO tras un proxy para que las URLs firmadas funcionen fuera de dev (documentado en `.env.example`).
 
+## En planeación
+
+- **Gestión de usuarios para el admin** (propuesta registrada en `project_state.md`, pendiente de confirmar reglas de negocio e implementar): lista unificada de usuarios, gestión de cobradores (crear/activar/desactivar), reset de contraseña y cambio de rol CLIENT↔COLLECTOR. Hoy no existe: los cobradores solo se crean dentro de Solicitudes y los admins no son gestionables.
+
 ## Pruebas
 
 - API: `cd api && npm test` (unitarias) y `npx jest --config ./test/jest-e2e.json --runInBand` (e2e, requiere MySQL arriba — el script `npm run test:e2e` sin `--runInBand` corre en paralelo y puede fallar por una carrera en el bootstrap del admin)
