@@ -48,10 +48,9 @@ El destino de producción es un **VPS de Hostinger** (no GitHub Pages ni ningún
 
 ## En planeación
 
-- **UX de cliente, cobrador y landing** (pedidos registrados en `project_state.md`, pendientes de implementar — en espera del diseño del admin):
-  - Cliente: fotos de documentos solo con cámara (tomadas en el momento), sin galería.
-  - Cobrador: monto a cobrar precargado (la cuota ya calculada), con modales de "+/-" para sumar cuotas, sin edición manual.
-  - Landing: la calculadora como inicio público (botón "Iniciar sesión" arriba a la derecha), con slider de $500 en $500 hasta $20,000 en vez del input manual, y el tope de $3,000 para cliente nuevo aplicado al cotizar.
+- **Fases 6-9 del roadmap general** (PWA completa con HTTPS, seguridad/QA final, producción en el VPS, escalabilidad) — ver `project_state.md`.
+- **UX pendiente de decisión:** qué hacer con la carpeta `stitch/` (diseños de referencia exportados, ya no referenciada por el código).
+- Los tres puntos de UX de cliente/cobrador/landing ya implementados (cortes 15-17): fotos de documentos solo con cámara `getUserMedia`, cobrador con monto precargado y modales "+/-", y calculadora como landing pública con slider de $500, topes por color de score configurables y flujo "Aumentar mi crédito".
 
 ## Pruebas
 

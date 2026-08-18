@@ -1082,3 +1082,97 @@ importantes se tomaron siguiendo el protocolo:
 Verificado: API 215/215 e2e (loans +3), web 30/30, builds y lint en verde,
 dist reconstruido. Sigue pendiente (fuera de alcance): pasada visual en
 navegador (extensi�n de Chrome desconectada) y la c�mara/HTTPS en producci�n.
+## Fase 7, corte 16: landing del cliente con diseño `stitch/cliente` + fix de fechas (2026-08-18)
+
+El usuario pidió aplicar el diseño del cotizador de cliente que exportó en
+`stitch/cliente/` (`code.html` + `DESIGN.md` + `screen.png`). Antes de tocar
+código se confirmaron dos decisiones de negocio clave:
+
+- **Fiel al diseño + accesos en el pie de página:** la raíz `/` es la landing
+  con header (marca Prestamitos + "Iniciar sesión" + "Registrarse"), el
+  cotizador debajo y los accesos de cobrador/admin como enlaces discretos
+  ("Acceso cobrador" → `/cobrador`, "Acceso administrador" → `/admin`).
+- **El cliente no tiene URL:** entra directo a la raíz; no se anuncia ningún
+  enlace de cliente. Las URLs de rol siguen existiendo; `/cliente` queda en el
+  router sin anunciarse. (Esto revierte las tarjetas de acceso del corte 14.)
+
+Implementación: `CalculatorPage` gana la prop `embedded` (la landing la embebe
+sin `min-h-screen`; en `/calculadora` standalone conserva padding para el CTA
+fijo). Formulario nuevo: slider "Monto solicitado" con CSS `range-slider`
+propio (track/thumb de los tokens), tabs Semanal/Quincenal como `radiogroup`
+con `role="radio"`, chips de fecha con scroll snap (helper `nextValidDates`
+que replica las reglas de `loan-quote.ts`: lunes/viernes o 15/último del mes,
+siempre >= hoy), tarjeta "Pago estimado" en vivo (debounce 300ms a
+`/loans/quote`), CTA fijo "Calcular opciones" + `arrow_forward` que reutiliza
+la estimación y hace scroll al resultado. Se eliminó el `<input type="date">`.
+
+**Fix de fecha detectado por el usuario en el celular:** los chips mostraban
+jueves y domingos. Causa real: `Intl.DateTimeFormat('es-MX', {weekday:'short'})`
+sin `timeZone` usaba la zona local (America/Mexico_City, UTC-6) sobre un `Date`
+de medianoche UTC → día corrido al anterior (lunes→domingo, viernes→jueves).
+Se movieron los helpers a `web/src/lib/calculator-dates.ts` (función pura,
+misma convención que las puras del backend) forzando `timeZone: 'UTC'`, con su
+spec (4 tests). Con hoy = martes 18/08/2026 los chips correctos son **Vie 21 /
+Lun 24 / Vie 28 / Lun 31 / Vie 04** (confirmado también por script Playwright
+contra `http://localhost/`).
+
+**Adaptación del Playwright e2e:** el spec `client-happy-path.spec.ts` usaba
+`setInputFiles` en los inputs de archivo que el corte 15 eliminó (cámara). Se
+agregó `mockCamera(page)` que con `addInitScript` sobreescribe
+`navigator.mediaDevices.getUserMedia` devolviendo `canvas.captureStream(10)` y
+recorre el flujo real de `CameraCapture` por slot (esperar `readyState >= 2`,
+"Tomar foto" → "Usar esta foto" → "Validado"). El cotizador ahora usa el slider
+("Monto solicitado") y selecciona fecha por chip (`getByRole('button', {name:
+<fecha ISO>})` — los chips llevan `aria-label` con la fecha).
+
+Verificado: web 36/36 tests (14 archivos), build + lint verdes, dist
+reconstruido, Playwright 1/1 PASS. Pendientes igual que cortes anteriores:
+pasada visual real (extensión Chrome desconectada) y cámara por HTTPS (Fase 8).
+Pendiente de decisión: qué hacer con `stitch/` (ya no la referencia el código;
+se sugirió conservar `DESIGN.md` + `screen.png`).## Fase 7, corte 17: topes por color configurables + "Aumentar mi crédito" (2026-08-18)
+
+El usuario pidió cambiar la lógica de topes y agregar un flujo de aumento de
+crédito. Se confirmaron las decisiones de negocio ANTES de tocar código:
+
+- **Anónimo sin tope:** la calculadora pública ya no limita a $3,000 a quien
+  no tiene sesión — el slider llega hasta $20,000. El tope de $3,000 queda
+  solo para clientes nuevos registrados.
+- **"Ya tiene crédito" = préstamo APPROVED/ACTIVE:** ese cliente va directo a
+  su home al entrar, sin calculadora. DRAFT/SUBMITTED siguen en calculadora.
+- **Topes por color configurables:** verde = sin tope (por defecto), amarillo
+  $3,000, naranja $2,000, rojo $1,000 — editables en Reglas de negocio
+  (pantalla admin de configuración), claves `score.{color}_max_amount`.
+- **Aumento = solicitud, no acción directa:** el cliente con tope pide un
+  monto deseado (múltiplo de $500, hasta $20,000); se notifica a TODOS los
+  admins y cobradores activos (app + correo); el primero que la resuelva
+  aprueba (sube `creditLimit` y quita `isNewCustomer`) o rechaza (con nota).
+  Nunca dos PENDING simultáneas (409).
+
+Implementación: modelo `CreditIncreaseRequest` + `Customer.creditLimit` (con
+migración), `resolveMaxAmount` reescrito (anónimo→null, nuevo→3000,
+creditLimit→creditLimit, resto→por color vía ScoreService), módulo
+`credit-increase` completo (create/me/list/resolve + notificaciones a staff y
+al cliente). Frontend: label "Pago semanal/quincenal" dinámico, redirect
+APPROVED/ACTIVE a home, sección "Aumentar mi crédito" en la calculadora,
+página admin "Aumentos" (`/admin/aumentos`) + `NotificationsBell` en el
+header del admin, tab "Aumentos de crédito" en la cartera del cobrador, y 4
+campos de tope por color en la configuración.
+
+**Bug de integración resuelto:** `LoansModule` no exportaba `LoansService` —
+`CreditIncreaseService` (que lo inyecta) rompía Nest en runtime con "Nest
+can't resolve dependencies ... LoansService at index [1]". Fix: `exports:
+[LoansService]`. Este tipo de error solo aparece al arrancar la app real (no
+en unit tests), por eso se verifica con el stack Docker y no solo con jest.
+
+**Detalle de contrato que cambia:** `GET /loans/quote-limit` para anónimos
+ahora devuelve `{"maxAmount":null}` (antes 3000) — el cliente nuevo sigue
+obteniendo 3000 y el no nuevo su `creditLimit` o el monto por color.
+
+Verificado: API 70/70 unit, 230/230 e2e (22 suites, +14 de credit-increase),
+build+lint API OK. Web 38/38 (15 archivos, +2 de CalculatorPageIncrease),
+build (tsc+vite) + dist reconstruido, lint OK (warning preexistente
+`auth.tsx`), Playwright 1/1 PASS. Stack dev actualizado en vivo (prisma
+generate + restart api): anónimo → `{"maxAmount":null}` y rutas
+`/credit-increase` mapeadas. Pendientes heredados sin cambio: pasada visual en
+navegador (extensión Chrome desconectada) y cámara/geo/push por HTTPS (Fase 8).
+Pendiente de decisión heredado: destino de `stitch/` (se sugirió conservarla).
