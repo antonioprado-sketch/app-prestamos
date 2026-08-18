@@ -642,3 +642,22 @@ Verificado local: 1/1 PASS, dos corridas seguidas, sin regresión en build/lint
 de web. No corrido todavía en Actions real — el primer push va a ser la
 prueba de fuego de si el runner de GitHub necesita ajustes (tiempos de
 arranque de Docker distintos a esta máquina, permisos) que no se ven en local.
+
+## Fase 7, hallazgo entre cortes: CI nunca había corrido (2026-08-18)
+
+Al querer verificar el run real de Actions del corte de Playwright, la API de
+Actions devolvió `total_count: 0` — cero runs, nunca, en toda la historia del
+repo. Causa: `.github/workflows/ci.yml` disparaba en `push.branches: [main]`,
+pero este repo siempre trabajó sobre `master` (nunca se creó `main`) y nunca
+hubo un solo Pull Request (todo el desarrollo commitea directo a `master`, ver
+patrón de todos los cortes anteriores). Ninguno de los dos triggers
+(`push`/`pull_request`) llegó a activarse jamás.
+
+Implicación real, no cosmética: cada "verificado en verde" de `project_state.md`
+desde que existe el workflow fue una corrida **local**, nunca confirmada de
+forma independiente por CI. El pipeline mismo — que existe desde Fase 1 Task 9
+— nunca se había probado en el entorno real de Actions (runner de Ubuntu,
+permisos, red), solo se había validado localmente "por partes" (sintaxis YAML,
+`migrate deploy` aislado). Corregido a `branches: [master]` en el mismo push
+que agrega el job `e2e-browser` — la primera corrida real de Actions de este
+repo va a validar simultáneamente el pipeline de siempre y el job nuevo.
