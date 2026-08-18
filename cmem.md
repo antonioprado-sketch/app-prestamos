@@ -742,3 +742,104 @@ nunca una credencial real) antes de `prisma generate`, para que ya no dependa
 de que exista un `.env` — real o no — en el contexto de build. En runtime el
 placeholder no importa: `docker-compose.dev.yml`/`.prod.yml` siempre inyectan
 el `DATABASE_URL` real vía `environment:`, que pisa cualquier `ENV` horneado.
+
+## Fase 7, feedback real de usuario probando el panel admin (2026-08-18)
+
+Primera vez que el usuario probó el panel admin en su propio celular, no solo
+por curl/Node. Salieron cinco puntos distintos, cada uno resuelto y verificado
+antes de pasar al siguiente: login de admin bloqueado por teclado numérico
+del celular, falta de ojito en contraseñas, ausencia total de alta manual de
+cliente, sección de ajuste de score que no explicaba qué hacía, y confusión
+sobre dónde aprobar solicitudes (que resultó no ser un bug — el flujo
+funciona, solo faltaban datos de prueba reales, verificado haciendo un clic
+de verdad vía `claude-in-chrome` con `element.click()` cuando los clicks por
+coordenada del propio tooling de automatización no registraban).
+
+El patrón que se repitió varias veces en esta sesión: "no veo la opción de
+X" casi siempre resultó ser que X sí existía pero estaba mal ubicado o sin
+contexto suficiente (aprobar solicitudes, asignar cobrador), no un feature
+faltante — salvo el alta manual de cliente, que genuinamente no existía. Vale
+la pena, ante un reporte de "no veo X", primero confirmar en vivo si existe
+antes de asumir que hay que construirlo de cero.
+
+## Fase 7, credenciales de correo editables desde admin — reabrir una regla fija (2026-08-18)
+
+Hasta ahora "secrets solo en `.env`" era una restricción fija del proyecto,
+de las que no se reabren sin pedirlo el usuario explícitamente. El usuario
+pidió exactamente eso: poder configurar Gmail (usuario, contraseña, puerto)
+desde el panel admin, con una prueba de envío real. Se le presentó la
+alternativa más conservadora (solo un botón de prueba usando lo que ya hay en
+`.env`, sin poder editarlo desde la UI) y eligió explícitamente guardar en
+BD, editable — la regla se reabre solo para este caso, con la contraseña
+siempre cifrada (AES-256-GCM, clave propia en `.env`) y nunca devuelta por la
+API una vez guardada.
+
+Decisión de diseño clave: `EmailService` pasó de armar el transporter SMTP
+una sola vez en el constructor (leyendo `.env` al boot, requería reiniciar el
+contenedor para que un cambio de credenciales aplicara) a armarlo en cada
+envío, resolviendo la config en el momento — BD primero, `.env` como fallback
+legacy. Es el mismo patrón que ya usa `BusinessRulesService`/
+`ConfigurationService` para reglas de negocio, extendido con cifrado porque
+acá sí hay un secreto real en juego (una contraseña de aplicación de Gmail),
+no solo un número de configuración.
+
+## Fase 7, asignar cobrador desde Clientes (2026-08-18)
+
+Pedido explícito de reusar, no reconstruir: el usuario quería poder asignar
+un cobrador desde la pantalla de Clientes, no solo desde dentro de una
+solicitud aprobada. Se descartó (con el usuario, vía pregunta directa) armar
+una página nueva de "Usuarios" que juntara clientes+cobradores+admins — el
+control de asignar/quitar cobrador que ya existía en `AdminLoansPage` se
+expuso también en `AdminCustomersPage`, mismo endpoint, mismo modelo de datos
+(`Loan.collectorId`, no una relación cliente↔cobrador directa). El único
+cambio de backend fue de exposición de datos, no de lógica: `AdminCustomersService`
+pasó a reusar `ADMIN_LOAN_INCLUDE`/`toAdminLoanResult` (ya documentado en
+CLAUDE.md como el patrón a reusar entre módulos admin con la misma forma de
+datos) en vez de `toLoanDraftResult`, para que el detalle de cliente también
+traiga `collectorId`/`collectorName` por préstamo.
+
+## Fase 7, octavo corte: documentos para admin + borrado de cliente + lista negra (2026-08-18)
+
+Pedido del usuario: el admin debía poder revisar los documentos de un cliente
+(INE, comprobante, video de identidad) antes de aprobar una solicitud, y cerrar
+dos huecos de operación — eliminar clientes y bloquear teléfonos. Tres bloques
+con una decisión de negocio confirmada explícitamente en cada uno.
+
+**Ver documentos.** El backend ya estaba escrito (sesión anterior, cortada por
+créditos, sin commitear): `GET /admin/customers/:phone/documents` + `GET
+/admin/documents/:id/signed-url` con `DocumentsService.signedUrlForAdmin()`. Se
+corrió su e2e nunca ejecutado (`admin-documents.e2e-spec.ts`): 7/7 PASS. El
+trabajo de este corte fue el frontend: componente compartido `DocumentList.tsx`
+(etiquetas en español, imagen/PDF en pestaña nueva, **video inline** con
+`<video controls>` — el usuario pidió explícitamente revisar el video ahí mismo
+para comparar la cara contra el INE, no en otra pestaña). Integrado en
+`AdminCustomersPage` y en el detalle de cada solicitud de `AdminLoansPage`
+(sección "Documentos del cliente", carga vía el endpoint de documentos al
+expandir).
+
+**Borrado de cliente.** Pregunta directa al usuario: ¿quitar solo la cuenta o
+borrar todo? → **borrar todo**, sin soft-delete, porque la gracia es que el
+teléfono vuelva a quedar libre para un re-registro limpio. `AdminCustomersService.remove()`:
+valida rol `CLIENT` (400 si no), borra objetos MinIO best-effort (log warn, no
+tumba el delete si un objeto falla — coherencia de BD importa más que limpieza
+perfecta de objetos), `prisma.user.delete` confiando en las FK `onDelete:
+Cascade` (loans, pagos, documentos, ubicaciones, notificaciones, refresh tokens;
+`AuditLog` queda con `SetNull`, el log sobrevive al borrado). `StorageService.removeObject()`
+nuevo. Frontend: botón "Eliminar cliente" con confirmación en dos pasos (warning
+explicando qué se borra + botón danger), patrón que evita borrados accidentales.
+
+**Lista negra.** La pregunta era de diseño de datos: ¿campo en `users` o tabla
+aparte? → **tabla aparte** (`Blacklist`, `phone` PK, `reason`, `createdBy`,
+`createdAt`, sin FK a `users` a propósito) porque así también bloquea números
+que nunca se registraron y guarda el motivo. `@Global()` como `AuditModule`.
+Bloquea en los dos puntos de entrada reales: `AuthService.register()`
+(ForbiddenException) y `LoansService.create()` — una cuenta ya dada de alta
+tampoco puede pedir préstamos nuevos. CRUD admin auditado (`blacklist_added`/
+`blacklist_removed`). Frontend: card "Lista negra" en `AdminCustomersPage`
+(agregar teléfono+motivo, listar con quién/cuándo, quitar).
+
+Patrón de infra repetido: tras la migración, `docker compose exec api npx
+prisma generate` + `restart api` dentro del contenedor (gotcha del volumen
+anónimo ya documentado) — la migración `20260818032847_blacklist` se aplicó
+desde el host y el cliente se regeneró en ambos lados. Suite completa 196/196
+e2e (dos corridas), 70/70 unit API, 20/20 web, build/lint verdes.

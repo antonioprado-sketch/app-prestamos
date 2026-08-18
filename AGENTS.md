@@ -67,7 +67,7 @@ npx prisma migrate status
 
 - Todo error HTTP pasa por `api/src/common/filters/http-exception.filter.ts` (registrado global como `APP_FILTER`). Respuesta: `{ statusCode, message, error }` — `message` puede ser string o array (mensajes de `class-validator`).
 - Validación global de DTOs vía `api/src/common/pipes/validation.pipe.ts` (`whitelist`, `forbidNonWhitelisted`, `transform`).
-- `PrismaModule`, `AuditModule` y `ConfigurationModule` son `@Global()` — no reimportar `PrismaService`/`AuditService`/`ConfigurationService`/`BusinessRulesService` por feature module.
+- `PrismaModule`, `AuditModule`, `ConfigurationModule` y `BlacklistModule` son `@Global()` — no reimportar `PrismaService`/`AuditService`/`ConfigurationService`/`BusinessRulesService`/`BlacklistService` por feature module. `BlacklistService.isBlacklisted(phone)` se llama en cualquier punto de entrada de un cliente (registro y creación de préstamo ya lo hacen, `ForbiddenException`).
 - TDD: cada task/corte escribe primero el test que falla, luego la implementación. Mantener esa disciplina para tasks nuevas.
 - Todo cambio de funcionalidad va con su test unitario/e2e ejecutable con `npm test` / `npm run test:e2e`. Un cambio sin test no se da por terminado.
 - Lógica de negocio financiera (cotización, multas, aplicación de pagos, score) vive en funciones puras sin dependencias de Nest/Prisma (`loans/loan-quote.ts`, `loans/loan-penalty.ts`, `payments/payment-application.ts`, `score/score-calculation.ts`), cada una con su `.spec.ts` TDD. El `Service` correspondiente solo envuelve esa función pura con acceso a BD/auditoría.
