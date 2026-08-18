@@ -12,6 +12,7 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
 ) {
   const autoId = useId();
   const inputId = id ?? autoId;
+  const errorId = `${inputId}-error`;
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={inputId} className="text-sm font-medium text-secondary">
@@ -24,9 +25,14 @@ export const Input = forwardRef<HTMLInputElement, Props>(function Input(
           error ? 'border-danger' : ''
         } ${className}`}
         aria-invalid={!!error}
+        aria-describedby={error ? errorId : undefined}
         {...rest}
       />
-      {error && <span className="text-sm text-danger">{error}</span>}
+      {error && (
+        <span id={errorId} className="text-sm text-danger">
+          {error}
+        </span>
+      )}
     </div>
   );
 });

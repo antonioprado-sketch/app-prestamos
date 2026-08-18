@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { getTourSeen, setTourSeen } from '../lib/tour';
@@ -22,9 +23,24 @@ const SLIDES = [
   },
 ];
 
+const TITLE_ID = 'welcome-tour-title';
+
+function focusableElements(container: HTMLElement): HTMLElement[] {
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+}
+
 export function WelcomeTour() {
   const [dismissed, setDismissed] = useState(getTourSeen());
   const [step, setStep] = useState(0);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!dismissed) dialogRef.current?.focus();
+  }, [dismissed]);
 
   if (dismissed) return null;
 
@@ -36,8 +52,35 @@ export function WelcomeTour() {
   const isLast = step === SLIDES.length - 1;
   const slide = SLIDES[step];
 
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      finish();
+      return;
+    }
+    if (e.key !== 'Tab' || !dialogRef.current) return;
+    const focusable = focusableElements(dialogRef.current);
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={TITLE_ID}
+      ref={dialogRef}
+      tabIndex={-1}
+      onKeyDown={onKeyDown}
+    >
       <Card className="w-full max-w-sm">
         <div className="mb-4 flex justify-center gap-1.5">
           {SLIDES.map((s, i) => (
@@ -47,7 +90,9 @@ export function WelcomeTour() {
             />
           ))}
         </div>
-        <h2 className="mb-2 text-center text-lg font-bold text-secondary">{slide.title}</h2>
+        <h2 id={TITLE_ID} className="mb-2 text-center text-lg font-bold text-secondary">
+          {slide.title}
+        </h2>
         <p className="mb-6 text-center text-sm text-secondary">{slide.body}</p>
         <div className="flex gap-2">
           {!isLast && (

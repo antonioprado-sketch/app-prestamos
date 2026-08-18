@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-17 (Fase 7 en curso, primer corte).
+Última actualización: 2026-08-17 (Fase 7 en curso, cuarto corte).
 
 ## Fase actual: Fase 7 — Seguridad y QA (en curso, sin plan escrito task-por-task). Fases 1-6 completas.
 
@@ -437,3 +437,11 @@ Fases 1-6 completas (fundaciones, cliente, administrador, cobrador, BI, PWA) —
 Pendiente no bloqueante, arrastrado de varias sesiones: la mayoría de las pantallas (login, registro, calculadora, onboarding, documentos, pagaré, `AdminLoansPage`, dashboards) siguen sin una pasada visual real en navegador con la extensión de Chrome conectada — todo verificado por curl/Node fetch/API contra el stack real, pero no visualmente. El video de identidad es la excepción (se probó con cámara real, ver Fase 2). Recomendable antes de seguir apilando UI, ya que ya aparecieron bugs (413 de Nginx en subida de video) que solo se detectan probando el flujo real de punta a punta, no con tests que le pegan directo a la API.
 
 El test de fecha hardcodeada en `loan-quote.spec.ts` encontrado en esta sesión ya se arregló (ver Fase 6 arriba) — `npm test` de la API vuelve a estar 100% verde.
+
+**Fase 7, cuarto corte: auditoría de accesibilidad WCAG 2.1 AA (2026-08-17):** solo frontend, sin cambios de API. Alcance: contraste de color y foco de teclado en modal, encontrados con la skill `accessibility-review`.
+
+- **Contraste insuficiente (texto sobre fondo claro, <4.5:1 AA):** `warning` (`#F5A623`, ~2:1) usado como color de texto en `Alert` (variante warning) y `AdminCustomersPage` (badge "ajuste manual") — se dejó el tono original como fondo/borde pero el texto pasa a `amber-700` (~4.7:1), misma familia visual. `primary` (`#0F8B5F`→`#0B7550`) y `danger` (`#D64545`→`#C63A3A`) en `tailwind.config.js` se oscurecieron porque se usan como texto en varios lugares (botones, links, `score.red`) y el tono original no llegaba a 4.5:1 contra blanco/`primary-light`/`bg-red-50`. `score.red` sigue el mismo valor que `danger` (ya estaban acoplados).
+- **`WelcomeTour` no era un diálogo modal accesible:** le faltaba `role="dialog"`/`aria-modal`/`aria-labelledby`, no atrapaba el foco (Tab podía salirse al fondo de la página detrás del overlay) ni cerraba con Escape. Se agregó `role="dialog"` + `aria-modal="true"` + `aria-labelledby` apuntando al `<h2>` del título, foco inicial al montar, trampa de foco manual (Tab/Shift+Tab cicla entre primer/último elemento enfocable dentro del diálogo) y `Escape` para cerrar (mismo efecto que el botón "Entendido").
+- **`Input`:** el mensaje de error no estaba asociado al campo para lectores de pantalla — se agregó `aria-describedby` apuntando al `id` del `<span>` de error (solo cuando hay error).
+
+Verificado 2026-08-17: `npm run build`/`lint`/`test` (web) en verde (20/20 unit tests, sin regresión). No se tocó Docker ni la API. Pendiente no bloqueante: no se auditaron todas las pantallas del sistema (solo los patrones reusables — `Alert`, `Input`, `WelcomeTour`, colores base — que se repiten en el resto de la UI), una pasada página por página queda para un corte futuro si se pide.

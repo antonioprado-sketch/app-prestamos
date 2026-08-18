@@ -576,3 +576,36 @@ acotadas, resto denegado) en Nginx.
 
 No verificado en runtime real de `docker-compose.prod.yml` (no estaba levantado esta
 sesión) — la rama de producción de `main.ts` se validó solo por código/build.
+
+## Fase 7, cuarto corte: accesibilidad WCAG 2.1 AA (2026-08-17)
+
+Corte de frontend puro, sin tocar API ni Docker. La skill `accessibility-review`
+encontró dos clases de problema, ambas en componentes compartidos (no páginas
+sueltas), lo que las hace de alto apalancamiento: arreglar un componente base
+corrige todas sus instancias en la app de una vez.
+
+**Contraste de color por debajo de 4.5:1 (AA) en texto.** El tono `warning`
+(`#F5A623`) daba ~2:1 sobre fondo claro — muy visible al ojo pero técnicamente
+ilegible para el estándar. Se separó **uso como fondo/borde** (se queda igual,
+el contraste ahí no aplica de la misma forma) de **uso como texto** (pasa a
+`amber-700`, ~4.7:1). `primary` y `danger` en `tailwind.config.js` se
+oscurecieron directamente en el token porque se usan como texto en demasiados
+lugares (botones, links, `score.red`) para separar variantes como se hizo con
+`warning` — más simple bajar el tono base un par de puntos que mantener dos
+paletas paralelas.
+
+**`WelcomeTour` no era un diálogo accesible de verdad.** Visualmente sí era un
+modal (overlay + tarjeta centrada), pero sin `role="dialog"`, sin trampa de
+foco (Tab se escapaba al contenido detrás del overlay) y sin cierre por
+Escape — un usuario de teclado o lector de pantalla no tenía forma confiable
+de saber que estaba en un diálogo ni de salir sin usar el mouse. Se implementó
+a mano (sin librería nueva): `role="dialog"` + `aria-modal` + `aria-labelledby`
+al título, foco inicial al montar vía `ref` + `useEffect`, trampa de foco
+manual comparando `document.activeElement` contra el primer/último elemento
+enfocable dentro del contenedor en el handler de `onKeyDown`, y `Escape`
+disparando el mismo `finish()` que ya usaba el botón "Entendido".
+
+Verificado: build/lint/test (web) en verde, 20/20 unit sin regresión. Quedó
+pendiente, no bloqueante: esta pasada cubrió los componentes base compartidos,
+no cada pantalla individual — una auditoría página por página es un corte
+aparte si se pide.

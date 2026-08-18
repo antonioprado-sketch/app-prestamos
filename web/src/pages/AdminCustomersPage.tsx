@@ -236,7 +236,7 @@ export function AdminCustomersPage() {
                           <p className="mb-1 text-sm font-medium text-secondary">
                             Score{' '}
                             {detail.isManualScoreOverride && (
-                              <span className="text-xs font-normal text-warning">
+                              <span className="text-xs font-normal text-amber-700">
                                 (ajuste manual)
                               </span>
                             )}
