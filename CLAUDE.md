@@ -9,6 +9,7 @@ Modular Monolith:
 - `web/` — React 18 + Vite 5 + Tailwind 3.4 + vite-plugin-pwa (`strategies: 'injectManifest'`, service worker propio en `web/src/sw.ts` — no `generateSW`, porque Web Push necesita listeners `push`/`notificationclick` personalizados).
 - MySQL 8, MinIO (documentos/video/pagarés vía URLs firmadas), Nginx como proxy.
 - Solo dos entornos: `docker-compose.dev.yml` y `docker-compose.prod.yml`.
+- **Destino de producción: VPS de Hostinger** con `docker-compose.prod.yml` (API + frontend + MySQL + MinIO + Nginx) — no GitHub Pages ni hosting estático; el CI de Actions solo valida, no despliega.
 
 ## Restricciones globales (no reabrir sin pedir al usuario)
 

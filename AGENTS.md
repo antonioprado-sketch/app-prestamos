@@ -13,6 +13,7 @@ Modular Monolith:
 - `web/` — React 18 + Vite 5 + Tailwind 3.4 + vite-plugin-pwa. Leaflet (mapa admin) y MediaPipe (video identidad) se cargan con `import()` dinámico, no van en el bundle principal.
 - MySQL 8, MinIO (documentos/video/pagarés vía URLs firmadas), Nginx como proxy.
 - Solo dos entornos: `docker-compose.dev.yml` y `docker-compose.prod.yml`.
+- Destino de producción: **VPS de Hostinger** con `docker-compose.prod.yml` — no GitHub Pages ni hosting estático; CI solo valida, no despliega.
 
 ## Restricciones globales (no reabrir sin pedir al usuario)
 

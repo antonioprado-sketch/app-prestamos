@@ -38,6 +38,14 @@ Copiar `.env.example` a `.env` y completar credenciales (MySQL, JWT, Gmail SMTP)
 
 > Nota: el servicio `worker` está definido en el compose desde Fase 1 pero su código (`main-worker.ts`) todavía no existe (multas se calculan en vivo sin cron, ver `project_state.md`). El contenedor se deja **detenido** (`docker compose stop worker`) en vez de reiniciarse en bucle.
 
+## Despliegue (producción)
+
+El destino de producción es un **VPS de Hostinger** (no GitHub Pages ni ningún hosting estático) — la app es un stack Docker completo (API + frontend + MySQL + MinIO + Nginx), no un sitio estático.
+
+- El CI de GitHub Actions (`ci.yml`) **solo valida** (build, lint, tests, e2e de navegador) — no despliega nada.
+- En el VPS se corre el entorno de producción: `docker compose -f docker-compose.prod.yml up -d --build` + migraciones (`cd api && npx prisma migrate deploy`). Requiere los mismos `.env` (MySQL, JWT, MinIO, VAPID, `EMAIL_ENCRYPTION_KEY`) y TLS vía Nginx (certificado en el VPS; ver `docker/nginx/nginx.prod.conf`).
+- Pendiente de Fase 8 del roadmap: TLS/HTTPS real en el VPS, firewall, backups de MySQL + MinIO con restauración probada, y exponer MinIO tras un proxy para que las URLs firmadas funcionen fuera de dev (documentado en `.env.example`).
+
 ## Pruebas
 
 - API: `cd api && npm test` (unitarias) y `npx jest --config ./test/jest-e2e.json --runInBand` (e2e, requiere MySQL arriba — el script `npm run test:e2e` sin `--runInBand` corre en paralelo y puede fallar por una carrera en el bootstrap del admin)

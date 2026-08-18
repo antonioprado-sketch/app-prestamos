@@ -843,3 +843,14 @@ prisma generate` + `restart api` dentro del contenedor (gotcha del volumen
 anónimo ya documentado) — la migración `20260818032847_blacklist` se aplicó
 desde el host y el cliente se regeneró en ambos lados. Suite completa 196/196
 e2e (dos corridas), 70/70 unit API, 20/20 web, build/lint verdes.
+
+## Decisión de despliegue: VPS de Hostinger (2026-08-18)
+
+Aclaración del usuario sobre el destino de producción: la app **no** es para
+GitHub Pages ni hosting estático — es un stack Docker completo (API + frontend +
+MySQL + MinIO + Nginx) que se despliega en un **VPS de Hostinger** con
+`docker-compose.prod.yml`. El CI de GitHub Actions solo valida (build, lint,
+tests, e2e de navegador) y nunca despliega. La configuración de producción
+(TLS/HTTPS, firewall, backups con restauración probada, exponer MinIO tras un
+proxy para URLs firmadas fuera de dev) es el contenido de Fase 8 del roadmap y
+se ejecutará sobre ese VPS.
