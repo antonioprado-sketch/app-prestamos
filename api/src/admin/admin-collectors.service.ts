@@ -1,8 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import * as argon2 from 'argon2';
-import { randomBytes, randomInt } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+import { generateTempPassword } from '../common/generate-temp-password';
 
 export interface CollectorResult {
   id: string;
@@ -13,12 +13,6 @@ export interface CollectorResult {
 
 export interface CreatedCollectorResult extends CollectorResult {
   tempPassword: string;
-}
-
-function generateTempPassword(): string {
-  const digits = randomInt(10, 99);
-  const hex = randomBytes(6).toString('hex');
-  return `Temp${digits}${hex}`;
 }
 
 @Injectable()

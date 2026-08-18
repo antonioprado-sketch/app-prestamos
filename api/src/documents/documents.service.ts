@@ -189,4 +189,21 @@ export class DocumentsService {
     );
     return { url };
   }
+
+  /** Sin chequeo de ownership — solo para uso desde endpoints de ADMIN, ya protegidos por RolesGuard. */
+  async signedUrlForAdmin(id: string): Promise<{ url: string }> {
+    if (!/^\d+$/.test(id))
+      throw new NotFoundException('Documento no encontrado');
+    const document = await this.prisma.document.findUnique({
+      where: { id: BigInt(id) },
+    });
+    if (!document) {
+      throw new NotFoundException('Documento no encontrado');
+    }
+    const url = await this.storage.presignedGetUrl(
+      document.storageKey,
+      SIGNED_URL_EXPIRY_SECONDS,
+    );
+    return { url };
+  }
 }

@@ -22,6 +22,7 @@ import { CollectorLoansModule } from './collector/collector-loans.module';
 import { LocationsModule } from './locations/locations.module';
 import { BiModule } from './bi/bi.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { BlacklistModule } from './blacklist/blacklist.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     LocationsModule,
     BiModule,
     NotificationsModule,
+    BlacklistModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

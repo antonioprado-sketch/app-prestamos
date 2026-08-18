@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -11,6 +12,7 @@ import { ConfigurationService } from '../configuration/configuration.service';
 import { BusinessRulesService } from '../configuration/business-rules.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../storage/storage.service';
+import { BlacklistService } from '../blacklist/blacklist.service';
 import {
   calculateQuote,
   QuoteInput,
@@ -96,6 +98,7 @@ export class LoansService {
     private readonly businessRules: BusinessRulesService,
     private readonly audit: AuditService,
     private readonly storage: StorageService,
+    private readonly blacklist: BlacklistService,
   ) {}
 
   async resolveMaxAmount(phone: string | undefined): Promise<number | null> {
@@ -128,6 +131,11 @@ export class LoansService {
     ip: string,
     ua: string,
   ): Promise<LoanDraftResult> {
+    if (await this.blacklist.isBlacklisted(phone)) {
+      throw new ForbiddenException(
+        'No puedes solicitar un préstamo: tu número está en la lista negra',
+      );
+    }
     const quote = await this.quote(input, phone);
 
     const existing = await this.prisma.loan.findFirst({

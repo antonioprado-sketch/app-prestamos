@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -10,6 +11,7 @@ import { TokensService } from './tokens.service';
 import { validatePassword } from './password.policy';
 import { AuditService } from '../audit/audit.service';
 import { EmailService } from '../email/email.service';
+import { BlacklistService } from '../blacklist/blacklist.service';
 import type { User } from '@prisma/client';
 
 @Injectable()
@@ -19,6 +21,7 @@ export class AuthService {
     private readonly tokens: TokensService,
     private readonly audit: AuditService,
     private readonly email: EmailService,
+    private readonly blacklist: BlacklistService,
   ) {}
 
   async register(
@@ -28,6 +31,11 @@ export class AuthService {
   ) {
     const policyError = validatePassword(dto.password);
     if (policyError) throw new BadRequestException(policyError);
+    if (await this.blacklist.isBlacklisted(dto.phone)) {
+      throw new ForbiddenException(
+        'Este número de teléfono está en la lista negra',
+      );
+    }
     const exists = await this.prisma.user.findUnique({
       where: { phone: dto.phone },
     });

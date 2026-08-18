@@ -5,6 +5,7 @@ import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
+import { DocumentList, type AdminDocument } from '../components/DocumentList';
 
 interface ScheduleEntry {
   seq: number;
@@ -103,6 +104,8 @@ export function AdminLoansPage() {
 
   const [scores, setScores] = useState<Record<string, CustomerScore>>({});
 
+  const [documentsByLoan, setDocumentsByLoan] = useState<Record<string, AdminDocument[]>>({});
+
   const load = () => {
     setLoading(true);
     setError(null);
@@ -197,13 +200,27 @@ export function AdminLoansPage() {
       .catch(() => undefined);
   };
 
+  const loadDocuments = (customerPhone: string) => {
+    apiFetch<AdminDocument[]>(`/admin/customers/${customerPhone}/documents`)
+      .then((docs) =>
+        setDocumentsByLoan((prev) => ({ ...prev, [customerPhone]: docs })),
+      )
+      .catch(() => undefined);
+  };
+
   const selectLoan = (id: string) => {
     const next = id === selectedId ? null : id;
     setSelectedId(next);
     resetAction();
     setPaymentAmount('');
     setPaymentError(null);
-    if (next) loadPayments(next);
+    if (next) {
+      loadPayments(next);
+      const loan = loans.find((l) => l.id === id);
+      if (loan && !documentsByLoan[loan.customerPhone]) {
+        loadDocuments(loan.customerPhone);
+      }
+    }
   };
 
   const registerPayment = async (loanId: string) => {
@@ -347,6 +364,19 @@ export function AdminLoansPage() {
                     {loan.adminNote && (
                       <Alert variant="error">Nota admin: {loan.adminNote}</Alert>
                     )}
+
+                    <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
+                      <p className="text-sm font-medium text-secondary">
+                        Documentos del cliente (revisa INE y video antes de aprobar)
+                      </p>
+                      {documentsByLoan[loan.customerPhone] ? (
+                        <DocumentList documents={documentsByLoan[loan.customerPhone]} />
+                      ) : (
+                        <p className="text-xs text-secondary">
+                          No se pudieron cargar los documentos.
+                        </p>
+                      )}
+                    </div>
 
                     {ASSIGNABLE_STATUSES.includes(loan.status) && (
                       <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">

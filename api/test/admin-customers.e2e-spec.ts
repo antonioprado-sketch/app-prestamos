@@ -9,6 +9,8 @@ describe('Admin customers (e2e)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
   const clientPhone = '5588112233';
+  const manualClientPhone = '5588112244';
+  const deletePhone = '5588221177';
   const adminPhone = process.env.ADMIN_PHONE ?? 'admin';
   const adminPassword = process.env.ADMIN_PASSWORD ?? 'admin';
 
@@ -34,6 +36,8 @@ describe('Admin customers (e2e)', () => {
     await setupApp.init();
     prisma = setupModule.get(PrismaService);
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: manualClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: deletePhone } });
     await setupApp.close();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -69,6 +73,8 @@ describe('Admin customers (e2e)', () => {
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { phone: clientPhone } });
+    await prisma.user.deleteMany({ where: { phone: manualClientPhone } });
+    await prisma.user.deleteMany({ where: { phone: deletePhone } });
     await app.close();
   });
 
@@ -148,5 +154,141 @@ describe('Admin customers (e2e)', () => {
       .set('Authorization', `Bearer ${clientToken}`)
       .send({ amount: 10000, model: 'WEEKLY', openingDate: '2026-08-17' })
       .expect(200);
+  });
+
+  it('POST /admin/customers requiere token', async () => {
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/customers')
+      .send({ phone: manualClientPhone })
+      .expect(401);
+  });
+
+  it('POST /admin/customers rechaza a un rol distinto de ADMIN', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ phone: manualClientPhone })
+      .expect(403);
+  });
+
+  it('POST /admin/customers da de alta un cliente con contraseña temporal', async () => {
+    const token = await loginAdmin();
+    const res = await request(app.getHttpServer())
+      .post('/api/v1/admin/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ phone: manualClientPhone })
+      .expect(201);
+
+    expect(res.body.phone).toBe(manualClientPhone);
+    expect(typeof res.body.tempPassword).toBe('string');
+    expect(res.body.tempPassword.length).toBeGreaterThanOrEqual(8);
+
+    const user = await prisma.user.findUnique({
+      where: { phone: manualClientPhone },
+      include: { customer: true },
+    });
+    expect(user?.role).toBe('CLIENT');
+    expect(user?.mustChangePassword).toBe(true);
+    expect(user?.customer?.isNewCustomer).toBe(true);
+  });
+
+  it('POST /admin/customers rechaza un teléfono duplicado', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .post('/api/v1/admin/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ phone: manualClientPhone })
+      .expect(409);
+  });
+
+  it('el cliente dado de alta manualmente puede loguearse con la contraseña temporal', async () => {
+    const token = await loginAdmin();
+    const created = await request(app.getHttpServer())
+      .post('/api/v1/admin/customers')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ phone: '5588112255' })
+      .expect(201);
+
+    const loginRes = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: '5588112255', password: created.body.tempPassword })
+      .expect(200);
+    expect(loginRes.body.mustChangePassword).toBe(true);
+
+    await prisma.user.deleteMany({ where: { phone: '5588112255' } });
+  });
+
+  it('DELETE /admin/customers/:phone requiere token', async () => {
+    await request(app.getHttpServer())
+      .delete(`/api/v1/admin/customers/${deletePhone}`)
+      .expect(401);
+  });
+
+  it('DELETE /admin/customers/:phone rechaza a un rol distinto de ADMIN', async () => {
+    const token = await loginClient();
+    await request(app.getHttpServer())
+      .delete(`/api/v1/admin/customers/${deletePhone}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(403);
+  });
+
+  it('DELETE /admin/customers/:phone rechaza eliminar a un no-cliente', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .delete(`/api/v1/admin/customers/${adminPhone}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(400);
+  });
+
+  it('DELETE /admin/customers/:phone borra el cliente, sus préstamos y libera el teléfono', async () => {
+    const adminToken = await loginAdmin();
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: deletePhone, password: 'Abcdef12!' })
+      .expect(201);
+
+    const clientLogin = await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: deletePhone, password: 'Abcdef12!' })
+      .expect(200);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/loans')
+      .set('Authorization', `Bearer ${clientLogin.body.accessToken}`)
+      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-24' })
+      .expect(201);
+
+    const res = await request(app.getHttpServer())
+      .delete(`/api/v1/admin/customers/${deletePhone}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .expect(200);
+    expect(res.body.removed).toBe(true);
+
+    const user = await prisma.user.findUnique({ where: { phone: deletePhone } });
+    expect(user).toBeNull();
+    const loans = await prisma.loan.count({
+      where: { customerPhone: deletePhone },
+    });
+    expect(loans).toBe(0);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/login')
+      .send({ phone: deletePhone, password: 'Abcdef12!' })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .send({ phone: deletePhone, password: 'Abcdef12!' })
+      .expect(201);
+  });
+
+  it('DELETE /admin/customers/:phone devuelve 404 si no existe', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .delete('/api/v1/admin/customers/5500000098')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(404);
   });
 });
