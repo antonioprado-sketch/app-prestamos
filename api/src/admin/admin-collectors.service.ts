@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -80,5 +84,44 @@ export class AdminCollectorsService {
       name: c.name,
       active: c.active,
     }));
+  }
+
+  async updateStatus(
+    adminPhone: string,
+    phone: string,
+    active: boolean,
+    ip: string,
+    ua: string,
+  ): Promise<CollectorResult> {
+    const collector = await this.prisma.collector.findUnique({
+      where: { phone },
+    });
+    if (!collector) throw new NotFoundException('Cobrador no encontrado');
+
+    const [updated] = await this.prisma.$transaction([
+      this.prisma.collector.update({ where: { phone }, data: { active } }),
+      this.prisma.user.update({
+        where: { phone },
+        data: { status: active ? 'ACTIVE' : 'INACTIVE' },
+      }),
+    ]);
+
+    await this.audit.log({
+      userPhone: adminPhone,
+      action: 'collector_status_changed',
+      entity: 'collector',
+      entityId: String(collector.id),
+      prevValue: { active: collector.active },
+      newValue: { active },
+      ip,
+      userAgent: ua,
+    });
+
+    return {
+      id: String(updated.id),
+      phone: updated.phone,
+      name: updated.name,
+      active: updated.active,
+    };
   }
 }

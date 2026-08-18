@@ -5,6 +5,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 import { todayInMexicoCity } from '../src/loans/loan-quote';
 
 describe('BI (e2e)', () => {
@@ -121,7 +122,11 @@ describe('BI (e2e)', () => {
     const loan = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 1000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
     const loanId = loan.body.id;
 
     const TINY_PNG_BASE64 =
@@ -207,7 +212,11 @@ describe('BI (e2e)', () => {
     const loan1 = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 1000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
 
     const TINY_PNG_BASE64 =
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
@@ -232,7 +241,11 @@ describe('BI (e2e)', () => {
     const loan2 = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 500, model: 'WEEKLY', openingDate: '2026-08-17' })
+      .send({
+        amount: 500,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      })
       .expect(201);
     expect(loan2.body.id).not.toBe(loan1.body.id);
 
@@ -285,7 +298,11 @@ describe('BI (e2e)', () => {
     const loan = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 1000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
 
     const TINY_PNG_BASE64 =
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
@@ -391,7 +408,11 @@ describe('BI (e2e)', () => {
     const loan = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 500, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 500,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
 
     const TINY_PNG_BASE64 =
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';

@@ -67,6 +67,9 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user)
       throw new UnauthorizedException('Teléfono o contraseña incorrectos');
+    if (user.status === 'INACTIVE') {
+      throw new UnauthorizedException('Cuenta desactivada');
+    }
     if (
       user.status === 'BLOCKED' &&
       user.blockedUntil &&

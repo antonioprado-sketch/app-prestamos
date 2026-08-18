@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 
 const TINY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
@@ -61,7 +62,11 @@ describe('Pagaré (e2e)', () => {
     const loan = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${token}`)
-      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 1000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
     loanId = loan.body.id;
   });
 

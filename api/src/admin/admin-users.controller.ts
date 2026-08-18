@@ -7,55 +7,58 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { AdminCollectorsService } from './admin-collectors.service';
-import { CreateCollectorDto } from './dto/create-collector.dto';
-import { UpdateCollectorStatusDto } from './dto/update-collector-status.dto';
+import { AdminUsersService } from './admin-users.service';
+import { ChangeUserRoleDto } from './dto/change-user-role.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
-@Controller('api/v1/admin/collectors')
+@Controller('api/v1/admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
-export class AdminCollectorsController {
-  constructor(private readonly adminCollectors: AdminCollectorsService) {}
+export class AdminUsersController {
+  constructor(private readonly adminUsers: AdminUsersService) {}
 
   @Get()
-  async findAll() {
-    return this.adminCollectors.findAll();
+  async findAll(
+    @Query('role') role?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.adminUsers.findAll({ role, status });
   }
 
-  @Post()
-  @HttpCode(HttpStatus.CREATED)
-  async create(
-    @Body() dto: CreateCollectorDto,
+  @Post(':phone/reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(
+    @Param('phone') phone: string,
     @CurrentUser() user: { phone: string },
     @Req() req: Request,
   ) {
-    return this.adminCollectors.create(
+    return this.adminUsers.resetPassword(
       user.phone,
-      dto,
+      phone,
       req.ip ?? '',
       req.headers['user-agent'] ?? '',
     );
   }
 
-  @Patch(':phone/status')
-  async updateStatus(
+  @Patch(':phone/role')
+  async changeRole(
     @Param('phone') phone: string,
-    @Body() dto: UpdateCollectorStatusDto,
+    @Body() dto: ChangeUserRoleDto,
     @CurrentUser() user: { phone: string },
     @Req() req: Request,
   ) {
-    return this.adminCollectors.updateStatus(
+    return this.adminUsers.changeRole(
       user.phone,
       phone,
-      dto.active,
+      dto.role,
       req.ip ?? '',
       req.headers['user-agent'] ?? '',
     );

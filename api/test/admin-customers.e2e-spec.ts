@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 
 describe('Admin customers (e2e)', () => {
   let app: INestApplication;
@@ -152,7 +153,11 @@ describe('Admin customers (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/v1/loans/quote')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 10000, model: 'WEEKLY', openingDate: '2026-08-17' })
+      .send({
+        amount: 10000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      })
       .expect(200);
   });
 
@@ -266,7 +271,9 @@ describe('Admin customers (e2e)', () => {
       .expect(200);
     expect(res.body.removed).toBe(true);
 
-    const user = await prisma.user.findUnique({ where: { phone: deletePhone } });
+    const user = await prisma.user.findUnique({
+      where: { phone: deletePhone },
+    });
     expect(user).toBeNull();
     const loans = await prisma.loan.count({
       where: { customerPhone: deletePhone },

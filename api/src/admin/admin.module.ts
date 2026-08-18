@@ -10,6 +10,8 @@ import { AdminConfigurationController } from './admin-configuration.controller';
 import { AdminConfigurationService } from './admin-configuration.service';
 import { AdminDocumentsController } from './admin-documents.controller';
 import { AdminBlacklistController } from './admin-blacklist.controller';
+import { AdminUsersController } from './admin-users.controller';
+import { AdminUsersService } from './admin-users.service';
 import { ScoreModule } from '../score/score.module';
 import { DocumentsModule } from '../documents/documents.module';
 
@@ -22,12 +24,14 @@ import { DocumentsModule } from '../documents/documents.module';
     AdminConfigurationController,
     AdminDocumentsController,
     AdminBlacklistController,
+    AdminUsersController,
   ],
   providers: [
     AdminLoansService,
     AdminCollectorsService,
     AdminCustomersService,
     AdminConfigurationService,
+    AdminUsersService,
   ],
 })
 export class AdminModule {}

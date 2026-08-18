@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 import { todayInMexicoCity } from '../src/loans/loan-quote';
 
 const TINY_PNG_BASE64 =
@@ -75,7 +76,11 @@ describe('Score (e2e)', () => {
     const loan = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 1000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
     loanId = loan.body.id;
 
     await request(app.getHttpServer())

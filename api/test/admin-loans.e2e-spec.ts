@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 
 const TINY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
@@ -90,7 +91,7 @@ describe('Admin loans (e2e)', () => {
       .send(customerData)
       .expect(200);
 
-    loanId = await createSubmittedLoan('2026-08-17');
+    loanId = await createSubmittedLoan(nextWeeklyOpeningDate());
   });
 
   afterAll(async () => {
