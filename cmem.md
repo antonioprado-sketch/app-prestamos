@@ -713,3 +713,32 @@ un token OAuth guardado para `github.com` (el mismo que usa `git push` sin
 pedir contraseña) — reutilizarlo para el `curl` autenticado fue lo que
 permitió ver el error real en vez de adivinar a partir de "failure" sin más
 contexto.
+
+## Fase 7, segundo run real de CI: secretos horneados en la imagen Docker (2026-08-18)
+
+Con `api` y `web` ya en verde, el tercer bug fue el más interesante de los
+tres — no estaba en el YAML de CI sino en `Dockerfile.api`, y su forma de
+esconderse era casi elegante: `RUN npx prisma generate` necesita que
+`DATABASE_URL` exista para que `prisma.config.ts` cargue (hace
+`import "dotenv/config"` y después `env("DATABASE_URL")`, que tira si la
+variable no está, aunque `generate` no llega a tocar ninguna base de datos
+real). El build de `docker compose ... --build` en CI no tiene ningún `.env`
+en ningún lado — fallaba ahí, limpio y reproducible.
+
+Lo que hizo que nadie lo notara antes: `api/.env` (credenciales reales de esta
+máquina, nunca commiteado) se copiaba sin querer a la imagen en cada build
+local, porque el patrón `.env` en `.dockerignore` solo excluye el archivo en
+la raíz del build context — no `api/.env`, que vive un nivel más adentro.
+Cada build de este proyecto, desde que existe `api/.env`, horneó secretos
+reales en una capa de la imagen. Nadie lo vio porque nunca hubo motivo para
+inspeccionar las capas de una imagen que "solo" corre en la máquina de
+desarrollo — hasta que CI, sin ese archivo, expuso la dependencia oculta.
+
+Arreglo con dos partes deliberadamente separadas: `.dockerignore` pasa de
+`.env` a `**/.env` (+ `**/.env.local`) para que ningún `.env` real, en
+ninguna ruta, vuelva a colarse en una imagen; y `Dockerfile.api` gana un
+placeholder explícito (`ENV DATABASE_URL="mysql://user:pass@localhost:3306/db"`,
+nunca una credencial real) antes de `prisma generate`, para que ya no dependa
+de que exista un `.env` — real o no — en el contexto de build. En runtime el
+placeholder no importa: `docker-compose.dev.yml`/`.prod.yml` siempre inyectan
+el `DATABASE_URL` real vía `environment:`, que pisa cualquier `ENV` horneado.

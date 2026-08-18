@@ -5,12 +5,14 @@ RUN npm ci
 
 FROM base AS dev
 COPY api/ .
+ENV DATABASE_URL="mysql://user:pass@localhost:3306/db"
 RUN npx prisma generate
 EXPOSE 3000
 CMD ["npm", "run", "start:dev"]
 
 FROM base AS build
 COPY api/ .
+ENV DATABASE_URL="mysql://user:pass@localhost:3306/db"
 RUN npx prisma generate
 RUN npm run build
 

@@ -5,7 +5,8 @@ web/node_modules
 dist
 api/dist
 web/dist
-.env
+**/.env
+**/.env.local
 .git
 docs
 .superpowers
