@@ -10,7 +10,7 @@ Fases 1-5 completas (fundaciones, cliente, administrador, cobrador, BI). BI: KPI
 
 Modular Monolith:
 - `api/` — NestJS 10 + TypeScript, Prisma 5 (MySQL 8), Argon2id, JWT (access 15min + refresh rotativo en BD), nestjs-pino, helmet, throttler, class-validator/class-transformer, Swagger (solo dev, `/api/v1/docs`).
-- `web/` — React 18 + Vite 5 + Tailwind 3.4 + vite-plugin-pwa. Leaflet (mapa admin) y MediaPipe (video identidad) se cargan con `import()` dinámico, no van en el bundle principal.
+- `web/` — React 18 + Vite 5 + Tailwind 3.4 + vite-plugin-pwa. Leaflet (mapa admin) y MediaPipe (video identidad) se cargan con `import()` dinámico, no van en el bundle principal. MediaPipe es **autocontenido** (`/mediapipe/*`): wasm+modelo locales, sin CDN (ver convención abajo).
 - MySQL 8, MinIO (documentos/video/pagarés vía URLs firmadas), Nginx como proxy.
 - Solo dos entornos: `docker-compose.dev.yml` y `docker-compose.prod.yml`.
 - Destino de producción: **VPS de Hostinger** con `docker-compose.prod.yml` — no GitHub Pages ni hosting estático; CI solo valida, no despliega.
@@ -77,7 +77,7 @@ npx prisma migrate status
 - Los `Service` de `admin/` exportan sus helpers de mapeo Prisma→DTO (tipos + funciones) para que módulos con la misma forma de datos pero distinto scope de ownership (ej. `collector/`) los reusen en vez de duplicar el mapeo.
 - Un endpoint nunca devuelve `null`/`undefined` como cuerpo completo de la respuesta — NestJS lo serializa como `200` con body vacío, lo que rompe `res.json()` del lado cliente. Envolver siempre en un objeto, ej. `{ location: T | null }`.
 - Endpoints que agregan sobre toda la BD (ej. `GET /admin/bi/kpis`) se testean por delta (antes/después de un fixture conocido), nunca por igualdad absoluta.
-- Librerías pesadas del lado cliente que solo usa una pantalla concreta se cargan sin ir en el bundle principal — `import()` dinámico imperativo para APIs no-JSX (MediaPipe, Leaflet), `React.lazy()`+`Suspense` para librerías usadas como JSX (Recharts). Verificar en el build que terminan en su propio chunk.
+- Librerías pesadas del lado cliente que solo usa una pantalla concreta se cargan sin ir en el bundle principal — `import()` dinámico imperativo para APIs no-JSX (MediaPipe, Leaflet), `React.lazy()`+`Suspense` para librerías usadas como JSX (Recharts). Verificar en el build que terminan en su propio chunk. El WASM y el modelo de MediaPipe (video de identidad) son **autocontenidos** (`/mediapipe/*`, copiados de `node_modules` en el build, excluidos del precache PWA) — nunca volver a apuntarlos a CDNs (`web/scripts/copy-mediapipe-wasm.mjs`).
 
 ## Reglas del protocolo `addv-web-app` aplicadas a este repo
 

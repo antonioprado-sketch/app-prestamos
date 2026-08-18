@@ -12,10 +12,8 @@ const DECLARED_PHRASE =
 const MIN_DURATION_SECONDS = 3;
 const MIN_HEIGHT = 480;
 const MIN_FACE_DETECTIONS = 3;
-const MODEL_URL =
-  'https://storage.googleapis.com/mediapipe-models/face_detector/blaze_face_short_range/float16/1/blaze_face_short_range.tflite';
-const WASM_BASE_URL =
-  'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm';
+const MODEL_URL = '/mediapipe/model/blaze_face_short_range.tflite';
+const WASM_BASE_URL = '/mediapipe/wasm';
 
 type FaceDetectorInstance = {
   detectForVideo: (video: HTMLVideoElement, timestamp: number) => { detections: unknown[] };

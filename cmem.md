@@ -854,3 +854,23 @@ tests, e2e de navegador) y nunca despliega. La configuración de producción
 (TLS/HTTPS, firewall, backups con restauración probada, exponer MinIO tras un
 proxy para URLs firmadas fuera de dev) es el contenido de Fase 8 del roadmap y
 se ejecutará sobre ese VPS.
+
+## Fix "No se pudo cargar la detección facial" (2026-08-18)
+
+El usuario lo reportó en su celular al grabar el video de identidad. Causa raíz
+de doble capa: (1) **descuadre de versiones** — el paquete instalado era
+`@mediapipe/tasks-vision@^1.0.1` pero el código cargaba el WASM de `0.10.14`
+(en 1.x cambió el glue/WASM; `FilesetResolver` arma `${base}/vision_wasm_*
+_internal.js|.wasm` según SIMD); (2) **CDNs externas en runtime** (Google Storage
+para el modelo, jsDelivr para el WASM), frágil desde redes móviles.
+
+Fix confirmado con el usuario: **autocontener todo**. El WASM se copia desde
+`node_modules` a `web/public/mediapipe/wasm/` en cada build
+(`web/scripts/copy-mediapipe-wasm.mjs`, hooks `predev`/`prebuild`/`prepreview`),
+el modelo tflite está commiteado en `web/public/mediapipe/model/`, y el código
+apunta a `/mediapipe/*` local. El wasm NO va al precache de la PWA
+(`injectManifest.globIgnores: ['**/mediapipe/**']` — el shell sigue ~1MB), y la
+CSP de Nginx perdió los CDNs. Nginx sirve `.wasm` con `application/wasm`.
+Lección de infra: no basta con que el archivo WASM exista en el CDN — el glue JS
+del bundle debe coincidir con la versión del WASM, y en producción los assets de
+una app para celular no deben depender de CDNs de terceros.

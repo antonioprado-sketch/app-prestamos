@@ -11,3 +11,4 @@ coverage/
 .superpowers/
 docker/mysql/data/
 minio-data/
+web/public/mediapipe/wasm/

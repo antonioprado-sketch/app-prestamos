@@ -16,6 +16,10 @@ export default defineConfig({
       // comportamiento que antes) — injectManifest es necesario para poder agregar
       // los listeners 'push'/'notificationclick' que generateSW no permite.
       injectManifest: {
+        // Los assets de MediaPipe (wasm ~12MB, modelo tflite) NO se precachean:
+        // el shell de la PWA no debe pesar 23MB. Se descargan en runtime con
+        // caché HTTP normal al usar el video de identidad.
+        globIgnores: ['**/mediapipe/**'],
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
