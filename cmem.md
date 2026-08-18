@@ -912,3 +912,72 @@ registrados en `project_state.md` como pendientes:
    **slider de $500 en $500 con tope $20,000** en vez de input manual; y "Lo quiero"
    aplica el tope de $3,000 para cliente nuevo (regla ya existente en backend,
    hay que reflejarla en el slider).
+
+## Fase 7, gestión de usuarios — las 3 reglas confirmadas tal cual, un ajuste de implementación (2026-08-18)
+
+El usuario confirmó las 3 reglas propuestas sin cambios (no gestionar admins,
+cobrador con préstamos no se degrada, desactivar bloquea login) — la única
+decisión que quedó abierta a criterio propio fue **qué hacer con el `Customer`
+al convertir un cliente en cobrador**. La propuesta original solo decía "crea
+el registro `Collector`", sin especificar si había que tocar el `Customer`
+existente. Borrarlo hubiera sido consistente con "ya no es cliente", pero
+`Customer` tiene cascada real hacia `Loan`/`Document`/`Payment` (el mismo
+cascade que usa el borrado completo de cliente) — convertir a alguien en
+cobrador hubiera borrado silenciosamente todo su historial de préstamos si
+alguna vez fue cliente antes. Se optó por conservarlo siempre: un cambio de
+rol es reversible por diseño, un borrado de historial no debería ser un
+efecto secundario de otro flujo.
+
+**El hallazgo colateral fue más grande que la feature.** Al correr la suite
+completa para verificar que nada se rompiera, fallaron 85 de 211 tests —
+no por el código nuevo, sino porque la fecha real había avanzado y "rotó"
+`openingDate: '2026-08-17'` hardcodeado en 12 archivos de e2e distintos.
+`loan-quote.spec.ts` ya se había arreglado dos veces en sesiones anteriores
+sin que nadie se preguntara si el mismo patrón estaba repetido en otro lado
+— sí lo estaba, en casi todos los e2e que crean un préstamo. Se creó un
+helper compartido (`api/test/test-helpers.ts`, `nextWeeklyOpeningDate()`)
+en vez de parchear cada archivo con una fecha nueva que iba a rotar otra vez
+— la lección de las dos veces anteriores era justo esa: una fecha hardcodeada
+en un test no es un fix, es una cuenta regresiva hasta el próximo "por qué
+falla esto de repente".
+
+## Fase 7, rediseño LendWise/stitch — por qué el primer intento no se vio bien (2026-08-18)
+
+Un corte anterior (de otra sesión) había tocado `tailwind.config.js` con la
+paleta correcta del mock, pero el usuario reportó que "el diseño no se
+aplicó como quiero". Investigando antes de tocar nada, aparecieron dos
+razones concretas, ninguna relacionada con los colores en sí:
+
+1. **Los tokens estaban bien, pero nadie los usó.** Ninguna página real
+   había sido tocada — `AdminBiPage`, `DashboardShell`, `DocumentsPage`
+   seguían con el markup viejo. Cambiar `tailwind.config.js` define qué
+   *podés* usar, no rediseña nada por sí solo.
+2. **Las fuentes estaban descargadas pero nunca conectadas.** `Inter` y
+   `Material Symbols Outlined` (`web/public/fonts/*.woff2`) existían en
+   disco desde una sesión anterior, sin un solo `@font-face` que las
+   cargara — el navegador caía a la fuente del sistema, y cualquier ícono
+   `material-symbols-outlined` se veía como texto plano ("home", "search")
+   en vez de un ícono, porque sin el font-face la ligadura no existe.
+
+Con el usuario habiendo exportado 5 pantallas reales de Stitch (HTML+PNG,
+carpeta `stitch/`) en vez de solo pedir "aplica los colores", el trabajo
+pasó de "ajustar tokens" a "portar 5 pantallas reales markup por markup" —
+mucho más trabajo, pero también mucho menos ambigüedad sobre qué se
+esperaba ver.
+
+**Regla aplicada en todo el corte: fidelidad visual sí, invención de datos
+no.** El mock tiene varios números/conceptos que no existen en el sistema
+real (un "score" numérico tipo 850, distancia GPS entre cobrador y cliente,
+"meta diaria" de cobranza, gráfica de pastel con splits fijos 40/30/20/10).
+En cada caso se adaptó al dato real disponible (categoría de score en vez
+de número, folio en vez de distancia, KPIs reales de `/admin/bi/kpis` en vez
+del pastel decorativo) en lugar de fabricar algo que se viera bien pero
+fuera falso. Es la misma disciplina que ya rigió el resto del proyecto
+(nunca exponer la tasa de interés real, nunca inventar el "próximo pago" sin
+poder calcularlo) aplicada ahora al terreno visual.
+
+**Lo que no se tocó a propósito:** `VideoIdentityPage` ya estaba probada con
+cámara real de hardware (Fase 2). Se agregó la pantalla de instrucciones
+previa del mock como un estado de UI puro (`showInstructions`, sin efecto en
+la lógica de grabación/MediaPipe) — cualquier cambio más profundo ahí
+arriesgaba una feature ya validada por muy poco beneficio visual adicional.
