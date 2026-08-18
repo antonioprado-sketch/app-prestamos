@@ -1,0 +1,257 @@
+<!DOCTYPE html><html lang="en" style=""><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LendWise - Calculate Loan</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet">
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#141819",
+                        "on-primary-container": "#8293ba",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#00629d",
+                        "surface-container": "#e5eeff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-surface": "#0b1c30",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed": "#cfe5ff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "primary-fixed-dim": "#b6c6f0",
+                        "on-primary-fixed-variant": "#364669",
+                        "outline": "#75777f",
+                        "surface-tint": "#4e5e82",
+                        "on-tertiary-container": "#909395",
+                        "inverse-surface": "#213145",
+                        "on-tertiary-fixed": "#191c1e",
+                        "primary-container": "#1a2b4c",
+                        "on-secondary-fixed": "#001d33",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary-fixed-variant": "#004a77",
+                        "on-secondary-container": "#003558",
+                        "tertiary-container": "#292c2e",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#071b3b",
+                        "on-primary": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#b6c6f0",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#dce9ff",
+                        "background": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary": "#031636",
+                        "on-surface-variant": "#44474e",
+                        "outline-variant": "#c5c6cf",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "secondary-container": "#00a2fd",
+                        "surface-bright": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-fixed-dim": "#98cbff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "8px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "2xl": "48px",
+                        "3xl": "64px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "sm": "12px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "data-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "data-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Base styles to hide scrollbar for horizontal lists but keep functionality */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface antialiased min-h-screen flex justify-center">
+<!-- Mobile-first container -->
+<main class="w-full max-w-md bg-surface min-h-screen relative flex flex-col">
+<!-- App Bar (Transactional/Task flow - back button only, no shell nav) -->
+<header class="flex items-center h-16 px-margin-mobile z-40 bg-surface w-full"><button aria-label="Regresar" class="p-2 -ml-2 rounded-full hover:bg-surface-container transition-colors text-primary"><span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span></button><div class="ml-auto flex gap-sm"><button class="px-2 py-1 font-label-md text-label-md text-secondary hover:bg-surface-container rounded-lg transition-colors">Iniciar sesión</button><button class="px-2 py-1 font-label-md text-label-md bg-secondary-container text-on-secondary-container rounded-lg transition-colors">Registrarse</button></div></header>
+<!-- Main Content Canvas -->
+<div class="flex-1 px-margin-mobile pb-[100px] flex flex-col gap-lg">
+<!-- Prominent Heading -->
+<div class="pt-sm"><h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary font-bold">Calcula tu préstamo</h1><p class="font-body-sm text-body-sm text-on-surface-variant mt-2">Define el monto y el plazo deseado.</p></div>
+<!-- Amount Input Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border border-transparent focus-within:border-secondary transition-all"><label class="block font-label-md text-label-md text-on-surface-variant mb-xs" for="amount-slider">Monto solicitado</label><div class="flex flex-col gap-sm"><div class="flex items-baseline gap-1"><span class="font-data-lg text-data-lg text-primary">$</span><span class="font-data-lg text-data-lg text-primary" id="amount-display">5000</span></div><input class="w-full h-2 bg-surface-container-high rounded-lg appearance-none cursor-pointer accent-secondary" id="amount-slider" max="20000" min="500" oninput="document.getElementById('amount-display').innerText = this.value" step="500" type="range" value="5000"></div><div class="flex justify-between mt-xs px-2"><span class="font-body-sm text-body-sm text-outline">Mín: $500</span><span class="font-body-sm text-body-sm text-outline">Máx: $20k</span></div></div>
+<!-- Loan Model Tabs -->
+<div class="flex flex-col gap-sm"><span class="font-label-md text-label-md text-on-surface-variant px-1">Modelo de préstamo</span><div class="bg-surface-container-lowest p-1 rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex"><button class="flex-1 py-3 text-center rounded-lg font-label-md text-label-md transition-all duration-200 bg-secondary-container text-on-secondary-container" id="tab-weekly" onclick="setFrequency('weekly')">Semanal</button><button class="flex-1 py-3 text-center rounded-lg font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:bg-surface-container" id="tab-biweekly" onclick="setFrequency('biweekly')">Quincenal</button></div></div>
+<!-- Opening Date Selector -->
+<div class="flex flex-col gap-sm mt-2"><div class="flex justify-between items-center px-1"><span class="font-label-md text-label-md text-on-surface-variant">Fecha de inicio</span><span class="font-body-sm text-body-sm text-secondary" id="date-constraint-label">Solo Lun / Vie</span></div><div class="flex gap-md overflow-x-auto hide-scrollbar py-2 px-1 snap-x" id="date-container"><button class="flex-shrink-0 w-[120px] h-16 rounded-xl flex items-center justify-center gap-2 transition-all snap-start shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-2 bg-surface-container-lowest border-secondary">
+                    <span class="font-body-sm text-body-sm text-secondary">Mon</span>
+                    <span class="font-headline-md text-headline-md text-primary">9</span>
+                    <span class="font-body-sm text-body-sm text-primary">Oct</span>
+                </button><button class="flex-shrink-0 w-[120px] h-16 rounded-xl flex items-center justify-center gap-2 transition-all snap-start shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-2 bg-surface-container-lowest border-transparent hover:border-outline-variant text-on-surface-variant">
+                    <span class="font-body-sm text-body-sm text-outline">Fri</span>
+                    <span class="font-headline-md text-headline-md text-on-surface">13</span>
+                    <span class="font-body-sm text-body-sm text-outline">Oct</span>
+                </button><button class="flex-shrink-0 w-[120px] h-16 rounded-xl flex items-center justify-center gap-2 transition-all snap-start shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-2 bg-surface-container-lowest border-transparent hover:border-outline-variant text-on-surface-variant">
+                    <span class="font-body-sm text-body-sm text-outline">Mon</span>
+                    <span class="font-headline-md text-headline-md text-on-surface">16</span>
+                    <span class="font-body-sm text-body-sm text-outline">Oct</span>
+                </button><button class="flex-shrink-0 w-[120px] h-16 rounded-xl flex items-center justify-center gap-2 transition-all snap-start shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-2 bg-surface-container-lowest border-transparent hover:border-outline-variant text-on-surface-variant">
+                    <span class="font-body-sm text-body-sm text-outline">Fri</span>
+                    <span class="font-headline-md text-headline-md text-on-surface">20</span>
+                    <span class="font-body-sm text-body-sm text-outline">Oct</span>
+                </button><button class="flex-shrink-0 w-[120px] h-16 rounded-xl flex items-center justify-center gap-2 transition-all snap-start shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-2 bg-surface-container-lowest border-transparent hover:border-outline-variant text-on-surface-variant">
+                    <span class="font-body-sm text-body-sm text-outline">Mon</span>
+                    <span class="font-headline-md text-headline-md text-on-surface">23</span>
+                    <span class="font-body-sm text-body-sm text-outline">Oct</span>
+                </button></div></div>
+<!-- Summary Card (Mock data for visual weight) -->
+<div class="mt-auto bg-surface-container-low rounded-xl p-md"><div class="flex justify-between items-center mb-sm"><span class="font-body-md text-body-md text-on-surface-variant">Pago estimado</span><span class="font-headline-md text-headline-md text-primary" id="est-payment">$125.00</span></div><div class="w-full h-px bg-outline-variant opacity-30 my-2"></div><div class="flex justify-between items-center"><span class="font-body-sm text-body-sm text-on-surface-variant">Duración</span><span class="font-body-sm text-body-sm text-primary font-medium" id="est-duration">20 Semanas</span></div></div>
+</div>
+<!-- Sticky Bottom CTA Area -->
+<div class="fixed bottom-0 left-0 w-full flex justify-center pb-6 pt-4 px-margin-mobile bg-gradient-to-t from-surface via-surface to-transparent z-50">
+<div class="w-full max-w-md">
+<button class="w-full h-[56px] bg-primary-container hover:bg-on-primary-fixed text-on-primary font-label-md text-label-md rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.15)] flex items-center justify-center gap-2 transition-all active:scale-95">Calcular opciones <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">arrow_forward</span></button>
+</div>
+</div>
+</main>
+<!-- Interactive Logic -->
+<script>
+        const weeklyDates = [
+            { day: 'Mon', date: 'Oct 9', full: '2023-10-09' },
+            { day: 'Fri', date: 'Oct 13', full: '2023-10-13' },
+            { day: 'Mon', date: 'Oct 16', full: '2023-10-16' },
+            { day: 'Fri', date: 'Oct 20', full: '2023-10-20' },
+            { day: 'Mon', date: 'Oct 23', full: '2023-10-23' }
+        ];
+
+        const biweeklyDates = [
+            { day: 'Sun', date: 'Oct 15', full: '2023-10-15' },
+            { day: 'Tue', date: 'Oct 31', full: '2023-10-31' },
+            { day: 'Wed', date: 'Nov 15', full: '2023-11-15' },
+            { day: 'Thu', date: 'Nov 30', full: '2023-11-30' }
+        ];
+
+        let selectedDateFull = weeklyDates[0].full;
+
+        function renderDates(type) {
+            const container = document.getElementById('date-container');
+            container.innerHTML = '';
+            const datesToUse = type === 'weekly' ? weeklyDates : biweeklyDates;
+            
+            // Set default selection when switching
+            selectedDateFull = datesToUse[0].full;
+
+            datesToUse.forEach((d, index) => {
+                const isSelected = selectedDateFull === d.full;
+                
+                const btn = document.createElement('button');
+                btn.className = `flex-shrink-0 w-[88px] h-[100px] rounded-xl flex flex-col items-center justify-center gap-1 transition-all snap-start shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-2 ${isSelected ? 'bg-surface-container-lowest border-secondary' : 'bg-surface-container-lowest border-transparent hover:border-outline-variant text-on-surface-variant'}`;
+                
+                btn.onclick = () => selectDate(d.full, type);
+                
+                btn.innerHTML = `
+                    <span class="font-body-sm text-body-sm ${isSelected ? 'text-secondary' : 'text-outline'}">${d.day}</span>
+                    <span class="font-headline-md text-headline-md ${isSelected ? 'text-primary' : 'text-on-surface'}">${d.date.split(' ')[1]}</span>
+                    <span class="font-body-sm text-body-sm ${isSelected ? 'text-primary' : 'text-outline'}">${d.date.split(' ')[0]}</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectDate(fullDate, type) {
+            selectedDateFull = fullDate;
+            renderDates(type);
+        }
+
+        function setFrequency(type) {
+            const tabWeekly = document.getElementById('tab-weekly');
+            const tabBiweekly = document.getElementById('tab-biweekly');
+            const labelConstraint = document.getElementById('date-constraint-label');
+            const estPayment = document.getElementById('est-payment');
+            const estDuration = document.getElementById('est-duration');
+
+            // Reset styles
+            tabWeekly.className = "flex-1 py-3 text-center rounded-lg font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:bg-surface-container";
+            tabBiweekly.className = "flex-1 py-3 text-center rounded-lg font-label-md text-label-md transition-all duration-200 text-on-surface-variant hover:bg-surface-container";
+
+            if (type === 'weekly') {
+                tabWeekly.className = "flex-1 py-3 text-center rounded-lg font-label-md text-label-md transition-all duration-200 bg-secondary-container text-on-secondary-container";
+                labelConstraint.innerText = "Mon / Fri only";
+                estPayment.innerText = "$125.00";
+                estDuration.innerText = "40 Weeks";
+            } else {
+                tabBiweekly.className = "flex-1 py-3 text-center rounded-lg font-label-md text-label-md transition-all duration-200 bg-secondary-container text-on-secondary-container";
+                labelConstraint.innerText = "15th / End of month";
+                estPayment.innerText = "$250.00";
+                estDuration.innerText = "20 Bi-weeks";
+            }
+
+            renderDates(type);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDates('weekly');
+        });
+    </script>
+
+
+</body></html>
