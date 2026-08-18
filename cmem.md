@@ -609,3 +609,36 @@ Verificado: build/lint/test (web) en verde, 20/20 unit sin regresión. Quedó
 pendiente, no bloqueante: esta pasada cubrió los componentes base compartidos,
 no cada pantalla individual — una auditoría página por página es un corte
 aparte si se pide.
+
+## Fase 7, quinto corte: Playwright contra el stack Docker real (2026-08-18)
+
+Motivación directa: varios bugs reales de esta fase (413 de Nginx en la subida
+de video, la CSP mal ajustada que hubiera roto MediaPipe/Leaflet) solo
+aparecieron probando contra el stack completo, nunca en Supertest ni en
+Vitest+jsdom — ninguno de los dos pasa por Nginx ni ejecuta un navegador de
+verdad. Playwright cierra ese hueco de forma repetible (antes dependía de
+`claude-in-chrome` manual, sesión por sesión).
+
+Primer corte deliberadamente angosto: un solo spec, el flujo cliente feliz de
+punta a punta (registro→cotizador→onboarding→documentos→pagaré→`SUBMITTED`),
+Chromium únicamente. Corre contra `http://localhost` (Nginx), no contra el dev
+server de Vite — mismo argumento que llevó a `docker compose up` real en vez
+de servers sueltos en Fase 1 Task 10.
+
+Un detalle no obvio: Vitest por defecto matchea cualquier `*.spec.ts` del
+proyecto, así que sin excluir `web/e2e/**` en `vite.config.ts` intentaba
+correr el spec de Playwright bajo `jsdom` y fallaba (no hay `page`/browser
+context ahí). Los dos test runners conviven en el mismo repo pero necesitan
+límites explícitos de qué archivos les tocan.
+
+El job de CI (`e2e-browser`) es el primero del repo que levanta el stack
+completo de Docker dentro de Actions — hasta ahora CI solo corría contra
+servicios sueltos (`mysql` como service container para la API, nada para
+web). Se excluyó `worker` del `up` porque `main-worker.ts` sigue sin existir
+(Fase 2/4, multas en vivo sin cron todavía) y solo generaría reinicios en
+bucle en el log sin aportar nada a este flujo.
+
+Verificado local: 1/1 PASS, dos corridas seguidas, sin regresión en build/lint
+de web. No corrido todavía en Actions real — el primer push va a ser la
+prueba de fuego de si el runner de GitHub necesita ajustes (tiempos de
+arranque de Docker distintos a esta máquina, permisos) que no se ven en local.

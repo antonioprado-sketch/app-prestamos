@@ -76,3 +76,74 @@ jobs:
       - name: Build
         working-directory: web
         run: npm run build
+
+  e2e-browser:
+    runs-on: ubuntu-latest
+    needs: [api, web]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Escribir .env para el stack de dev
+        run: |
+          cat <<'EOF' > .env
+          MYSQL_DATABASE=appprestamos
+          MYSQL_USER=prestamos
+          MYSQL_PASSWORD=prestamos
+          MYSQL_ROOT_PASSWORD=root
+          DATABASE_URL=mysql://prestamos:prestamos@mysql:3306/appprestamos
+          API_PORT=3000
+          JWT_ACCESS_SECRET=test-access
+          JWT_REFRESH_SECRET=test-refresh
+          JWT_ACCESS_TTL=15m
+          JWT_REFRESH_TTL_DAYS=30
+          ADMIN_PHONE=admin
+          ADMIN_PASSWORD=admin
+          TZ=America/Mexico_City
+          GMAIL_USER=
+          GMAIL_APP_PASSWORD=
+          VAPID_PUBLIC_KEY=
+          VAPID_PRIVATE_KEY=
+          VAPID_SUBJECT=mailto:admin@example.com
+          MINIO_ROOT_USER=minioadmin
+          MINIO_ROOT_PASSWORD=minioadmin123
+          MINIO_BUCKET=documentos
+          MINIO_PUBLIC_ENDPOINT=localhost
+          MINIO_PUBLIC_PORT=9000
+          EOF
+      - name: Build frontend (Nginx sirve web/dist como archivos estáticos)
+        working-directory: web
+        run: npm ci && npm run build
+      - name: Levantar stack Docker real
+        run: docker compose -f docker-compose.dev.yml up -d --build mysql minio api nginx
+      - name: Esperar a que la API esté lista
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost/api/v1/health/ready && exit 0
+            sleep 2
+          done
+          echo "La API no respondió a tiempo"; exit 1
+      - name: Aplicar migraciones de Prisma
+        working-directory: api
+        env:
+          DATABASE_URL: mysql://prestamos:prestamos@localhost:3307/appprestamos
+        run: npm ci && npx prisma migrate deploy
+      - name: Instalar Playwright + Chromium
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Correr e2e de navegador real
+        working-directory: web
+        run: npm run test:e2e
+      - name: Subir reporte de Playwright si falla
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: web/playwright-report/
+          retention-days: 7
+      - name: Apagar el stack
+        if: always()
+        run: docker compose -f docker-compose.dev.yml down -v

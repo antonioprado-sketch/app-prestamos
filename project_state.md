@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-17 (Fase 7 en curso, cuarto corte).
+Última actualización: 2026-08-17/18 (Fase 7 en curso, quinto corte).
 
 ## Fase actual: Fase 7 — Seguridad y QA (en curso, sin plan escrito task-por-task). Fases 1-6 completas.
 
@@ -445,3 +445,13 @@ El test de fecha hardcodeada en `loan-quote.spec.ts` encontrado en esta sesión 
 - **`Input`:** el mensaje de error no estaba asociado al campo para lectores de pantalla — se agregó `aria-describedby` apuntando al `id` del `<span>` de error (solo cuando hay error).
 
 Verificado 2026-08-17: `npm run build`/`lint`/`test` (web) en verde (20/20 unit tests, sin regresión). No se tocó Docker ni la API. Pendiente no bloqueante: no se auditaron todas las pantallas del sistema (solo los patrones reusables — `Alert`, `Input`, `WelcomeTour`, colores base — que se repiten en el resto de la UI), una pasada página por página queda para un corte futuro si se pide.
+
+**Fase 7, quinto corte: Playwright e2e de navegador real (2026-08-18):** alcance confirmado con el usuario — solo flujo cliente feliz completo (registro → login → cotizador → onboarding → documentos → pagaré → `SUBMITTED`), Chromium headless únicamente, corriendo contra el **stack Docker real** (Nginx en `http://localhost`, no un dev server suelto) — mismo criterio que ya detectó el 413 de Nginx y validó la CSP, porque Supertest/vitest nunca pasan por Nginx ni ejecutan JS real de navegador.
+
+- `web/playwright.config.ts` (`baseURL` configurable por `E2E_BASE_URL`, default `http://localhost`), `web/e2e/client-happy-path.spec.ts`. Teléfono aleatorio por corrida (mismo patrón que los e2e de la API) para no colisionar con datos previos.
+- `vite.config.ts`: se agregó `test.exclude` con `./e2e/**` — sin esto, Vitest (que por defecto matchea `*.spec.ts`) intentaba correr el spec de Playwright bajo jsdom y fallaba.
+- Script nuevo `web/package.json` → `npm run test:e2e` (`playwright test`). Reporter `html` (además de `list`) para poder subir el reporte como artefacto en CI si falla.
+- CI (`.github/workflows/ci.yml`): job nuevo `e2e-browser` (`needs: [api, web]`) — escribe un `.env` efímero con credenciales de prueba, compila `web/dist`, levanta `mysql`+`minio`+`api`+`nginx` (sin `worker`, que todavía no tiene `main-worker.ts` — no hace falta para este flujo y solo generaría ruido de reinicio en el log), espera `/api/v1/health/ready`, aplica `prisma migrate deploy` desde el host contra el puerto publicado (`3307`), instala Chromium (`--with-deps`, necesario en Ubuntu de Actions) y corre el spec. `docker compose down -v` en `if: always()` para no dejar contenedores/volúmenes huérfanos en el runner aunque falle.
+- `web/.gitignore`: se agregó `/playwright-report` y `/test-results`.
+
+Verificado 2026-08-18: `npm run test:e2e` 1/1 PASS contra el stack Docker real levantado en esta máquina (corrido dos veces seguidas), `npm test`/`build` (web) sin regresión tras el `test.exclude`. Datos de prueba (2 clientes creados por las dos corridas) limpiados de la BD de dev después. **No verificado en GitHub Actions real** (requiere push) — solo validado el flujo localmente pieza por pieza (health-check, migrate deploy contra el puerto publicado, instalación de Chromium con `--with-deps`); revisar el primer run real en Actions por si el runner necesita ajustes que no aparecen en local (timeouts de arranque de Docker, permisos).
