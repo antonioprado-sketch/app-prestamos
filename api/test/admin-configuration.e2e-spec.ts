@@ -8,8 +8,12 @@ import { nextWeeklyOpeningDate } from './test-helpers';
 import { todayInMexicoCity } from '../src/loans/loan-quote';
 import {
   PENALTY_PER_DAY_KEY,
-  SCORE_YELLOW_MAX_DAYS_KEY,
+  SCORE_GREEN_MAX_AMOUNT_KEY,
+  SCORE_ORANGE_MAX_AMOUNT_KEY,
   SCORE_ORANGE_MAX_DAYS_KEY,
+  SCORE_RED_MAX_AMOUNT_KEY,
+  SCORE_YELLOW_MAX_AMOUNT_KEY,
+  SCORE_YELLOW_MAX_DAYS_KEY,
 } from '../src/configuration/business-rules.constants';
 
 const TINY_PNG_BASE64 =
@@ -26,7 +30,20 @@ describe('Admin configuration - business rules (e2e)', () => {
     PENALTY_PER_DAY_KEY,
     SCORE_YELLOW_MAX_DAYS_KEY,
     SCORE_ORANGE_MAX_DAYS_KEY,
+    SCORE_GREEN_MAX_AMOUNT_KEY,
+    SCORE_YELLOW_MAX_AMOUNT_KEY,
+    SCORE_ORANGE_MAX_AMOUNT_KEY,
+    SCORE_RED_MAX_AMOUNT_KEY,
   ];
+  const validRules = {
+    penaltyPerDay: 50,
+    yellowMaxDays: 7,
+    orangeMaxDays: 15,
+    greenMaxAmount: null,
+    yellowMaxAmount: 3000,
+    orangeMaxAmount: 2000,
+    redMaxAmount: 1000,
+  };
   let loanId: string;
 
   async function loginClient(): Promise<string> {
@@ -155,14 +172,10 @@ describe('Admin configuration - business rules (e2e)', () => {
       .set('Authorization', `Bearer ${token}`)
       .expect(200);
 
-    expect(res.body).toEqual({
-      penaltyPerDay: 50,
-      yellowMaxDays: 7,
-      orangeMaxDays: 15,
-    });
+    expect(res.body).toEqual(validRules);
   });
 
-  it('PUT /admin/configuration/business-rules exige los 3 campos', async () => {
+  it('PUT /admin/configuration/business-rules exige todos los campos', async () => {
     const token = await loginAdmin();
     await request(app.getHttpServer())
       .put('/api/v1/admin/configuration/business-rules')
@@ -171,12 +184,21 @@ describe('Admin configuration - business rules (e2e)', () => {
       .expect(400);
   });
 
+  it('PUT /admin/configuration/business-rules rechaza montos inválidos', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .put('/api/v1/admin/configuration/business-rules')
+      .set('Authorization', `Bearer ${token}`)
+      .send({ ...validRules, redMaxAmount: 0 })
+      .expect(400);
+  });
+
   it('PUT /admin/configuration/business-rules rechaza yellowMaxDays >= orangeMaxDays', async () => {
     const token = await loginAdmin();
     await request(app.getHttpServer())
       .put('/api/v1/admin/configuration/business-rules')
       .set('Authorization', `Bearer ${token}`)
-      .send({ penaltyPerDay: 50, yellowMaxDays: 15, orangeMaxDays: 7 })
+      .send({ ...validRules, yellowMaxDays: 15, orangeMaxDays: 7 })
       .expect(400);
   });
 
@@ -185,7 +207,15 @@ describe('Admin configuration - business rules (e2e)', () => {
     await request(app.getHttpServer())
       .put('/api/v1/admin/configuration/business-rules')
       .set('Authorization', `Bearer ${token}`)
-      .send({ penaltyPerDay: 100, yellowMaxDays: 5, orangeMaxDays: 10 })
+      .send({
+        ...validRules,
+        penaltyPerDay: 100,
+        yellowMaxDays: 5,
+        orangeMaxDays: 10,
+        yellowMaxAmount: 4000,
+        orangeMaxAmount: 2500,
+        redMaxAmount: 1500,
+      })
       .expect(200);
 
     const res = await request(app.getHttpServer())
@@ -194,9 +224,13 @@ describe('Admin configuration - business rules (e2e)', () => {
       .expect(200);
 
     expect(res.body).toEqual({
+      ...validRules,
       penaltyPerDay: 100,
       yellowMaxDays: 5,
       orangeMaxDays: 10,
+      yellowMaxAmount: 4000,
+      orangeMaxAmount: 2500,
+      redMaxAmount: 1500,
     });
   });
 
@@ -213,7 +247,7 @@ describe('Admin configuration - business rules (e2e)', () => {
     await request(app.getHttpServer())
       .put('/api/v1/admin/configuration/business-rules')
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ penaltyPerDay: 50, yellowMaxDays: 2, orangeMaxDays: 10 })
+      .send({ ...validRules, yellowMaxDays: 2, orangeMaxDays: 10 })
       .expect(200);
 
     const after = await request(app.getHttpServer())

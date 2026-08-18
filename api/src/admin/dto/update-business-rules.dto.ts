@@ -1,4 +1,4 @@
-import { IsInt, IsNumber, Min } from 'class-validator';
+import { IsInt, IsNumber, IsOptional, Min } from 'class-validator';
 
 export class UpdateBusinessRulesDto {
   @IsNumber()
@@ -12,4 +12,21 @@ export class UpdateBusinessRulesDto {
   @IsInt()
   @Min(1)
   orangeMaxDays: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  greenMaxAmount: number | null;
+
+  @IsNumber()
+  @Min(0.01)
+  yellowMaxAmount: number;
+
+  @IsNumber()
+  @Min(0.01)
+  orangeMaxAmount: number;
+
+  @IsNumber()
+  @Min(0.01)
+  redMaxAmount: number;
 }

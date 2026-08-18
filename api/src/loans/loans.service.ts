@@ -13,6 +13,7 @@ import { BusinessRulesService } from '../configuration/business-rules.service';
 import { AuditService } from '../audit/audit.service';
 import { StorageService } from '../storage/storage.service';
 import { BlacklistService } from '../blacklist/blacklist.service';
+import { ScoreService } from '../score/score.service';
 import {
   calculateQuote,
   QuoteInput,
@@ -108,22 +109,38 @@ export class LoansService {
     private readonly audit: AuditService,
     private readonly storage: StorageService,
     private readonly blacklist: BlacklistService,
+    private readonly scoreService: ScoreService,
   ) {}
 
   async resolveMaxAmount(phone: string | undefined): Promise<number | null> {
+    if (!phone) return null;
+
+    const customer = await this.prisma.customer.findUnique({
+      where: { phone },
+      select: { isNewCustomer: true, creditLimit: true },
+    });
+
     const newClientMax = await this.config.getNumber(
       NEW_CLIENT_MAX_AMOUNT_KEY,
       NEW_CLIENT_MAX_AMOUNT_DEFAULT,
     );
-
-    if (!phone) return newClientMax;
-
-    const customer = await this.prisma.customer.findUnique({
-      where: { phone },
-      select: { isNewCustomer: true },
-    });
     if (!customer || customer.isNewCustomer) return newClientMax;
-    return null;
+
+    if (customer.creditLimit !== null) return Number(customer.creditLimit);
+
+    const rules = await this.businessRules.get();
+    const score = await this.scoreService.getForCustomer(phone);
+    switch (score.level) {
+      case 'YELLOW':
+        return rules.yellowMaxAmount;
+      case 'ORANGE':
+        return rules.orangeMaxAmount;
+      case 'RED':
+        return rules.redMaxAmount;
+      case 'GREEN':
+      default:
+        return rules.greenMaxAmount;
+    }
   }
 
   async quote(

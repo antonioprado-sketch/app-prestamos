@@ -23,6 +23,7 @@ import { LocationsModule } from './locations/locations.module';
 import { BiModule } from './bi/bi.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { BlacklistModule } from './blacklist/blacklist.module';
+import { CreditIncreaseModule } from './credit-increase/credit-increase.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { BlacklistModule } from './blacklist/blacklist.module';
     BiModule,
     NotificationsModule,
     BlacklistModule,
+    CreditIncreaseModule,
   ],
   providers: [{ provide: APP_FILTER, useClass: HttpExceptionFilter }],
 })

@@ -238,11 +238,11 @@ describe('Loans (e2e)', () => {
       .expect(409);
   });
 
-  it('GET /loans/quote-limit devuelve el tope de cliente nuevo para anónimos', async () => {
+  it('GET /loans/quote-limit devuelve null (sin tope) para anónimos', async () => {
     const res = await request(app.getHttpServer())
       .get('/api/v1/loans/quote-limit')
       .expect(200);
-    expect(res.body.maxAmount).toBe(3000);
+    expect(res.body.maxAmount).toBeNull();
   });
 
   it('GET /loans/quote-limit de un cliente nuevo devuelve $3,000', async () => {

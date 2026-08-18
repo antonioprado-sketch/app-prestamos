@@ -27,6 +27,7 @@ model User {
   approvedLoans Loan[] @relation("LoanApprover")
   notifications Notification[]
   pushSubscriptions PushSubscription[]
+  creditIncreaseResolutions CreditIncreaseRequest[] @relation("CreditIncreaseResolver")
 
   @@map("users")
 }
@@ -64,6 +65,7 @@ model Customer {
   isNewCustomer      Boolean     @default(false) @map("is_new_customer")
   onboardingComplete Boolean     @default(false) @map("onboarding_complete")
   scoreOverride      ScoreLevel? @map("score_override")
+  creditLimit        Decimal?    @map("credit_limit") @db.Decimal(10, 2)
   createdAt          DateTime    @default(now()) @map("created_at")
   updatedAt          DateTime    @updatedAt @map("updated_at")
 
@@ -71,6 +73,7 @@ model Customer {
   loans Loan[]
   documents Document[]
   locations Location[]
+  creditIncreaseRequests CreditIncreaseRequest[]
 
   @@map("customers")
 }
@@ -262,6 +265,26 @@ model PushSubscription {
   @@map("push_subscriptions")
 }
 
+// Solicitud de aumento de crédito de un cliente, resuelta por un admin o un
+// cobrador (el primero que la resuelve cierra el caso).
+model CreditIncreaseRequest {
+  id            BigInt               @id @default(autoincrement())
+  customerPhone String               @map("customer_phone") @db.VarChar(15)
+  amount        Decimal              @db.Decimal(10, 2)
+  status        CreditIncreaseStatus @default(PENDING)
+  resolvedBy    String?              @map("resolved_by") @db.VarChar(15)
+  resolvedAt    DateTime?            @map("resolved_at")
+  note          String?              @db.VarChar(255)
+  createdAt     DateTime             @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerPhone], references: [phone], onDelete: Cascade)
+  resolver User?    @relation("CreditIncreaseResolver", fields: [resolvedBy], references: [phone], onDelete: SetNull)
+
+  @@index([customerPhone, status])
+  @@index([status, createdAt])
+  @@map("credit_increase_requests")
+}
+
 enum Role {
   CLIENT
   COLLECTOR
@@ -319,4 +342,10 @@ enum DocumentType {
   PAGARE
   VIDEO_IDENTITY
   COLLECTOR_DOC
+}
+
+enum CreditIncreaseStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
