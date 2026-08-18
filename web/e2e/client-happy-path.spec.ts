@@ -22,12 +22,27 @@ function nextWeeklyOpeningDate(): string {
   return date.toISOString().slice(0, 10);
 }
 
-function jpegBuffer(): Buffer {
-  const buf = Buffer.alloc(100, 0);
-  buf[0] = 0xff;
-  buf[1] = 0xd8;
-  buf[2] = 0xff;
-  return buf;
+// La cámara del navegador headless no existe: se simula getUserMedia con un
+// canvas.captureStream() para poder recorrer el flujo real de CameraCapture.
+async function mockCamera(page: import('@playwright/test').Page) {
+  await page.addInitScript(() => {
+    if (!navigator.mediaDevices) {
+      Object.defineProperty(navigator, 'mediaDevices', { value: {}, configurable: true });
+    }
+    navigator.mediaDevices.getUserMedia = async () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = '#00629d';
+        ctx.fillRect(0, 0, 640, 480);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(240, 160, 160, 160);
+      }
+      return canvas.captureStream(10);
+    };
+  });
 }
 
 test('cliente completa registro, cotización, onboarding, documentos y firma de pagaré', async ({
@@ -35,6 +50,8 @@ test('cliente completa registro, cotización, onboarding, documentos y firma de 
 }) => {
   const phone = randomPhone();
   const password = 'Abcdef12!';
+
+  await mockCamera(page);
 
   // Registro
   await page.goto('/register');
@@ -46,9 +63,9 @@ test('cliente completa registro, cotización, onboarding, documentos y firma de 
 
   // Cotizador
   await page.goto('/calculadora');
-  await page.getByLabel('Monto a solicitar').fill('3000');
-  await page.getByLabel('Fecha de apertura').fill(nextWeeklyOpeningDate());
-  await page.getByRole('button', { name: 'Calcular' }).click();
+  await page.getByLabel('Monto solicitado').fill('3000');
+  await page.getByRole('button', { name: nextWeeklyOpeningDate() }).click();
+  await page.getByRole('button', { name: 'Calcular opciones' }).click();
   await expect(page.getByText('Calendario de pagos')).toBeVisible();
 
   // Crear solicitud (borrador)
@@ -72,18 +89,22 @@ test('cliente completa registro, cotización, onboarding, documentos y firma de 
   await page.getByRole('button', { name: 'Guardar' }).click();
   await expect(page.getByText('Tus datos se guardaron correctamente.')).toBeVisible();
 
-  // Documentos (INE frente/reverso + comprobante)
+  // Documentos (INE frente/reverso + comprobante) — cámara simulada
   await page.getByRole('link', { name: 'Continuar con mis documentos' }).click();
   await expect(page).toHaveURL(/\/documentos/);
-  const fileInputs = page.locator('input[type="file"]');
-  for (let i = 0; i < 3; i++) {
-    await fileInputs.nth(i).setInputFiles({
-      name: `doc-${i}.jpg`,
-      mimeType: 'image/jpeg',
-      buffer: jpegBuffer(),
+  for (let i = 1; i <= 3; i++) {
+    await page.getByRole('button', { name: /Tomar foto con la cámara/ }).first().click();
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await page.waitForFunction(() => {
+      const v = document.querySelector('[data-testid="camera-live"]') as HTMLVideoElement | null;
+      return !!v && v.readyState >= 2;
     });
+    await dialog.getByRole('button', { name: 'Tomar foto' }).click();
+    await expect(dialog.getByRole('button', { name: 'Usar esta foto' })).toBeVisible();
+    await dialog.getByRole('button', { name: 'Usar esta foto' }).click();
+    await expect(page.getByText('Validado')).toHaveCount(i);
   }
-  await expect(page.getByText('Validado')).toHaveCount(3);
 
   // Pagaré: firma + envío (cierra la solicitud, único prerequisito es onboarding completo)
   await page.goto('/pagare');

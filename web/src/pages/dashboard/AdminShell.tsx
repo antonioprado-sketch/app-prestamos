@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { Icon } from '../../components/ui/Icon';
+import { NotificationsBell } from '../../components/NotificationsBell';
 
 export type AdminNavKey =
   | 'dashboard'
@@ -9,6 +10,7 @@ export type AdminNavKey =
   | 'clientes'
   | 'usuarios'
   | 'ubicaciones'
+  | 'aumentos'
   | 'configuracion';
 
 const NAV_ITEMS: { key: AdminNavKey; label: string; icon: string; to: string }[] = [
@@ -16,6 +18,7 @@ const NAV_ITEMS: { key: AdminNavKey; label: string; icon: string; to: string }[]
   { key: 'solicitudes', label: 'Solicitudes', icon: 'pending_actions', to: '/admin/solicitudes' },
   { key: 'clientes', label: 'Clientes', icon: 'badge', to: '/admin/clientes' },
   { key: 'usuarios', label: 'Usuarios', icon: 'directions_run', to: '/admin/usuarios' },
+  { key: 'aumentos', label: 'Aumentos', icon: 'trending_up', to: '/admin/aumentos' },
   { key: 'ubicaciones', label: 'Ubicaciones', icon: 'location_on', to: '/admin/ubicaciones' },
   { key: 'configuracion', label: 'Configuración', icon: 'settings', to: '/admin/configuracion' },
 ];
@@ -67,14 +70,17 @@ export function AdminShell({
           <div className="hidden font-headline-md text-headline-md text-on-surface md:block">
             {title}
           </div>
-          <button
-            type="button"
-            onClick={() => logout()}
-            className="text-on-surface-variant transition-opacity hover:opacity-80 md:hidden"
-            aria-label="Cerrar sesión"
-          >
-            <Icon name="logout" />
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationsBell />
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="text-on-surface-variant transition-opacity hover:opacity-80 md:hidden"
+              aria-label="Cerrar sesión"
+            >
+              <Icon name="logout" />
+            </button>
+          </div>
         </header>
         <div className="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop">{children}</div>
       </div>

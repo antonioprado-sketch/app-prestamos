@@ -15,6 +15,7 @@ import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminConfigurationPage } from './pages/AdminConfigurationPage';
 import { AdminLocationsPage } from './pages/AdminLocationsPage';
 import { AdminBiPage } from './pages/AdminBiPage';
+import { AdminCreditIncreasePage } from './pages/AdminCreditIncreasePage';
 import { CollectorLoansPage } from './pages/CollectorLoansPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
@@ -110,6 +111,16 @@ export default function App() {
         path="/admin/indicadores"
         element={
           user?.role === 'ADMIN' ? <AdminBiPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/admin/aumentos"
+        element={
+          user?.role === 'ADMIN' ? (
+            <AdminCreditIncreasePage />
+          ) : (
+            <Navigate to={user ? homeFor(user.role) : '/login'} />
+          )
         }
       />
       <Route

@@ -1,14 +1,14 @@
-import { useEffect, useId, useState } from 'react';
-import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
 import { apiFetch, ApiError } from '../lib/api';
 import { captureLocation } from '../lib/location';
+import { nextValidDates } from '../lib/calculator-dates';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
+import { Icon } from '../components/ui/Icon';
 
 type Model = 'WEEKLY' | 'BIWEEKLY';
 
@@ -81,12 +81,21 @@ function ScoreBadge({ score }: { score: CustomerScore }) {
 
 const TERMINAL_STATUSES = ['LIQUIDATED', 'CANCELLED', 'REJECTED'];
 
+interface CreditIncreaseRequestItem {
+  id: string;
+  amount: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  note: string | null;
+  createdAt: string;
+}
+
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 const longDate = new Intl.DateTimeFormat('es-MX', {
   weekday: 'long',
   day: 'numeric',
   month: 'long',
   year: 'numeric',
+  timeZone: 'UTC',
 });
 
 function formatLongDate(iso: string) {
@@ -196,14 +205,15 @@ function PenaltySummary({ penalty }: { penalty: PenaltyResult }) {
   );
 }
 
-export function CalculatorPage() {
+export function CalculatorPage({ embedded = false }: { embedded?: boolean }) {
   const { user } = useAuth();
-  const modelId = useId();
+  const navigate = useNavigate();
   const [amount, setAmount] = useState(500);
   const [maxAmount, setMaxAmount] = useState(20000);
   const [model, setModel] = useState<Model>('WEEKLY');
-  const [openingDate, setOpeningDate] = useState('');
+  const [openingDate, setOpeningDate] = useState(() => nextValidDates('WEEKLY', 1)[0].full);
   const [result, setResult] = useState<QuoteResult | null>(null);
+  const [estimate, setEstimate] = useState<QuoteResult | null>(null);
   const [draft, setDraft] = useState<LoanDraft | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [wantItError, setWantItError] = useState<string | null>(null);
@@ -212,6 +222,17 @@ export function CalculatorPage() {
   const [checkingDraft, setCheckingDraft] = useState(user?.role === 'CLIENT');
   const [penalty, setPenalty] = useState<PenaltyResult | null>(null);
   const [score, setScore] = useState<CustomerScore | null>(null);
+  const [increaseRequest, setIncreaseRequest] = useState<CreditIncreaseRequestItem | null>(null);
+  const [increaseFormOpen, setIncreaseFormOpen] = useState(false);
+  const [increaseAmount, setIncreaseAmount] = useState(5000);
+  const [increaseError, setIncreaseError] = useState<string | null>(null);
+  const [increaseLoading, setIncreaseLoading] = useState(false);
+  const resultRef = useRef<HTMLDivElement | null>(null);
+
+  const dates = useMemo(
+    () => nextValidDates(model, model === 'WEEKLY' ? 5 : 4),
+    [model],
+  );
 
   useEffect(() => {
     apiFetch<{ maxAmount: number | null }>('/loans/quote-limit')
@@ -224,6 +245,30 @@ export function CalculatorPage() {
   }, [maxAmount, amount]);
 
   useEffect(() => {
+    if (draft || !openingDate) {
+      setEstimate(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      apiFetch<QuoteResult>('/loans/quote', {
+        method: 'POST',
+        body: JSON.stringify({ amount, model, openingDate }),
+      })
+        .then((q) => {
+          if (!cancelled) setEstimate(q);
+        })
+        .catch(() => {
+          if (!cancelled) setEstimate(null);
+        });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [amount, model, openingDate, draft]);
+
+  useEffect(() => {
     if (user?.role !== 'CLIENT') {
       setCheckingDraft(false);
       return;
@@ -231,7 +276,13 @@ export function CalculatorPage() {
     apiFetch<LoanDraft[]>('/loans')
       .then((loans) => {
         const active = loans.find((l) => !TERMINAL_STATUSES.includes(l.status));
-        if (active) setDraft(active);
+        if (active) {
+          if (active.status === 'APPROVED' || active.status === 'ACTIVE') {
+            navigate('/app/cliente', { replace: true });
+            return;
+          }
+          setDraft(active);
+        }
       })
       .catch(() => undefined)
       .finally(() => setCheckingDraft(false));
@@ -239,7 +290,45 @@ export function CalculatorPage() {
     apiFetch<CustomerScore>('/customers/me/score')
       .then(setScore)
       .catch(() => undefined);
+  }, [user, navigate]);
+
+  useEffect(() => {
+    if (user?.role !== 'CLIENT') return;
+    let cancelled = false;
+    apiFetch<{ request: CreditIncreaseRequestItem | null }>('/credit-increase/me')
+      .then((r) => {
+        if (!cancelled) setIncreaseRequest(r.request);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
   }, [user]);
+
+  const onSubmitIncrease = async () => {
+    if (!increaseAmount || increaseAmount % 500 !== 0 || increaseAmount <= maxAmount) {
+      setIncreaseError(
+        `El monto debe ser múltiplo de $500 y mayor a tu límite actual de ${currency.format(
+          maxAmount,
+        )}`,
+      );
+      return;
+    }
+    setIncreaseError(null);
+    setIncreaseLoading(true);
+    try {
+      const created = await apiFetch<CreditIncreaseRequestItem>('/credit-increase', {
+        method: 'POST',
+        body: JSON.stringify({ amount: increaseAmount }),
+      });
+      setIncreaseRequest(created);
+      setIncreaseFormOpen(false);
+    } catch (err) {
+      setIncreaseError(err instanceof ApiError ? err.message : 'No se pudo enviar la solicitud');
+    } finally {
+      setIncreaseLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!draft) {
@@ -251,18 +340,28 @@ export function CalculatorPage() {
       .catch(() => undefined);
   }, [draft]);
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
+  const selectModel = (m: Model) => {
+    setModel(m);
+    setOpeningDate(nextValidDates(m, 1)[0].full);
+  };
+
+  const onSubmit = async () => {
     setError(null);
     setResult(null);
     setWantItError(null);
     setLoading(true);
     try {
-      const quote = await apiFetch<QuoteResult>('/loans/quote', {
-        method: 'POST',
-        body: JSON.stringify({ amount, model, openingDate }),
-      });
+      const quote =
+        estimate && estimate.amount === amount && estimate.model === model
+          ? estimate
+          : await apiFetch<QuoteResult>('/loans/quote', {
+              method: 'POST',
+              body: JSON.stringify({ amount, model, openingDate }),
+            });
       setResult(quote);
+      requestAnimationFrame(() =>
+        resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+      );
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'No se pudo calcular la cotización');
     } finally {
@@ -290,25 +389,25 @@ export function CalculatorPage() {
 
   if (checkingDraft) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+      <main className="flex min-h-screen items-center justify-center bg-surface p-4">
         <Spinner />
       </main>
     );
   }
 
-  return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-2xl">
-        <h1 className="mb-1 text-center text-xl font-bold text-secondary">
-          Calculadora de préstamo
-        </h1>
-        <p className="mb-6 text-center text-sm text-secondary">
-          {draft ? 'Ya tienes una solicitud guardada' : 'Simula tu préstamo antes de solicitarlo'}
-        </p>
+  if (draft) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-surface p-4">
+        <Card className="w-full max-w-2xl">
+          <h1 className="mb-1 text-center text-xl font-bold text-secondary">
+            Calculadora de préstamo
+          </h1>
+          <p className="mb-6 text-center text-sm text-secondary">
+            Ya tienes una solicitud guardada
+          </p>
 
-        {score && <ScoreBadge score={score} />}
+          {score && <ScoreBadge score={score} />}
 
-        {draft && (
           <div className="flex flex-col gap-4">
             <Alert variant="success">
               Folio <strong>{draft.folio}</strong> · estado {draft.status}. Vas a retomar esta
@@ -352,95 +451,291 @@ export function CalculatorPage() {
               <Alert variant="success">Tu solicitud está siendo procesada.</Alert>
             )}
           </div>
-        )}
+        </Card>
+      </main>
+    );
+  }
 
-        {!draft && (
-          <>
-            <form onSubmit={onSubmit} className="flex flex-col gap-4">
-              {error && <Alert variant="error">{error}</Alert>}
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <label htmlFor="amount-slider" className="text-sm font-medium text-secondary">
-                    Monto a solicitar
-                  </label>
-                  <span className="font-mono text-lg font-bold text-primary">
-                    {currency.format(amount)}
-                  </span>
-                </div>
-                <input
-                  id="amount-slider"
-                  type="range"
-                  min={500}
-                  max={maxAmount}
-                  step={500}
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                  aria-label="Monto a solicitar"
-                  className="w-full accent-primary"
-                />
-                <div className="flex justify-between text-xs text-secondary">
-                  <span>{currency.format(500)}</span>
-                  <span>{currency.format(maxAmount)}</span>
-                </div>
-                {maxAmount < 20000 && (
-                  <p className="text-xs text-secondary">
-                    Tope de {currency.format(maxAmount)} para tu primer préstamo.
-                  </p>
-                )}
-              </div>
-              <div className="flex flex-col gap-1">
-                <label htmlFor={modelId} className="text-sm font-medium text-secondary">
-                  Frecuencia de pago
-                </label>
-                <select
-                  id={modelId}
-                  value={model}
-                  onChange={(e) => setModel(e.target.value as Model)}
-                  className="min-h-11 rounded-xl border border-gray-300 px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                >
-                  <option value="WEEKLY">Semanal</option>
-                  <option value="BIWEEKLY">Quincenal</option>
-                </select>
-              </div>
-              <Input
-                label="Fecha de apertura"
-                type="date"
-                value={openingDate}
-                onChange={(e) => setOpeningDate(e.target.value)}
-                required
-              />
-              <p className="text-xs text-secondary">
-                {model === 'WEEKLY'
-                  ? 'Modelo semanal: la fecha debe ser lunes o viernes.'
-                  : 'Modelo quincenal: la fecha debe ser día 15 o el último día del mes.'}
-              </p>
-              <Button type="submit" loading={loading}>
-                Calcular
-              </Button>
-            </form>
+  return (
+    <main
+      className={`flex w-full flex-col items-center bg-surface px-margin-mobile ${
+        embedded ? '' : 'min-h-screen pb-[120px]'
+      }`}
+    >
+      <div className="flex w-full max-w-md flex-1 flex-col gap-lg pt-sm">
+        <div className="pt-sm">
+          <h1 className="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary">
+            Calcula tu préstamo
+          </h1>
+          <p className="mt-2 font-body-sm text-body-sm text-on-surface-variant">
+            Define el monto y el plazo deseado.
+          </p>
+        </div>
 
-            {result && (
-              <div className="mt-6 flex flex-col gap-4 border-t border-gray-200 pt-4">
-                <ScheduleSummary quote={result} />
+        {score && <ScoreBadge score={score} />}
 
-                {wantItError && <Alert variant="error">{wantItError}</Alert>}
+        {error && <Alert variant="error">{error}</Alert>}
 
-                {user ? (
-                  <Button type="button" loading={wantItLoading} onClick={onWantIt}>
-                    Lo quiero
-                  </Button>
+        <div className="rounded-xl border border-transparent bg-surface-container-lowest p-md shadow-level-2 transition-all focus-within:border-secondary">
+          <label
+            htmlFor="amount-slider"
+            className="mb-xs block font-label-md text-label-md text-on-surface-variant"
+          >
+            Monto solicitado
+          </label>
+          <div className="flex flex-col gap-sm">
+            <div className="flex items-baseline gap-1">
+              <span className="font-data-lg text-data-lg text-primary">$</span>
+              <span className="font-data-lg text-data-lg text-primary">
+                {amount.toLocaleString('es-MX')}
+              </span>
+            </div>
+            <input
+              id="amount-slider"
+              type="range"
+              min={500}
+              max={maxAmount}
+              step={500}
+              value={amount}
+              onChange={(e) => setAmount(Number(e.target.value))}
+              className="range-slider w-full"
+            />
+          </div>
+          <div className="mt-xs flex justify-between px-2">
+            <span className="font-body-sm text-body-sm text-outline">Mín: $500</span>
+            <span className="font-body-sm text-body-sm text-outline">
+              Máx: {maxAmount >= 20000 ? '$20k' : currency.format(maxAmount)}
+            </span>
+          </div>
+          {maxAmount < 20000 && (
+            <p className="mt-1 text-xs text-secondary">
+              Tope de {currency.format(maxAmount)} para tu primer préstamo.
+            </p>
+          )}
+        </div>
+
+        {user?.role === 'CLIENT' && maxAmount < 20000 && (
+          <div className="flex flex-col gap-sm">
+            {increaseRequest?.status === 'PENDING' && (
+              <Alert variant="warning">
+                Tu solicitud de aumento a {currency.format(increaseRequest.amount)} está en
+                revisión. Te avisaremos por notificación y correo.
+              </Alert>
+            )}
+            {increaseRequest?.status === 'REJECTED' && (
+              <Alert variant="error">
+                Tu solicitud de aumento a {currency.format(increaseRequest.amount)} no fue
+                aprobada.
+                {increaseRequest.note ? ` Motivo: ${increaseRequest.note}` : ''}
+              </Alert>
+            )}
+            {increaseRequest?.status !== 'PENDING' && (
+              <div className="rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest p-md">
+                {increaseFormOpen ? (
+                  <div className="flex flex-col gap-sm">
+                    <span className="font-label-md text-label-md text-on-surface-variant">
+                      ¿A cuánto quieres aumentar tu límite?
+                    </span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="font-data-lg text-data-lg text-primary">$</span>
+                      <span className="font-data-lg text-data-lg text-primary">
+                        {increaseAmount.toLocaleString('es-MX')}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min={Math.min(maxAmount + 500, 20000)}
+                      max={20000}
+                      step={500}
+                      value={increaseAmount}
+                      onChange={(e) => setIncreaseAmount(Number(e.target.value))}
+                      className="range-slider w-full"
+                    />
+                    <div className="flex justify-between px-2">
+                      <span className="font-body-sm text-body-sm text-outline">
+                        Mín: ${Math.min(maxAmount + 500, 20000).toLocaleString('es-MX')}
+                      </span>
+                      <span className="font-body-sm text-body-sm text-outline">Máx: $20,000</span>
+                    </div>
+                    {increaseError && <Alert variant="error">{increaseError}</Alert>}
+                    <div className="flex gap-sm">
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        loading={increaseLoading}
+                        onClick={onSubmitIncrease}
+                      >
+                        Enviar solicitud
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => {
+                          setIncreaseFormOpen(false);
+                          setIncreaseError(null);
+                        }}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
-                  <Link to="/register">
-                    <Button type="button" className="w-full">
-                      Lo quiero
+                  <div className="flex items-center justify-between gap-sm">
+                    <p className="text-sm text-secondary">
+                      ¿Necesitas más de {currency.format(maxAmount)}?
+                    </p>
+                    <Button type="button" variant="secondary" onClick={() => setIncreaseFormOpen(true)}>
+                      Aumentar mi crédito
                     </Button>
-                  </Link>
+                  </div>
                 )}
               </div>
             )}
-          </>
+          </div>
         )}
-      </Card>
+
+        <div className="flex flex-col gap-sm">
+          <span className="px-1 font-label-md text-label-md text-on-surface-variant">
+            Modelo de préstamo
+          </span>
+          <div
+            className="flex rounded-xl bg-surface-container-lowest p-1 shadow-level-2"
+            role="radiogroup"
+            aria-label="Modelo de préstamo"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={model === 'WEEKLY'}
+              onClick={() => selectModel('WEEKLY')}
+              className={`flex-1 rounded-lg py-3 text-center font-label-md text-label-md transition-all duration-200 ${
+                model === 'WEEKLY'
+                  ? 'bg-secondary-container text-on-secondary-container'
+                  : 'text-on-surface-variant hover:bg-surface-container'
+              }`}
+            >
+              Semanal
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={model === 'BIWEEKLY'}
+              onClick={() => selectModel('BIWEEKLY')}
+              className={`flex-1 rounded-lg py-3 text-center font-label-md text-label-md transition-all duration-200 ${
+                model === 'BIWEEKLY'
+                  ? 'bg-secondary-container text-on-secondary-container'
+                  : 'text-on-surface-variant hover:bg-surface-container'
+              }`}
+            >
+              Quincenal
+            </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-sm">
+          <div className="flex items-center justify-between px-1">
+            <span className="font-label-md text-label-md text-on-surface-variant">
+              Fecha de inicio
+            </span>
+            <span className="font-body-sm text-body-sm text-accent">
+              {model === 'WEEKLY' ? 'Solo Lun / Vie' : '15 / Fin de mes'}
+            </span>
+          </div>
+          <div className="hide-scrollbar flex gap-md overflow-x-auto px-1 py-2 snap-x">
+            {dates.map((d) => {
+              const selected = openingDate === d.full;
+              return (
+                <button
+                  key={d.full}
+                  type="button"
+                  onClick={() => setOpeningDate(d.full)}
+                  aria-pressed={selected}
+                  aria-label={d.full}
+                  className={`flex h-16 w-[120px] flex-shrink-0 snap-start items-center justify-center gap-2 rounded-xl border-2 bg-surface-container-lowest shadow-level-2 transition-all ${
+                    selected
+                      ? 'border-secondary'
+                      : 'border-transparent hover:border-outline-variant'
+                  }`}
+                >
+                  <span
+                    className={`font-body-sm text-body-sm ${
+                      selected ? 'text-accent' : 'text-outline'
+                    }`}
+                  >
+                    {d.day}
+                  </span>
+                  <span
+                    className={`font-headline-md text-headline-md ${
+                      selected ? 'text-primary' : 'text-on-surface'
+                    }`}
+                  >
+                    {d.dayNum}
+                  </span>
+                  <span
+                    className={`font-body-sm text-body-sm ${
+                      selected ? 'text-primary' : 'text-outline'
+                    }`}
+                  >
+                    {d.month}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-auto rounded-xl bg-surface-container-low p-md">
+          <div className="mb-sm flex items-center justify-between">
+            <span className="font-body-md text-body-md text-on-surface-variant">
+              Pago {model === 'WEEKLY' ? 'semanal' : 'quincenal'}
+            </span>
+            <span className="font-headline-md text-headline-md text-primary">
+              {estimate ? currency.format(estimate.payment) : '—'}
+            </span>
+          </div>
+          <div className="my-2 h-px w-full bg-outline-variant opacity-30" />
+          <div className="flex items-center justify-between">
+            <span className="font-body-sm text-body-sm text-on-surface-variant">Duración</span>
+            <span className="font-body-sm text-body-sm font-medium text-primary">
+              {estimate ? (model === 'WEEKLY' ? '20 semanas' : '10 quincenas') : '—'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {result && (
+        <div ref={resultRef} className="flex w-full max-w-md flex-col gap-4 pt-6">
+          <div className="flex flex-col gap-4 rounded-xl bg-surface-container-lowest p-md shadow-level-2">
+            <ScheduleSummary quote={result} />
+
+            {wantItError && <Alert variant="error">{wantItError}</Alert>}
+
+            {user ? (
+              <Button type="button" loading={wantItLoading} onClick={onWantIt}>
+                Lo quiero
+              </Button>
+            ) : (
+              <Link to="/register">
+                <Button type="button" className="w-full">
+                  Lo quiero
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="fixed bottom-0 left-0 z-50 flex w-full justify-center bg-gradient-to-t from-surface via-surface to-transparent px-margin-mobile pb-6 pt-4">
+        <Button
+          type="button"
+          className="h-14 w-full max-w-md gap-2 rounded-xl shadow-level-3"
+          loading={loading}
+          onClick={onSubmit}
+        >
+          Calcular opciones
+          <Icon name="arrow_forward" size={20} />
+        </Button>
+      </div>
     </main>
   );
 }

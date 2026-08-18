@@ -11,6 +11,10 @@ interface BusinessRules {
   penaltyPerDay: number;
   yellowMaxDays: number;
   orangeMaxDays: number;
+  greenMaxAmount: number | null;
+  yellowMaxAmount: number;
+  orangeMaxAmount: number;
+  redMaxAmount: number;
 }
 
 interface EmailConfig {
@@ -38,6 +42,10 @@ export function AdminConfigurationPage() {
     penaltyPerDay: 0,
     yellowMaxDays: 0,
     orangeMaxDays: 0,
+    greenMaxAmount: null,
+    yellowMaxAmount: 0,
+    orangeMaxAmount: 0,
+    redMaxAmount: 0,
   });
 
   const [emailConfig, setEmailConfig] = useState<EmailConfig>(EMAIL_DEFAULTS);
@@ -68,6 +76,15 @@ export function AdminConfigurationPage() {
   const setField = (field: keyof BusinessRules) => (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
     setForm((f) => ({ ...f, [field]: Number.isFinite(value) ? value : 0 }));
+    setSuccess(false);
+  };
+
+  const setGreenMax = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setForm((f) => ({
+      ...f,
+      greenMaxAmount: raw === '' ? null : Number(raw),
+    }));
     setSuccess(false);
   };
 
@@ -206,6 +223,51 @@ export function AdminConfigurationPage() {
             <p className="text-xs text-secondary">
               Más de {form.orangeMaxDays || '—'} días de atraso se marca en rojo.
             </p>
+
+            <div className="border-t border-gray-100 pt-3">
+              <h2 className="mb-1 text-sm font-semibold text-secondary">
+                Tope de préstamo por color de score
+              </h2>
+              <p className="mb-3 text-xs text-secondary">
+                Aplica a clientes ya registrados, sin préstamo vigente ni límite aprobado. El
+                tope verde vacío significa sin tope.
+              </p>
+            </div>
+            <Input
+              label="Tope verde ($ MXN, vacío = sin tope)"
+              type="number"
+              step="500"
+              min="0.01"
+              value={form.greenMaxAmount ?? ''}
+              onChange={setGreenMax}
+            />
+            <Input
+              label="Tope amarillo ($ MXN)"
+              type="number"
+              step="500"
+              min="0.01"
+              value={form.yellowMaxAmount}
+              onChange={setField('yellowMaxAmount')}
+              required
+            />
+            <Input
+              label="Tope naranja ($ MXN)"
+              type="number"
+              step="500"
+              min="0.01"
+              value={form.orangeMaxAmount}
+              onChange={setField('orangeMaxAmount')}
+              required
+            />
+            <Input
+              label="Tope rojo ($ MXN)"
+              type="number"
+              step="500"
+              min="0.01"
+              value={form.redMaxAmount}
+              onChange={setField('redMaxAmount')}
+              required
+            />
 
             <Button type="submit" loading={saving} disabled={!!orderError} className="w-full">
               Guardar cambios

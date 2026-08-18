@@ -51,6 +51,18 @@ interface LastLocation {
 
 const PAYABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
+interface CreditIncreaseItem {
+  id: string;
+  customerPhone: string;
+  customerName: string | null;
+  amount: number;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  note: string | null;
+  createdAt: string;
+  currentMaxAmount: number | null;
+  scoreLevel: string | null;
+}
+
 const STATUS_LABEL: Record<string, string> = {
   APPROVED: 'Aprobado, sin primer pago',
   ACTIVE: 'Activo',
@@ -85,6 +97,12 @@ export function CollectorLoansPage() {
   const [documentUploading, setDocumentUploading] = useState(false);
   const [documentError, setDocumentError] = useState<string | null>(null);
   const [locationByLoan, setLocationByLoan] = useState<Record<string, LastLocation | null>>({});
+  const [view, setView] = useState<'cartera' | 'aumentos'>('cartera');
+  const [increaseRequests, setIncreaseRequests] = useState<CreditIncreaseItem[]>([]);
+  const [increaseLoading, setIncreaseLoading] = useState(false);
+  const [increaseError, setIncreaseError] = useState<string | null>(null);
+  const [increaseResolvingId, setIncreaseResolvingId] = useState<string | null>(null);
+  const [increaseNotes, setIncreaseNotes] = useState<Record<string, string>>({});
 
   const load = () => {
     setLoading(true);
@@ -95,7 +113,38 @@ export function CollectorLoansPage() {
       .finally(() => setLoading(false));
   };
 
+  const loadIncreases = () => {
+    setIncreaseLoading(true);
+    setIncreaseError(null);
+    apiFetch<CreditIncreaseItem[]>('/credit-increase')
+      .then(setIncreaseRequests)
+      .catch((err) =>
+        setIncreaseError(err instanceof ApiError ? err.message : 'No se pudieron cargar las solicitudes'),
+      )
+      .finally(() => setIncreaseLoading(false));
+  };
+
+  const resolveIncrease = async (id: string, status: 'APPROVED' | 'REJECTED') => {
+    setIncreaseError(null);
+    setIncreaseResolvingId(id);
+    try {
+      await apiFetch(`/credit-increase/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, note: increaseNotes[id]?.trim() || undefined }),
+      });
+      loadIncreases();
+    } catch (err) {
+      setIncreaseError(err instanceof ApiError ? err.message : 'No se pudo resolver la solicitud');
+    } finally {
+      setIncreaseResolvingId(null);
+    }
+  };
+
   useEffect(load, []);
+
+  useEffect(() => {
+    if (view === 'aumentos') loadIncreases();
+  }, [view]);
 
   const selected = loans.find((l) => l.id === selectedId) ?? null;
   const paymentLoan = loans.find((l) => l.id === paymentFor) ?? null;
@@ -189,15 +238,46 @@ export function CollectorLoansPage() {
           Préstamos que tienes asignados y sus pagos
         </p>
 
-        {error && <Alert variant="error">{error}</Alert>}
+        <div className="mb-4 flex rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => setView('cartera')}
+            aria-pressed={view === 'cartera'}
+            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors ${
+              view === 'cartera'
+                ? 'bg-secondary text-white'
+                : 'text-secondary hover:bg-gray-200'
+            }`}
+          >
+            Mi cartera
+          </button>
+          <button
+            type="button"
+            onClick={() => setView('aumentos')}
+            aria-pressed={view === 'aumentos'}
+            className={`flex-1 rounded-lg py-2.5 text-sm font-semibold transition-colors ${
+              view === 'aumentos'
+                ? 'bg-secondary text-white'
+                : 'text-secondary hover:bg-gray-200'
+            }`}
+          >
+            Aumentos de crédito
+          </button>
+        </div>
 
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Spinner />
-          </div>
-        ) : loans.length === 0 ? (
-          <p className="py-8 text-center text-sm text-secondary">No tienes préstamos asignados.</p>
-        ) : (
+        {view === 'cartera' && (
+          <>
+            {error && <Alert variant="error">{error}</Alert>}
+
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Spinner />
+              </div>
+            ) : loans.length === 0 ? (
+              <p className="py-8 text-center text-sm text-secondary">
+                No tienes préstamos asignados.
+              </p>
+            ) : (
           <div className="flex flex-col gap-3">
             {loans.map((loan) => (
               <div key={loan.id} className="rounded-xl border border-gray-200">
@@ -343,6 +423,79 @@ export function CollectorLoansPage() {
               </div>
             ))}
           </div>
+            )}
+          </>
+        )}
+
+        {view === 'aumentos' && (
+          <>
+            {increaseError && <Alert variant="error">{increaseError}</Alert>}
+
+            {increaseLoading ? (
+              <div className="flex justify-center py-8">
+                <Spinner />
+              </div>
+            ) : increaseRequests.length === 0 ? (
+              <p className="py-8 text-center text-sm text-secondary">
+                No hay solicitudes de aumento pendientes.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {increaseRequests.map((request) => (
+                  <div key={request.id} className="rounded-xl border border-gray-200 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <div>
+                        <p className="font-semibold text-secondary">
+                          {request.customerName ?? request.customerPhone}
+                        </p>
+                        <p className="text-xs text-secondary">{request.customerPhone}</p>
+                      </div>
+                      <span className="rounded-full bg-primary-light px-3 py-1 text-xs font-semibold text-primary-dark">
+                        {currency.format(request.amount)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-2 text-xs text-secondary">
+                      <span>
+                        Límite actual:{' '}
+                        {request.currentMaxAmount
+                          ? currency.format(request.currentMaxAmount)
+                          : 'sin tope'}
+                      </span>
+                      <span>Score: {request.scoreLevel ?? '—'}</span>
+                    </div>
+                    <input
+                      aria-label="Nota (opcional)"
+                      placeholder="Nota (opcional)"
+                      value={increaseNotes[request.id] ?? ''}
+                      onChange={(e) =>
+                        setIncreaseNotes((n) => ({ ...n, [request.id]: e.target.value }))
+                      }
+                      className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    />
+                    <div className="mt-2 flex gap-2">
+                      <Button
+                        type="button"
+                        className="flex-1"
+                        loading={increaseResolvingId === request.id}
+                        onClick={() => resolveIncrease(request.id, 'APPROVED')}
+                      >
+                        Aprobar
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        className="flex-1"
+                        loading={increaseResolvingId === request.id}
+                        onClick={() => resolveIncrease(request.id, 'REJECTED')}
+                      >
+                        Rechazar
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </Card>
 

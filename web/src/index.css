@@ -37,6 +37,43 @@
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
+/* Listas horizontales con scroll sin barra visible (chips de fecha del cotizador). */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Slider del cotizador — track y thumb propios (el diseño usa appearance:none,
+   que en WebKit deja el thumb sin estilo; se replica el aspecto del mock). */
+.range-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 8px;
+  border-radius: 8px;
+  background: #dce9ff; /* surface-container-high */
+  cursor: pointer;
+}
+.range-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #00a2fd; /* secondary-container */
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 6px rgba(26, 43, 76, 0.25);
+}
+.range-slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  background: #00a2fd;
+  border: 2px solid #ffffff;
+}
+
 @layer base {
   html {
     @apply text-secondary antialiased;
