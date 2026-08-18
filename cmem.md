@@ -1010,3 +1010,39 @@ aprobar, `ppni-4733` APPROVED con cobrador) y credenciales verificadas por
 login real. Nota importante que quedó ahí: por HTTP sin HTTPS, la cámara,
 geolocalización y Web Push **no funcionan en el celular** (contexto seguro) —
 el resto del flujo sí.
+
+## Fase 7, corte 14: acceso por rol + prompt de instalación PWA (2026-08-18)
+
+El usuario pidió: "no quiero el login luego luego, quiero una URL para
+cliente, una para Cobrador y otra para el Admin", y que la app se pueda
+instalar en el celular para que se vea como app nativa. Se confirmaron dos
+decisiones con él antes de tocar código (protocolo addv-web-app): la raíz
+muestra la calculadora con accesos por rol, y cada login valida el rol.
+
+- **Tres URLs de login con rol fijo:** `/cliente`, `/cobrador`, `/admin`.
+  `LoginPage` acepta prop `role`; al entrar valida que la cuenta sea de ese
+  rol — si no, cierra la sesión recién abierta y muestra "Esta cuenta no
+  corresponde al acceso seleccionado." (detalle importante: si no se cerrara
+  la sesión, el guard de rutas redirigiría igual al home del rol real, que no
+  es el que el usuario eligió). Los accesos cobrador/admin no ofrecen
+  "Regístrate" (registro es solo para clientes).
+- **La raíz dejó de caer al login genérico:** `LandingPage` = header con la
+  marca + botón "Iniciar sesión" arriba a la derecha + 3 tarjetas de acceso +
+  la calculadora debajo. Desbloquea la parte central del pendiente UX #3
+  (calculadora como landing); los detalles del slider ($500 en $500, topes
+  $20,000/$3,000) siguen pendientes de confirmar.
+- **Prompt de instalación:** `InstallPromptBanner` montado en `main.tsx`
+  (sobre toda la app, no por pantalla). Escucha `beforeinstallprompt`, muestra
+  bottom sheet con "Instalar"/"Ahora no", y persiste en localStorage para no
+  insistir. **Lección importante documentada en `test.md`:** `beforeinstallprompt`
+  NO dispara por HTTP desde el celular — solo HTTPS o localhost —, así que el
+  banner no se verá en las pruebas por IP LAN; se verá en producción. Esto
+  también aplica a cámara/geolocalización/Web Push (ya documentado).
+- Rutas existentes intactas: `/login` (genérico) y `/calculadora` siguen
+  funcionando; la app usa `/calculadora` en el nav del cliente y el registro
+  sigue apuntando a `/register`.
+
+Verificado con tests (28/28 PASS), lint y build, y confirmando por HTTP que
+Nginx responde 200 en las 4 URLs nuevas (/, /cliente, /cobrador, /admin) y
+que el bundle sirve las cadenas nuevas. Queda pendiente revisar en pantalla
+real (navegador/celular) el aspecto de la landing, que es nueva UI.
