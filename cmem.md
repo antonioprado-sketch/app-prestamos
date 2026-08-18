@@ -891,3 +891,24 @@ funcionaría sin tocar el login. Diseño completo (endpoints `GET /admin/users`,
 plan TDD) registrado en `project_state.md`. **Pendiente**: confirmar 3 reglas de
 negocio (rol sin ADMIN, cobrador con préstamos no degradable, desactivar bloquea
 login) y la implementación del corte.
+
+## Tres puntos de UX registrados como pendientes (2026-08-18)
+
+El usuario pidió documentar tres pedidos de UX mientras pasa el diseño "stitch"
+del admin (que vendrá en una próxima sesión). Ninguno está implementado; quedan
+registrados en `project_state.md` como pendientes:
+
+1. **Fotos de cliente solo con cámara.** `DocumentsPage` usa `<input type="file">`
+   sin `capture` — permite galería. Pedido: la foto debe tomarse en el momento.
+   El patrón ya existe en evidencia de visita del cobrador (`capture="environment"`).
+   Pendiente por resolver: el comprobante de domicilio acepta PDF además de imagen.
+2. **Cobrador: monto a cobrar precargado.** `AdminLoanResult.payment` (la cuota
+   semanal ya calculada) viaja en la API, pero `CollectorLoansPage` pide teclear
+   el monto en cada cobro. Pedido: precargar la cuota, permitir sumar con
+   **modales de "+/-"** (múltiplos del pago) y **sin edición manual** — evita
+   errores. Solo frontend.
+3. **Calculadora como landing, no login.** Hoy `/` sin sesión → `/login`. Pedido:
+   landing pública con la calculadora y botón "Iniciar sesión" arriba a la derecha;
+   **slider de $500 en $500 con tope $20,000** en vez de input manual; y "Lo quiero"
+   aplica el tope de $3,000 para cliente nuevo (regla ya existente en backend,
+   hay que reflejarla en el slider).

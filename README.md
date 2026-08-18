@@ -49,6 +49,10 @@ El destino de producción es un **VPS de Hostinger** (no GitHub Pages ni ningún
 ## En planeación
 
 - **Gestión de usuarios para el admin** (propuesta registrada en `project_state.md`, pendiente de confirmar reglas de negocio e implementar): lista unificada de usuarios, gestión de cobradores (crear/activar/desactivar), reset de contraseña y cambio de rol CLIENT↔COLLECTOR. Hoy no existe: los cobradores solo se crean dentro de Solicitudes y los admins no son gestionables.
+- **UX de cliente, cobrador y landing** (pedidos registrados en `project_state.md`, pendientes de implementar — en espera del diseño del admin):
+  - Cliente: fotos de documentos solo con cámara (tomadas en el momento), sin galería.
+  - Cobrador: monto a cobrar precargado (la cuota ya calculada), con modales de "+/-" para sumar cuotas, sin edición manual.
+  - Landing: la calculadora como inicio público (botón "Iniciar sesión" arriba a la derecha), con slider de $500 en $500 hasta $20,000 en vez del input manual, y el tope de $3,000 para cliente nuevo aplicado al cotizar.
 
 ## Pruebas
 

@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-18 (Fase 7 en curso, décimo corte — propuesta de gestión de usuarios registrada, pendiente de confirmar e implementar).
+Última actualización: 2026-08-18 (Fase 7 en curso; décimo corte — propuesta de gestión de usuarios registrada; tres puntos de UX registrados como pendientes: fotos solo con cámara, monto a cobrar precargado en cobrador, y landing con calculadora + slider).
 
 ## Fase actual: Fase 7 — Seguridad y QA (en curso, sin plan escrito task-por-task). Fases 1-6 completas.
 
@@ -540,3 +540,9 @@ Verificado 2026-08-18: build web limpio (sin warnings del PWA), `npm test` web 2
 - **TDD:** e2e nuevo `admin-users.e2e-spec.ts` (lista+filtros, reset con login de la temporal, rol con las reglas, estado incl. que INACTIVE bloquea login y que un cobrador con préstamos no se degrada) + test web `AdminUsersPage.test.tsx`.
 
 **Pendiente de confirmación explícita del usuario** (3 reglas de negocio antes de implementar): (1) el cambio de rol **no** incluye ADMIN, (2) un cobrador **con préstamos asignados no se puede degradar** a CLIENT, (3) desactivar un usuario **bloquea su login**.
+
+**Tres puntos de UX registrados por el usuario como pendientes (2026-08-18, aún sin confirmar alcance/implementar) — en espera del diseño "stitch" del admin que el usuario va a pasar:**
+
+1. **Fotos de cliente solo con cámara, no de galería.** En el flujo de documentos del cliente (`DocumentsPage`, `web/src/pages/DocumentsPage.tsx`) el `<input type="file">` actual permite elegir de galería; el usuario pidió que **la foto tenga que tomarse en el momento** (cámara), no subirse de la galería. Nota: el flujo de evidencia de visita del cobrador ya usa `capture="environment"` (patrón a replicar), y el comprobante de domicilio acepta PDF además de imagen — confirmar cómo queda ese slot con "solo cámara".
+2. **Cobrador: monto a cobrar precargado, no anotarlo a mano.** El pago semanal ya viene calculado en el préstamo (`AdminLoanResult.payment`, = `schedule[0].amount`) pero la UI de cobrador (`CollectorLoansPage`) pide teclear el monto en cada cobro. Pedido: **precargar el monto a cobrar** (la cuota ya calculada), permitir **sumar** si el cliente paga de más, usando **modales de "+/-" para agregar cuotas** (múltiplos del pago), y **que no se pueda editar** el monto a mano para evitar errores. Solo frontend (el dato ya viaja en la API).
+3. **La calculadora debe ser el inicio (landing), no el login.** Hoy `/` sin sesión cae a `/login` (`App.tsx`); el usuario pidió que la landing sea **la calculadora pública** con botón **"Iniciar sesión" arriba a la derecha**. Además: **reemplazar el input manual de monto por una barra deslizante (slider) que se desplace de $500 en $500, con monto máximo $20,000**. Y al dar "Lo quiero", **como son nuevos, aplica la regla de los $3,000 a tope** (la regla de cliente nuevo ya existe en backend — `loans.new_client_max_amount` / `resolveMaxAmount()` — hay que reflejarla en la UI del slider para que el tope se vea antes de cotizar).
