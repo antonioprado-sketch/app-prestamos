@@ -661,3 +661,55 @@ permisos, red), solo se había validado localmente "por partes" (sintaxis YAML,
 `migrate deploy` aislado). Corregido a `branches: [master]` en el mismo push
 que agrega el job `e2e-browser` — la primera corrida real de Actions de este
 repo va a validar simultáneamente el pipeline de siempre y el job nuevo.
+
+## Fase 7, primer run real de CI: dos bugs preexistentes que salieron a la luz (2026-08-18)
+
+Arreglar el trigger de rama no fue el final de la historia — el primer run
+real falló, y encontró dos problemas que llevaban ahí desde antes (uno desde
+Fase 2, uno desde que se agregó `@playwright/test` esta misma sesión), ambos
+invisibles hasta ahora exactamente porque CI nunca había corrido.
+
+**Lockfile no instalable bajo npm 10.** El `package-lock.json` de `web/` se
+generó con npm 11 (esta máquina), pero el runner de Actions usa Node 22, que
+trae npm 10. npm 11 tolera/repara silenciosamente una inconsistencia menor
+(referencias a una versión de `esbuild` sin sus entradas correspondientes,
+originada en una copia anidada de `vite` que `vitest` resuelve como peer
+opcional interno) que npm 10 rechaza en seco con `npm ci`. Se reprodujo exacto
+corriendo `npm ci` dentro de un contenedor `node:22` — mismo error, letra por
+letra, que el log real de Actions. Arreglado regenerando el lockfile con
+`npm install` (no `ci`) dentro de ese mismo contenedor, para que quede escrito
+por el mismo npm que lo va a consumir en CI.
+
+**El job `api` de CI nunca tuvo MinIO.** Documentos, BI, cobrador — cualquier
+e2e que pase por `StorageModule` — fallaban con `getaddrinfo EAI_AGAIN minio`
+porque el job solo definía un servicio `mysql`. Esto es un hueco que existe
+desde que se agregó MinIO en Fase 2 (14-15 de agosto), simplemente nadie lo
+había visto porque CI jamás había ejecutado una sola vez en la vida del repo.
+El obstáculo para arreglarlo directo con `services:` de GitHub Actions: ese
+bloque no deja pasar un `command:` propio al contenedor, y la imagen
+`minio/minio` no arranca sin que se le pase `server /data` explícito (no trae
+default). Se resolvió igual que se resolvería en cualquier VM: un paso nuevo
+con `docker run -d` antes de instalar dependencias, publicando el puerto igual
+que ya hace `mysql` como servicio.
+
+**Cómo se verificó sin gastar corridas ciegas de Actions.** Se armó el mismo
+entorno en local: MySQL 8.4 y MinIO efímeros (contenedores nuevos, sin el
+volumen persistente de datos de dev de esta máquina) con exactamente las
+mismas variables de entorno que usa el job `api`, migraciones aplicadas desde
+cero, suite completa corrida contra eso — 160/160. Detalle que casi lleva a
+una conclusión equivocada: el primer intento de reproducir el bug de MinIO
+*sin* aislar contenedores nuevos pasó igual, porque `api/.env` (nunca
+commiteado, exclusivo de esta máquina) ya apunta a la instancia de MinIO real
+del stack de dev, tapando exactamente el hueco que existe en CI. Hubo que
+forzar variables de entorno explícitas y un MinIO en un puerto distinto para
+que el repro fallara de la misma forma que el run real — un recordatorio de
+que "pasa en mi máquina" y "pasa en un entorno limpio" no son la misma
+pregunta, ni siquiera cuando ambos corren el mismo comando.
+
+**Cómo se consiguieron los logs reales.** La API de Actions rechaza la
+descarga de logs de un job sin autenticación, incluso en un repo público
+(`403 Must have admin rights to Repository`). `git credential fill` ya tenía
+un token OAuth guardado para `github.com` (el mismo que usa `git push` sin
+pedir contraseña) — reutilizarlo para el `curl` autenticado fue lo que
+permitió ver el error real en vez de adivinar a partir de "failure" sin más
+contexto.

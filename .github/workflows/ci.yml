@@ -29,6 +29,13 @@ jobs:
       JWT_REFRESH_TTL_DAYS: 30
       ADMIN_PHONE: admin
       ADMIN_PASSWORD: admin
+      MINIO_ENDPOINT: localhost
+      MINIO_PORT: '9000'
+      MINIO_PUBLIC_ENDPOINT: localhost
+      MINIO_PUBLIC_PORT: '9000'
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin123
+      MINIO_BUCKET: documentos
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,6 +43,16 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: api/package-lock.json
+      - name: Levantar MinIO (los e2e de documentos/video lo necesitan)
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin123 \
+            minio/minio server /data
+          for i in $(seq 1 15); do
+            curl -sf http://localhost:9000/minio/health/live && exit 0
+            sleep 2
+          done
+          echo "MinIO no respondió a tiempo"; exit 1
       - name: Install dependencies
         working-directory: api
         run: npm ci
