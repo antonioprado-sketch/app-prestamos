@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './store/auth';
 import { LoginPage } from './pages/LoginPage';
+import { LandingPage } from './pages/LandingPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
 import { CalculatorPage } from './pages/CalculatorPage';
@@ -37,7 +38,20 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={user ? <Navigate to={homeFor(user.role)} replace /> : <LandingPage />} />
       <Route path="/calculadora" element={<CalculatorPage />} />
+      <Route
+        path="/cliente"
+        element={user ? <Navigate to={homeFor(user.role)} /> : <LoginPage role="CLIENT" />}
+      />
+      <Route
+        path="/cobrador"
+        element={user ? <Navigate to={homeFor(user.role)} /> : <LoginPage role="COLLECTOR" />}
+      />
+      <Route
+        path="/admin"
+        element={user ? <Navigate to={homeFor(user.role)} /> : <LoginPage role="ADMIN" />}
+      />
       <Route
         path="/onboarding"
         element={

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../store/auth';
+import type { Role } from '../store/auth';
 import { ApiError } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -14,13 +15,20 @@ function homeFor(role: string) {
   return '/app/cliente';
 }
 
-export function LoginPage() {
-  const { login } = useAuth();
+const ROLE_ACCESS: Partial<Record<Role, { label: string }>> = {
+  CLIENT: { label: 'Acceso cliente' },
+  COLLECTOR: { label: 'Acceso cobrador' },
+  ADMIN: { label: 'Acceso administrador' },
+};
+
+export function LoginPage({ role }: { role?: Role }) {
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const access = role ? ROLE_ACCESS[role] : undefined;
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,6 +36,12 @@ export function LoginPage() {
     setLoading(true);
     try {
       const user = await login(phone, password);
+      if (role && user.role !== role) {
+        await logout();
+        setError('Esta cuenta no corresponde al acceso seleccionado.');
+        setLoading(false);
+        return;
+      }
       navigate(user.mustChangePassword ? '/change-password' : homeFor(user.role), {
         replace: true,
       });
@@ -37,10 +51,15 @@ export function LoginPage() {
     }
   };
 
+  const allowRegister = role !== 'COLLECTOR' && role !== 'ADMIN';
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-sm">
-        <h1 className="mb-6 text-center text-xl font-bold text-secondary">Prestamitos</h1>
+        <h1 className="mb-1 text-center text-xl font-bold text-secondary">Prestamitos</h1>
+        {access && (
+          <p className="mb-4 text-center text-sm font-semibold text-primary">{access.label}</p>
+        )}
         <form onSubmit={onSubmit} className="flex flex-col gap-4">
           {error && <Alert variant="error">{error}</Alert>}
           <Input
@@ -63,11 +82,13 @@ export function LoginPage() {
             Entrar
           </Button>
         </form>
-        <p className="mt-4 text-center text-sm text-secondary">
-          ¿No tienes cuenta? <Link to="/register" className="text-primary">Regístrate</Link>
-        </p>
+        {allowRegister && (
+          <p className="mt-4 text-center text-sm text-secondary">
+            ¿No tienes cuenta? <Link to="/register" className="text-primary">Regístrate</Link>
+          </p>
+        )}
         <p className="mt-2 text-center text-sm text-secondary">
-          <Link to="/calculadora" className="text-primary">Simula tu préstamo</Link>
+          <Link to="/" className="text-primary">Volver al inicio</Link>
         </p>
       </Card>
     </main>
