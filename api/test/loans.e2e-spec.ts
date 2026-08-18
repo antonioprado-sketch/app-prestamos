@@ -237,4 +237,37 @@ describe('Loans (e2e)', () => {
       .send(validBody)
       .expect(409);
   });
+
+  it('GET /loans/quote-limit devuelve el tope de cliente nuevo para anónimos', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/loans/quote-limit')
+      .expect(200);
+    expect(res.body.maxAmount).toBe(3000);
+  });
+
+  it('GET /loans/quote-limit de un cliente nuevo devuelve $3,000', async () => {
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/loans/quote-limit')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body.maxAmount).toBe(3000);
+  });
+
+  it('GET /loans/quote-limit de un cliente ya no nuevo devuelve null (sin tope)', async () => {
+    await prisma.customer.update({
+      where: { phone: clientPhone },
+      data: { isNewCustomer: false },
+    });
+    const token = await loginClient();
+    const res = await request(app.getHttpServer())
+      .get('/api/v1/loans/quote-limit')
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(res.body.maxAmount).toBeNull();
+    await prisma.customer.update({
+      where: { phone: clientPhone },
+      data: { isNewCustomer: true },
+    });
+  });
 });

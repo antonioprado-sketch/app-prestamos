@@ -134,6 +134,12 @@ export class LoansService {
     return calculateQuote({ ...input, maxAmount });
   }
 
+  async quoteLimit(
+    phone: string | undefined,
+  ): Promise<{ maxAmount: number | null }> {
+    return { maxAmount: await this.resolveMaxAmount(phone) };
+  }
+
   async create(
     phone: string,
     input: CreateLoanInput,

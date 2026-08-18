@@ -37,6 +37,13 @@ export class LoansController {
     return this.handleQuoteErrors(() => this.loans.quote(dto, req.user?.phone));
   }
 
+  @Get('quote-limit')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(OptionalJwtAuthGuard)
+  async quoteLimit(@Req() req: Request & { user?: { phone: string } }) {
+    return this.loans.quoteLimit(req.user?.phone);
+  }
+
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @UseGuards(JwtAuthGuard, RolesGuard)
