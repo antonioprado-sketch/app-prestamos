@@ -981,3 +981,32 @@ cámara real de hardware (Fase 2). Se agregó la pantalla de instrucciones
 previa del mock como un estado de UI puro (`showInstructions`, sin efecto en
 la lógica de grabación/MediaPipe) — cualquier cambio más profundo ahí
 arriesgaba una feature ya validada por muy poco beneficio visual adicional.
+
+## Fase 7, corte 13: probar desde el celular + marca "Prestamitos" (2026-08-18)
+
+Dos cambios chicos tras el rediseño:
+
+1. **URLs firmadas de MinIO para el celular.** El `MINIO_PUBLIC_ENDPOINT` de
+   `docker-compose.dev.yml` estaba fijo en `localhost` — desde el teléfono,
+   cualquier documento (INE, comprobante, pagaré PDF, video) apuntaba al
+   `localhost:9000` del propio teléfono y no descargaba. Se hizo interpolable
+   (`${MINIO_PUBLIC_ENDPOINT:-localhost}`) y `.env` define la IP LAN
+   (`192.168.68.71`). Verificado end-to-end: URL firmada con la IP LAN + PDF
+   descargado por esa IP. El "pendiente real" documentado desde Fase 2
+   (MinIO tras proxy en prod) sigue siendo para producción, esto solo cubre dev.
+
+2. **Marca real: Prestamitos, no LendWise.** El mock de Stitch inventó
+   "LendWise"; la app real se llama Prestamitos (lo que ya usaban login y
+   WelcomeTour). Se reemplazó en los 4 puntos donde el rediseño la había
+   metido (sidebar admin + header mobile admin + los 2 headers de
+   cliente/cobrador). Detalle de la sesión: el usuario pidió "cambialo en el
+   admin" y se extendió a los headers de cliente/cobrador por consistencia de
+   marca — si solo se quería el admin, es un cambio de una línea revertir los
+   otros dos.
+
+También se dejó `test.md` (gitignored) como ficha viva para pruebas desde el
+celular: IP real, préstamos vigentes (`ppni-1292` SUBMITTED listo para
+aprobar, `ppni-4733` APPROVED con cobrador) y credenciales verificadas por
+login real. Nota importante que quedó ahí: por HTTP sin HTTPS, la cámara,
+geolocalización y Web Push **no funcionan en el celular** (contexto seguro) —
+el resto del flujo sí.
