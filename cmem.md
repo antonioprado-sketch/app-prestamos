@@ -1046,3 +1046,39 @@ Verificado con tests (28/28 PASS), lint y build, y confirmando por HTTP que
 Nginx responde 200 en las 4 URLs nuevas (/, /cliente, /cobrador, /admin) y
 que el bundle sirve las cadenas nuevas. Queda pendiente revisar en pantalla
 real (navegador/celular) el aspecto de la landing, que es nueva UI.
+
+
+## Fase 7, corte 15: los tres pendientes de UX implementados (2026-08-18)
+
+El usuario dijo "continua con todos los pendientes". Los tres puntos de UX
+registrados en cortes anteriores quedaron implementados. Dos decisiones
+importantes se tomaron siguiendo el protocolo:
+
+- **UX #1 (fotos solo con cámara):** se preguntó al usuario y eligió la
+  opción fuerte — "Cámara forzada getUserMedia (Recomendado)" — en vez del
+  atributo `capture="environment"` (que es solo una sugerencia al navegador y
+  muchos siguen ofreciendo la galería). `DocumentsPage` ya no tiene inputs de
+  archivo: abre un modal `CameraCapture` con `getUserMedia({video:{facingMode:
+  "environment"}})`, "Tomar foto" captura a canvas ? JPEG, y "Usar esta foto"
+  sube. El comprobante de domicilio **ya no acepta PDF** — solo foto, como
+  pidió el usuario. Lección aprendida a transmitir: en el celular por
+  `http://192.168.68.71` la cámara no se abrirá (contexto seguro obligatorio) —
+  se verá en producción HTTPS. El test usa jsdom donde `navigator.mediaDevices`
+  no existe, así que el flujo que se prueba es el del error amigable + cerrar.
+- **UX #2 (cobrador, monto precargado + "+/-"):** el dato ya viajaba en la API
+  (`AdminLoanResult.schedule[].status/paidAmount`), solo faltaba declararlo en
+  el tipo del frontend. El modal "Cobrar" arranca en 1 cuota (remanente de la
+  próxima no pagada), los botones -/+ suman/quitan cuotas sin permitir edición
+  manual del monto, y el total se envía tal cual. `crypto.randomUUID()` sigue
+  como `idempotencyKey`.
+- **UX #3 (slider + tope por cliente nuevo):** se necesitaba un endpoint nuevo
+  (`GET /api/v1/loans/quote-limit`) para que el slider supiera su tope máximo
+  según la sesión (anónimo/cliente nuevo ? $3,000; cliente no nuevo ? sin
+  tope ? 20,000). La ruta se declaró antes de `@Get(':id')` (orden NestJS, si
+  no `:id` se traga `quote-limit`). El slider va de $500 en $500 y muestra el
+  tope de $3,000 cuando aplica. El `aria-label` "Monto a solicitar" se
+  conservó porque un test existente lo usa.
+
+Verificado: API 215/215 e2e (loans +3), web 30/30, builds y lint en verde,
+dist reconstruido. Sigue pendiente (fuera de alcance): pasada visual en
+navegador (extensión de Chrome desconectada) y la cámara/HTTPS en producción.
