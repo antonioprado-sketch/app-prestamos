@@ -30,7 +30,7 @@ export function DashboardShell({ role }: { role: DashboardRole }) {
         <header className="fixed top-0 z-40 flex h-16 w-full items-center justify-between bg-surface px-margin-mobile">
           <div className="flex items-center gap-xs">
             <span className="font-headline-md text-headline-lg-mobile font-bold text-primary">
-              LendWise
+              Prestamitos
             </span>
           </div>
           <div className="flex items-center gap-md">
@@ -70,7 +70,7 @@ export function DashboardShell({ role }: { role: DashboardRole }) {
     <div className="min-h-screen bg-surface pb-24 text-on-surface">
         <PushConsentBanner />
         <header className="fixed top-0 z-40 flex h-16 w-full items-center justify-between bg-surface px-margin-mobile">
-          <span className="font-headline-md text-headline-md font-bold text-primary">LendWise</span>
+          <span className="font-headline-md text-headline-md font-bold text-primary">Prestamitos</span>
           <div className="flex items-center gap-md">
             <NotificationsBell />
             <button

@@ -34,7 +34,7 @@ export function AdminShell({
   return (
     <div className="flex min-h-screen bg-background text-on-surface">
       <nav className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col gap-2 border-r border-outline-variant bg-surface-container-low p-6 md:flex">
-        <div className="mb-8 font-headline-md text-headline-md text-primary">LendWise Admin</div>
+        <div className="mb-8 font-headline-md text-headline-md text-primary">Prestamitos Admin</div>
         {NAV_ITEMS.map((item) => (
           <Link
             key={item.key}
@@ -62,7 +62,7 @@ export function AdminShell({
       <div className="flex min-h-screen flex-1 flex-col md:ml-64">
         <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-outline-variant/30 bg-surface px-margin-mobile md:px-margin-desktop">
           <span className="font-headline-md text-headline-md font-bold text-primary md:hidden">
-            LendWise
+            Prestamitos
           </span>
           <div className="hidden font-headline-md text-headline-md text-on-surface md:block">
             {title}
