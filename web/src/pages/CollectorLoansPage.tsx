@@ -1,10 +1,17 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
+
+interface ScheduleEntry {
+  seq: number;
+  dueDate: string;
+  amount: number;
+  status: string;
+  paidAmount: number;
+}
 
 interface CollectorLoan {
   id: string;
@@ -15,7 +22,7 @@ interface CollectorLoan {
   amount: number;
   total: number;
   model: 'WEEKLY' | 'BIWEEKLY';
-  schedule: { seq: number; dueDate: string; amount: number }[];
+  schedule: ScheduleEntry[];
 }
 
 interface Payment {
@@ -70,7 +77,8 @@ export function CollectorLoansPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [paymentsByLoan, setPaymentsByLoan] = useState<Record<string, Payment[]>>({});
-  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentFor, setPaymentFor] = useState<string | null>(null);
+  const [cuotaCount, setCuotaCount] = useState(1);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [documentsByLoan, setDocumentsByLoan] = useState<Record<string, FieldDocument[]>>({});
@@ -90,6 +98,25 @@ export function CollectorLoansPage() {
   useEffect(load, []);
 
   const selected = loans.find((l) => l.id === selectedId) ?? null;
+  const paymentLoan = loans.find((l) => l.id === paymentFor) ?? null;
+
+  const remainingPerCuota = (loan: CollectorLoan) =>
+    loan.schedule.map((s) =>
+      s.status === 'PAID' ? 0 : Math.max(0, s.amount - (s.paidAmount ?? 0)),
+    );
+
+  const unpaidCount = (loan: CollectorLoan) => loan.schedule.filter((s) => s.status !== 'PAID').length;
+
+  const totalFor = (loan: CollectorLoan, count: number) => {
+    const remaining = remainingPerCuota(loan);
+    return Math.round(remaining.slice(0, count).reduce((a, b) => a + b, 0) * 100) / 100;
+  };
+
+  const openPaymentModal = (loanId: string) => {
+    setPaymentFor(loanId);
+    setCuotaCount(1);
+    setPaymentError(null);
+  };
 
   const loadPayments = (loanId: string) => {
     apiFetch<Payment[]>(`/loans/${loanId}/payments`)
@@ -112,8 +139,6 @@ export function CollectorLoansPage() {
   const selectLoan = (id: string) => {
     const next = id === selectedId ? null : id;
     setSelectedId(next);
-    setPaymentAmount('');
-    setPaymentError(null);
     setDocumentError(null);
     if (next) {
       loadPayments(next);
@@ -137,8 +162,7 @@ export function CollectorLoansPage() {
     }
   };
 
-  const registerPayment = async (loanId: string) => {
-    const amount = Number(paymentAmount);
+  const registerPayment = async (loanId: string, amount: number) => {
     if (!amount || amount <= 0) return;
     setPaymentLoading(true);
     setPaymentError(null);
@@ -147,7 +171,7 @@ export function CollectorLoansPage() {
         method: 'POST',
         body: JSON.stringify({ amount, idempotencyKey: crypto.randomUUID() }),
       });
-      setPaymentAmount('');
+      setPaymentFor(null);
       loadPayments(loanId);
       load();
     } catch (err) {
@@ -257,8 +281,6 @@ export function CollectorLoansPage() {
                     <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
                       <p className="text-sm font-medium text-secondary">Pagos</p>
 
-                      {paymentError && <Alert variant="error">{paymentError}</Alert>}
-
                       {(paymentsByLoan[loan.id] ?? []).length === 0 ? (
                         <p className="text-xs text-secondary">Sin pagos registrados.</p>
                       ) : (
@@ -273,24 +295,13 @@ export function CollectorLoansPage() {
                       )}
 
                       {PAYABLE_STATUSES.includes(loan.status) && (
-                        <div className="flex gap-2">
-                          <Input
-                            label="Monto del pago"
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={paymentAmount}
-                            onChange={(e) => setPaymentAmount(e.target.value)}
-                          />
-                          <Button
-                            type="button"
-                            loading={paymentLoading}
-                            disabled={!paymentAmount || Number(paymentAmount) <= 0}
-                            onClick={() => registerPayment(loan.id)}
-                          >
-                            Registrar
-                          </Button>
-                        </div>
+                        <Button
+                          type="button"
+                          className="w-full"
+                          onClick={() => openPaymentModal(loan.id)}
+                        >
+                          Cobrar
+                        </Button>
                       )}
                     </div>
 
@@ -334,6 +345,87 @@ export function CollectorLoansPage() {
           </div>
         )}
       </Card>
+
+      {paymentLoan && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Registrar pago"
+        >
+          <div className="w-full max-w-md rounded-2xl bg-white p-4 shadow-lg">
+            <p className="text-sm font-semibold text-secondary">
+              Cobrar a {paymentLoan.customerName ?? paymentLoan.customerPhone}
+            </p>
+            <p className="mb-3 text-xs text-secondary">{paymentLoan.folio}</p>
+
+            {paymentError && <Alert variant="error">{paymentError}</Alert>}
+
+            <div className="rounded-xl border border-gray-200 p-3">
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  disabled={cuotaCount <= 1}
+                  onClick={() => setCuotaCount((c) => c - 1)}
+                  aria-label="Quitar cuota"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-xl font-bold text-secondary transition-colors hover:bg-gray-200 disabled:opacity-40"
+                >
+                  −
+                </button>
+                <div className="text-center">
+                  <p className="font-semibold text-secondary">
+                    {cuotaCount} {cuotaCount === 1 ? 'cuota' : 'cuotas'}
+                  </p>
+                  <p className="text-xs text-secondary">
+                    Cada cuota: {currency.format(paymentLoan.schedule[0]?.amount ?? 0)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  disabled={cuotaCount >= unpaidCount(paymentLoan)}
+                  onClick={() => setCuotaCount((c) => c + 1)}
+                  aria-label="Sumar cuota"
+                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-100 text-xl font-bold text-secondary transition-colors hover:bg-gray-200 disabled:opacity-40"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <div className="my-3 flex items-center justify-between">
+              <span className="text-sm font-medium text-secondary">Monto a cobrar</span>
+              <span
+                data-testid="payment-total"
+                className="font-mono text-lg font-bold text-primary"
+              >
+                {currency.format(totalFor(paymentLoan, cuotaCount))}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="flex-1"
+                disabled={paymentLoading}
+                onClick={() => setPaymentFor(null)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                className="flex-1"
+                loading={paymentLoading}
+                onClick={() =>
+                  registerPayment(paymentLoan.id, totalFor(paymentLoan, cuotaCount))
+                }
+              >
+                Registrar pago
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

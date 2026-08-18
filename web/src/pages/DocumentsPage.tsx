@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch, ApiError } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
+import { CameraCapture } from '../components/CameraCapture';
 
 type DocumentType = 'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF';
 
@@ -17,25 +17,22 @@ interface DocumentSummary {
   createdAt: string;
 }
 
-const SLOTS: { type: DocumentType; label: string; accept: string; hint: string; icon: string }[] = [
+const SLOTS: { type: DocumentType; label: string; hint: string; icon: string }[] = [
   {
     type: 'INE_FRONT',
     label: 'INE Frente',
-    accept: 'image/jpeg,image/png',
     hint: 'Asegúrate que los datos sean legibles.',
     icon: 'id_card',
   },
   {
     type: 'INE_BACK',
     label: 'INE Reverso',
-    accept: 'image/jpeg,image/png',
     hint: 'Código de barras claramente visible.',
     icon: 'credit_card',
   },
   {
     type: 'ADDRESS_PROOF',
     label: 'Comprobante de domicilio',
-    accept: 'image/jpeg,image/png,application/pdf',
     hint: 'No mayor a 3 meses de antigüedad.',
     icon: 'home_pin',
   },
@@ -45,12 +42,8 @@ export function DocumentsPage() {
   const [documents, setDocuments] = useState<DocumentSummary[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [uploadingType, setUploadingType] = useState<DocumentType | null>(null);
+  const [captureType, setCaptureType] = useState<DocumentType | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const inputRefs = useRef<Record<DocumentType, HTMLInputElement | null>>({
-    INE_FRONT: null,
-    INE_BACK: null,
-    ADDRESS_PROOF: null,
-  });
 
   const load = () => {
     setLoadingList(true);
@@ -73,21 +66,18 @@ export function DocumentsPage() {
     }
   };
 
-  const onFileChange = (type: DocumentType) => async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-
+  const onCaptured = (type: DocumentType) => async (blob: Blob) => {
+    setCaptureType(null);
     setError(null);
     setUploadingType(type);
     try {
       const form = new FormData();
       form.append('type', type);
-      form.append('file', file);
+      form.append('file', blob, 'documento.jpg');
       await apiFetch('/documents', { method: 'POST', body: form });
       load();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'No se pudo subir el archivo');
+      setError(err instanceof ApiError ? err.message : 'No se pudo subir la foto');
     } finally {
       setUploadingType(null);
     }
@@ -152,21 +142,9 @@ export function DocumentsPage() {
                     </span>
                   </div>
 
-                  <input
-                    type="file"
-                    accept={slot.accept}
-                    capture="environment"
-                    className="hidden"
-                    disabled={isUploading}
-                    ref={(el) => {
-                      inputRefs.current[slot.type] = el;
-                    }}
-                    onChange={onFileChange(slot.type)}
-                  />
-
                   {uploaded ? (
                     <div className="mt-md flex items-center justify-between rounded-lg border border-outline-variant bg-background p-sm">
-                      <span className="font-label-md text-label-md text-primary">Archivo subido</span>
+                      <span className="font-label-md text-label-md text-primary">Foto subida</span>
                       <div className="flex gap-xs">
                         <button
                           type="button"
@@ -180,7 +158,7 @@ export function DocumentsPage() {
                           type="button"
                           variant="ghost"
                           loading={isUploading}
-                          onClick={() => inputRefs.current[slot.type]?.click()}
+                          onClick={() => setCaptureType(slot.type)}
                         >
                           Reemplazar
                         </Button>
@@ -190,7 +168,7 @@ export function DocumentsPage() {
                     <button
                       type="button"
                       disabled={isUploading}
-                      onClick={() => inputRefs.current[slot.type]?.click()}
+                      onClick={() => setCaptureType(slot.type)}
                       className="mt-md flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-outline-variant bg-background p-xl transition-colors hover:border-secondary"
                     >
                       {isUploading ? (
@@ -199,7 +177,7 @@ export function DocumentsPage() {
                         <>
                           <Icon name="add_a_photo" size={36} className="mb-sm text-on-surface-variant" />
                           <span className="font-label-md text-label-md text-primary">
-                            Tomar Foto o Subir Archivo
+                            Tomar foto con la cámara
                           </span>
                         </>
                       )}
@@ -225,6 +203,14 @@ export function DocumentsPage() {
           </Link>
         </div>
       </div>
+
+      {captureType && (
+        <CameraCapture
+          title={SLOTS.find((s) => s.type === captureType)?.label ?? 'Documento'}
+          onCapture={onCaptured(captureType)}
+          onCancel={() => setCaptureType(null)}
+        />
+      )}
     </main>
   );
 }

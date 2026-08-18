@@ -199,7 +199,8 @@ function PenaltySummary({ penalty }: { penalty: PenaltyResult }) {
 export function CalculatorPage() {
   const { user } = useAuth();
   const modelId = useId();
-  const [amount, setAmount] = useState('');
+  const [amount, setAmount] = useState(500);
+  const [maxAmount, setMaxAmount] = useState(20000);
   const [model, setModel] = useState<Model>('WEEKLY');
   const [openingDate, setOpeningDate] = useState('');
   const [result, setResult] = useState<QuoteResult | null>(null);
@@ -211,6 +212,16 @@ export function CalculatorPage() {
   const [checkingDraft, setCheckingDraft] = useState(user?.role === 'CLIENT');
   const [penalty, setPenalty] = useState<PenaltyResult | null>(null);
   const [score, setScore] = useState<CustomerScore | null>(null);
+
+  useEffect(() => {
+    apiFetch<{ maxAmount: number | null }>('/loans/quote-limit')
+      .then((r) => setMaxAmount(r.maxAmount ?? 20000))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (amount > maxAmount) setAmount(maxAmount);
+  }, [maxAmount, amount]);
 
   useEffect(() => {
     if (user?.role !== 'CLIENT') {
@@ -249,7 +260,7 @@ export function CalculatorPage() {
     try {
       const quote = await apiFetch<QuoteResult>('/loans/quote', {
         method: 'POST',
-        body: JSON.stringify({ amount: Number(amount), model, openingDate }),
+        body: JSON.stringify({ amount, model, openingDate }),
       });
       setResult(quote);
     } catch (err) {
@@ -266,7 +277,7 @@ export function CalculatorPage() {
     try {
       const created = await apiFetch<LoanDraft>('/loans', {
         method: 'POST',
-        body: JSON.stringify({ amount: Number(amount), model, openingDate }),
+        body: JSON.stringify({ amount, model, openingDate }),
       });
       setDraft(created);
       captureLocation('REQUEST');
@@ -347,16 +358,36 @@ export function CalculatorPage() {
           <>
             <form onSubmit={onSubmit} className="flex flex-col gap-4">
               {error && <Alert variant="error">{error}</Alert>}
-              <Input
-                label="Monto a solicitar"
-                type="number"
-                min="1"
-                step="0.01"
-                inputMode="decimal"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <label htmlFor="amount-slider" className="text-sm font-medium text-secondary">
+                    Monto a solicitar
+                  </label>
+                  <span className="font-mono text-lg font-bold text-primary">
+                    {currency.format(amount)}
+                  </span>
+                </div>
+                <input
+                  id="amount-slider"
+                  type="range"
+                  min={500}
+                  max={maxAmount}
+                  step={500}
+                  value={amount}
+                  onChange={(e) => setAmount(Number(e.target.value))}
+                  aria-label="Monto a solicitar"
+                  className="w-full accent-primary"
+                />
+                <div className="flex justify-between text-xs text-secondary">
+                  <span>{currency.format(500)}</span>
+                  <span>{currency.format(maxAmount)}</span>
+                </div>
+                {maxAmount < 20000 && (
+                  <p className="text-xs text-secondary">
+                    Tope de {currency.format(maxAmount)} para tu primer préstamo.
+                  </p>
+                )}
+              </div>
               <div className="flex flex-col gap-1">
                 <label htmlFor={modelId} className="text-sm font-medium text-secondary">
                   Frecuencia de pago
