@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-18 (Fase 7 en curso, noveno corte).
+Última actualización: 2026-08-18 (Fase 7 en curso, décimo corte — propuesta de gestión de usuarios registrada, pendiente de confirmar e implementar).
 
 ## Fase actual: Fase 7 — Seguridad y QA (en curso, sin plan escrito task-por-task). Fases 1-6 completas.
 
@@ -522,3 +522,21 @@ Verificado 2026-08-18: `npm test` API 70/70 PASS (sin unit nuevos — delete/bla
 - **CSP endurecida**: se quitaron `https://storage.googleapis.com` y `https://cdn.jsdelivr.net` de `connect-src`/`worker-src` en `nginx.dev.conf` y `nginx.prod.conf` — ya nada del frontend depende de CDNs.
 
 Verificado 2026-08-18: build web limpio (sin warnings del PWA), `npm test` web 20/20 PASS, lint OK (solo warning preexistente `auth.tsx`). Contra el stack Docker real (Nginx recargado): `GET /mediapipe/wasm/vision_wasm_internal.wasm` → 200 con `Content-Type: application/wasm` (mime requerido por `WebAssembly.instantiateStreaming`), glue `.js` → `application/javascript`, modelo → `application/octet-stream`, CSP nueva activa sin CDNs. Magic bytes del wasm validados. Pendiente en el celular del usuario: volver a probar la grabación (el stack ya está servido con el fix).
+
+**Fase 7, décimo corte: propuesta de gestión de usuarios para el admin (2026-08-18) — REGISTRADA, pendiente de confirmación final e implementación.** El usuario pidió "no veo la gestión de usuarios en la app". Estado actual: **no existe** — el admin gestiona clientes en `/admin/clientes` (crear/eliminar/lista negra/score) y crea cobradores **solo dentro de** `AdminLoansPage` (formulario inline vía `POST /admin/collectors`); los admins **no son gestionables** (solo el inicial de `.env`); no hay endpoint unificado de usuarios ni altas/bajas/reset/roles. Modelos disponibles y suficientes (sin migración): `User` (`role` CLIENT/COLLECTOR/ADMIN, `status` ACTIVE/INACTIVE/BLOCKED, `mustChangePassword`), `Collector` (`active`), `Admin`, `Customer`.
+
+- **Alcance confirmado con el usuario (selección múltiple):** (1) lista unificada de usuarios, (2) gestión de cobradores (crear/activar/desactivar/listar), (3) reset de contraseña y cambio de rol. **No** se seleccionó "gestión de administradores" (crear/quitar admins).
+- **Hallazgo técnico crítico:** `AuthService.login()` (`api/src/auth/auth.service.ts`) solo bloquea `status=BLOCKED` con `blockedUntil` futuro; **ignora `INACTIVE`**, y en login exitoso **fuerza `status: 'ACTIVE'`** (línea ~94). Sin tocar esto, "desactivar" un usuario no bloquearía su acceso y además se **reactivaría solo** al entrar con contraseña correcta.
+- **Diseño propuesto (backend, nuevo `AdminUsersService` en `api/src/admin/`):**
+  - `GET /admin/users` — lista unificada: teléfono, nombre (desde `Customer`/`Collector`/`Admin`), rol, estado, `mustChangePassword`, `createdAt`; filtros opcionales `?role=` y `?status=`.
+  - `PATCH /admin/collectors/:phone/status` `{active: boolean}` — activar/desactivar cobrador (sincroniza `Collector.active` + `User.status`), auditado (`collector_status_changed`).
+  - `POST /admin/users/:phone/reset-password` — contraseña temporal con `generateTempPassword()` (patrón existente de crear cobrador), `mustChangePassword=true`, limpia `failedAttempts`/`blockedUntil`; **prohibido resetear el propio admin**; auditado (`password_reset`). Devuelve `{ tempPassword }`.
+  - `PATCH /admin/users/:phone/role` `{role: CLIENT | COLLECTOR}` — cambio de rol, auditado (`user_role_changed`). Reglas propuestas:
+    - **No permite ADMIN** (fuera de alcance) y **no se puede cambiar el rol propio**.
+    - `COLLECTOR → CLIENT`: solo si el cobrador **no tiene préstamos asignados** (`Loan.collectorId` sin uso — 400 si tiene, quedarían sin dueño); se elimina el registro `Collector`.
+    - `CLIENT → COLLECTOR`: crea el registro `Collector` con el nombre del cliente (fallback al teléfono si no hay perfil de cliente).
+  - Fix en `AuthService.login()`: rechazar `INACTIVE` con mensaje claro antes de verificar la contraseña.
+- **Frontend propuesto:** `AdminUsersPage` en `/admin/usuarios` + link en el menú admin (`DashboardShell`): lista unificada con filtros por rol/estado; acciones por usuario (resetear contraseña mostrando la temporal, cambiar rol CLIENT↔COLLECTOR, activar/desactivar para cobradores); sección de creación de cobrador (nombre+teléfono → muestra la temporal).
+- **TDD:** e2e nuevo `admin-users.e2e-spec.ts` (lista+filtros, reset con login de la temporal, rol con las reglas, estado incl. que INACTIVE bloquea login y que un cobrador con préstamos no se degrada) + test web `AdminUsersPage.test.tsx`.
+
+**Pendiente de confirmación explícita del usuario** (3 reglas de negocio antes de implementar): (1) el cambio de rol **no** incluye ADMIN, (2) un cobrador **con préstamos asignados no se puede degradar** a CLIENT, (3) desactivar un usuario **bloquea su login**.

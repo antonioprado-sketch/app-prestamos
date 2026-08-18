@@ -874,3 +874,20 @@ CSP de Nginx perdió los CDNs. Nginx sirve `.wasm` con `application/wasm`.
 Lección de infra: no basta con que el archivo WASM exista en el CDN — el glue JS
 del bundle debe coincidir con la versión del WASM, y en producción los assets de
 una app para celular no deben depender de CDNs de terceros.
+
+## Propuesta registrada: gestión de usuarios (2026-08-18)
+
+El usuario pidió "no veo la gestión de usuarios en la app" — y no existe: los
+clientes se gestionan en su página, los cobradores solo se crean dentro de
+Solicitudes, y los admins no son gestionables. Alcance confirmado por pregunta
+directa: **lista unificada de usuarios + gestión de cobradores + reset de
+contraseña/roles** (excluye explícitamente la gestión de administradores).
+
+Hallazgo técnico crítico del análisis: `AuthService.login()` ignora `INACTIVE`
+y fuerza `status: 'ACTIVE'` en login exitoso — "desactivar" un usuario no
+funcionaría sin tocar el login. Diseño completo (endpoints `GET /admin/users`,
+`PATCH /admin/collectors/:phone/status`, `POST /admin/users/:phone/reset-password`,
+`PATCH /admin/users/:phone/role` con reglas de negocio, página `/admin/usuarios`,
+plan TDD) registrado en `project_state.md`. **Pendiente**: confirmar 3 reglas de
+negocio (rol sin ADMIN, cobrador con préstamos no degradable, desactivar bloquea
+login) y la implementación del corte.
