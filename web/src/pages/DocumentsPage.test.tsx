@@ -10,9 +10,9 @@ describe('DocumentsPage', () => {
         <DocumentsPage />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/Tus documentos/i)).toBeTruthy();
-    expect(await screen.findByText(/INE — frente/i)).toBeTruthy();
-    expect(screen.getByText(/INE — reverso/i)).toBeTruthy();
+    expect(screen.getByText(/Identidad y Domicilio/i)).toBeTruthy();
+    expect(await screen.findByText(/INE Frente/i)).toBeTruthy();
+    expect(screen.getByText(/INE Reverso/i)).toBeTruthy();
     expect(screen.getByText(/Comprobante de domicilio/i)).toBeTruthy();
   });
 });

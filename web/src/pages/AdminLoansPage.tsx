@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { DocumentList, type AdminDocument } from '../components/DocumentList';
+import { AdminShell } from './dashboard/AdminShell';
 
 interface ScheduleEntry {
   seq: number;
@@ -278,8 +279,8 @@ export function AdminLoansPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-3xl">
+    <AdminShell active="solicitudes" title="Solicitudes de préstamo">
+      <Card className="mx-auto w-full max-w-3xl">
         <h1 className="mb-1 text-center text-xl font-bold text-secondary">
           Solicitudes de préstamo
         </h1>
@@ -599,6 +600,6 @@ export function AdminLoansPage() {
           </div>
         )}
       </Card>
-    </main>
+    </AdminShell>
   );
 }

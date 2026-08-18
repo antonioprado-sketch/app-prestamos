@@ -10,7 +10,7 @@ describe('VideoIdentityPage', () => {
         <VideoIdentityPage />
       </MemoryRouter>,
     );
-    expect(screen.getByText(/Video de identidad/i)).toBeTruthy();
+    expect(screen.getAllByText(/Video de identidad/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Declaro que solicito voluntariamente/i)).toBeTruthy();
   });
 });

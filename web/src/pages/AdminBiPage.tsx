@@ -3,6 +3,8 @@ import { apiFetch, ApiError } from '../lib/api';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
+import { Icon } from '../components/ui/Icon';
+import { AdminShell } from './dashboard/AdminShell';
 
 const WeeklyTrendChart = lazy(() => import('../components/WeeklyTrendChart'));
 
@@ -80,6 +82,50 @@ function StatTile({ label, value }: { label: string; value: string }) {
   );
 }
 
+function KpiCard({
+  label,
+  value,
+  icon,
+  trend,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  icon: string;
+  trend?: string;
+  tone?: 'default' | 'danger';
+}) {
+  const danger = tone === 'danger';
+  return (
+    <div
+      className={`relative overflow-hidden rounded-xl bg-surface-container-lowest p-md shadow-level-2 ${
+        danger ? '' : 'border-l-2 border-secondary-container'
+      }`}
+    >
+      {danger && (
+        <div className="absolute right-0 top-0 h-16 w-16 rounded-bl-full bg-error-container opacity-50" />
+      )}
+      <div className="relative z-10 mb-sm flex items-start justify-between">
+        <span className="font-body-sm text-body-sm text-on-surface-variant">{label}</span>
+        <div
+          className={`rounded-lg p-2 ${danger ? 'bg-error-container text-error' : 'bg-surface-container-low text-primary'}`}
+        >
+          <Icon name={icon} size={20} />
+        </div>
+      </div>
+      <div className={`relative z-10 font-data-lg text-data-lg ${danger ? 'text-error' : 'text-primary'}`}>
+        {value}
+      </div>
+      {trend && (
+        <div className={`relative z-10 mt-1 flex items-center gap-1 text-sm ${danger ? 'text-error' : 'text-green-600'}`}>
+          <Icon name="trending_up" size={16} />
+          <span className="font-body-sm text-body-sm">{trend}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function AdminBiPage() {
   const [kpis, setKpis] = useState<FinancialKpis | null>(null);
   const [collectors, setCollectors] = useState<CollectorBreakdown[]>([]);
@@ -106,47 +152,56 @@ export function AdminBiPage() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-4xl">
-        <h1 className="mb-1 text-center text-xl font-bold text-secondary">Indicadores</h1>
-        <p className="mb-6 text-center text-sm text-secondary">
-          Núcleo financiero — capital, cartera y multas
+    <AdminShell active="dashboard" title="Resumen General">
+      <div className="mb-lg">
+        <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary md:font-headline-lg md:text-headline-lg">
+          Panel de Business Intelligence
+        </h1>
+        <p className="font-body-md text-body-md text-on-surface-variant">
+          Vista general de cartera y rendimiento de cobranza al día de hoy.
         </p>
+      </div>
 
-        {error && <Alert variant="error">{error}</Alert>}
+      {error && <Alert variant="error">{error}</Alert>}
 
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <Spinner />
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Spinner />
+        </div>
+      ) : kpis ? (
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
+            <KpiCard label="Capital Colocado" value={currency.format(kpis.capitalColocado)} icon="account_balance" />
+            <KpiCard label="Capital Recuperado" value={currency.format(kpis.capitalCobrado)} icon="payments" />
+            <KpiCard label="Por Cobrar (Pendiente)" value={currency.format(kpis.capitalPendiente)} icon="pending_actions" />
+            <KpiCard
+              label="Cartera Vencida"
+              value={currency.format(kpis.carteraVencida)}
+              icon="warning"
+              tone="danger"
+              trend={`${percent(kpis.morosidadPct)} morosidad`}
+            />
           </div>
-        ) : kpis ? (
+
+          <div className="rounded-xl bg-surface-container-lowest p-md shadow-level-2">
+            <p className="mb-2 font-headline-md text-headline-md text-primary">
+              Capital cobrado — últimas 12 semanas
+            </p>
+            <div className="rounded-lg">
+              <Suspense
+                fallback={
+                  <div className="flex h-[260px] items-center justify-center">
+                    <Spinner />
+                  </div>
+                }
+              >
+                <WeeklyTrendChart data={trends} />
+              </Suspense>
+            </div>
+          </div>
+
+          <Card className="w-full">
           <div className="flex flex-col gap-6">
-            <div>
-              <p className="mb-2 text-sm font-medium text-secondary">
-                Capital cobrado — últimas 12 semanas
-              </p>
-              <div className="rounded-xl border border-gray-200 p-3">
-                <Suspense
-                  fallback={
-                    <div className="flex h-[260px] items-center justify-center">
-                      <Spinner />
-                    </div>
-                  }
-                >
-                  <WeeklyTrendChart data={trends} />
-                </Suspense>
-              </div>
-            </div>
-
-            <div>
-              <p className="mb-2 text-sm font-medium text-secondary">Capital</p>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <StatTile label="Colocado" value={currency.format(kpis.capitalColocado)} />
-                <StatTile label="Cobrado" value={currency.format(kpis.capitalCobrado)} />
-                <StatTile label="Pendiente" value={currency.format(kpis.capitalPendiente)} />
-              </div>
-            </div>
-
             <div>
               <p className="mb-2 text-sm font-medium text-secondary">Cartera y riesgo</p>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -274,8 +329,9 @@ export function AdminBiPage() {
               )}
             </div>
           </div>
-        ) : null}
-      </Card>
-    </main>
+          </Card>
+        </div>
+      ) : null}
+    </AdminShell>
   );
 }

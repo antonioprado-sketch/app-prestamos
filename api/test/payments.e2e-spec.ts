@@ -5,6 +5,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 
 const TINY_PNG_BASE64 =
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
@@ -81,7 +82,11 @@ describe('Payments (e2e)', () => {
     const loan = await request(app.getHttpServer())
       .post('/api/v1/loans')
       .set('Authorization', `Bearer ${clientToken}`)
-      .send({ amount: 1000, model: 'WEEKLY', openingDate: '2026-08-17' });
+      .send({
+        amount: 1000,
+        model: 'WEEKLY',
+        openingDate: nextWeeklyOpeningDate(),
+      });
     loanId = loan.body.id;
 
     await request(app.getHttpServer())
@@ -189,6 +194,9 @@ describe('Payments (e2e)', () => {
     expect(res.body.alreadyProcessed).toBe(false);
     expect(res.body.loan.status).toBe('ACTIVE');
     expect(res.body.loan.schedule[0].seq).toBe(1);
+    expect(res.body.loan.schedule[0].status).toBe('PAID');
+    expect(res.body.loan.schedule[0].paidAmount).toBe(70);
+    expect(res.body.loan.schedule[1].status).toBe('PENDING');
   });
 
   it('POST .../payments con la misma idempotencyKey no vuelve a aplicar el pago', async () => {

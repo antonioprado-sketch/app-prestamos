@@ -10,6 +10,7 @@ import { PagarePage } from './pages/PagarePage';
 import { VideoIdentityPage } from './pages/VideoIdentityPage';
 import { AdminLoansPage } from './pages/AdminLoansPage';
 import { AdminCustomersPage } from './pages/AdminCustomersPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
 import { AdminConfigurationPage } from './pages/AdminConfigurationPage';
 import { AdminLocationsPage } from './pages/AdminLocationsPage';
 import { AdminBiPage } from './pages/AdminBiPage';
@@ -18,7 +19,7 @@ import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
 
 function homeFor(role: string) {
-  if (role === 'ADMIN') return '/app/admin';
+  if (role === 'ADMIN') return '/admin/indicadores';
   if (role === 'COLLECTOR') return '/app/cobrador';
   return '/app/cliente';
 }
@@ -74,6 +75,12 @@ export default function App() {
         }
       />
       <Route
+        path="/admin/usuarios"
+        element={
+          user?.role === 'ADMIN' ? <AdminUsersPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
         path="/admin/configuracion"
         element={
           user?.role === 'ADMIN' ? <AdminConfigurationPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
@@ -114,7 +121,15 @@ export default function App() {
       />
       <Route
         path="/app/*"
-        element={user ? <DashboardShell role={user.role} /> : <Navigate to="/login" />}
+        element={
+          !user ? (
+            <Navigate to="/login" />
+          ) : user.role === 'ADMIN' ? (
+            <Navigate to="/admin/indicadores" />
+          ) : (
+            <DashboardShell role={user.role} />
+          )
+        }
       />
       <Route path="*" element={<Navigate to={user ? homeFor(user.role) : '/login'} />} />
     </Routes>

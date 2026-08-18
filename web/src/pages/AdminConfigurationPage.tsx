@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { AdminShell } from './dashboard/AdminShell';
 import { Alert } from '../components/ui/Alert';
 import { Input } from '../components/ui/Input';
 import { Spinner } from '../components/ui/Spinner';
@@ -157,7 +158,8 @@ export function AdminConfigurationPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center gap-4 bg-gray-50 p-4">
+    <AdminShell active="configuracion" title="Reglas de negocio">
+      <div className="mx-auto flex w-full max-w-md flex-col gap-4">
       <Card className="w-full max-w-md">
         <h1 className="mb-1 text-center text-xl font-bold text-secondary">Reglas de negocio</h1>
         <p className="mb-6 text-center text-sm text-secondary">
@@ -317,6 +319,7 @@ export function AdminConfigurationPage() {
           </>
         )}
       </Card>
-    </main>
+      </div>
+    </AdminShell>
   );
 }

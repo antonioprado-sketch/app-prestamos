@@ -83,7 +83,7 @@ test('cliente completa registro, cotización, onboarding, documentos y firma de 
       buffer: jpegBuffer(),
     });
   }
-  await expect(page.getByText('Subido ✓')).toHaveCount(3);
+  await expect(page.getByText('Validado')).toHaveCount(3);
 
   // Pagaré: firma + envío (cierra la solicitud, único prerequisito es onboarding completo)
   await page.goto('/pagare');

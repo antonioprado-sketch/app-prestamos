@@ -17,6 +17,7 @@ import {
   calculateQuote,
   QuoteInput,
   QuoteResult,
+  QuoteScheduleEntry,
   todayInMexicoCity,
 } from './loan-quote';
 import { calculateLoanPenalty, PenaltyResult } from './loan-penalty';
@@ -43,11 +44,17 @@ export interface CreateLoanInput {
   openingDate: string;
 }
 
-export interface LoanDraftResult extends QuoteResult {
+export interface LoanScheduleEntryWithStatus extends QuoteScheduleEntry {
+  status: string;
+  paidAmount: number;
+}
+
+export interface LoanDraftResult extends Omit<QuoteResult, 'schedule'> {
   id: string;
   folio: string;
   status: string;
   adminNote: string | null;
+  schedule: LoanScheduleEntryWithStatus[];
 }
 
 function generateFolio(): string {
@@ -73,6 +80,8 @@ export function toLoanDraftResult(loan: LoanWithSchedule): LoanDraftResult {
       seq: entry.seq,
       dueDate: toDateString(entry.dueDate),
       amount: Number(entry.amount),
+      status: entry.status,
+      paidAmount: Number(entry.paidAmount),
     }));
 
   return {
@@ -191,6 +200,11 @@ export class LoansService {
 
         return {
           ...quote,
+          schedule: quote.schedule.map((entry) => ({
+            ...entry,
+            status: 'PENDING',
+            paidAmount: 0,
+          })),
           id: String(loan.id),
           folio,
           status: loan.status,

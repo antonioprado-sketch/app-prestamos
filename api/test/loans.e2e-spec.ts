@@ -4,6 +4,7 @@ import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { ValidationPipe } from '../src/common/pipes/validation.pipe';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { nextWeeklyOpeningDate } from './test-helpers';
 import { todayInMexicoCity } from '../src/loans/loan-quote';
 
 describe('Loans (e2e)', () => {
@@ -16,7 +17,7 @@ describe('Loans (e2e)', () => {
   const validBody = {
     amount: 1000,
     model: 'WEEKLY',
-    openingDate: '2026-08-17', // lunes futuro
+    openingDate: nextWeeklyOpeningDate(), // lunes futuro
   };
 
   async function loginClient(): Promise<string> {
@@ -106,8 +107,20 @@ describe('Loans (e2e)', () => {
     expect(res.body.status).toBe('DRAFT');
     expect(res.body.total).toBe(1400);
     expect(res.body.schedule).toHaveLength(20);
+    expect(res.body.schedule[0].status).toBe('PENDING');
+    expect(res.body.schedule[0].paidAmount).toBe(0);
     loanId = res.body.id;
     folio = res.body.folio;
+  });
+
+  it('GET /loans/:id expone el estado de cada cuota (PENDING antes de pagar)', async () => {
+    const token = await loginClient();
+    const detail = await request(app.getHttpServer())
+      .get(`/api/v1/loans/${loanId}`)
+      .set('Authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(detail.body.schedule[0].status).toBe('PENDING');
+    expect(detail.body.schedule[0].paidAmount).toBe(0);
   });
 
   it('GET /loans requiere token', async () => {

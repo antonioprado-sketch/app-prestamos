@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LendWise - Carga de Documentos</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "secondary-fixed": "#cfe5ff",
+                      "primary-container": "#1a2b4c",
+                      "on-tertiary-container": "#909395",
+                      "tertiary-fixed": "#e0e3e5",
+                      "on-error-container": "#93000a",
+                      "on-primary": "#ffffff",
+                      "surface-tint": "#4e5e82",
+                      "surface-container-high": "#dce9ff",
+                      "secondary": "#00629d",
+                      "on-secondary-fixed": "#001d33",
+                      "outline": "#75777f",
+                      "on-tertiary-fixed": "#191c1e",
+                      "surface-container-highest": "#d3e4fe",
+                      "outline-variant": "#c5c6cf",
+                      "surface-bright": "#f8f9ff",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "surface-container": "#e5eeff",
+                      "tertiary": "#141819",
+                      "background": "#f8f9ff",
+                      "surface": "#f8f9ff",
+                      "surface-dim": "#cbdbf5",
+                      "surface-container-low": "#eff4ff",
+                      "on-primary-fixed": "#071b3b",
+                      "primary-fixed-dim": "#b6c6f0",
+                      "secondary-fixed-dim": "#98cbff",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed-variant": "#004a77",
+                      "on-surface": "#0b1c30",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary-container": "#8293ba",
+                      "inverse-surface": "#213145",
+                      "primary": "#031636",
+                      "inverse-primary": "#b6c6f0",
+                      "error-container": "#ffdad6",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "primary-fixed": "#d8e2ff",
+                      "tertiary-container": "#292c2e",
+                      "on-tertiary": "#ffffff",
+                      "on-background": "#0b1c30",
+                      "on-primary-fixed-variant": "#364669",
+                      "on-surface-variant": "#44474e",
+                      "surface-variant": "#d3e4fe",
+                      "secondary-container": "#00a2fd",
+                      "on-secondary-container": "#003558",
+                      "inverse-on-surface": "#eaf1ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "xl": "32px",
+                      "3xl": "64px",
+                      "margin-mobile": "16px",
+                      "sm": "12px",
+                      "base": "4px",
+                      "2xl": "48px",
+                      "xs": "8px",
+                      "gutter": "16px",
+                      "md": "16px",
+                      "lg": "24px"
+              },
+              "fontFamily": {
+                      "label-md": [
+                              "Inter"
+                      ],
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "headline-lg": [
+                              "Inter"
+                      ],
+                      "body-lg": [
+                              "Inter"
+                      ],
+                      "headline-md": [
+                              "Inter"
+                      ],
+                      "data-lg": [
+                              "Inter"
+                      ],
+                      "headline-lg-mobile": [
+                              "Inter"
+                      ],
+                      "display-lg": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "label-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-lg": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "20px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "data-lg": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings:
+            'FILL' 1,
+            'wght' 400,
+            'GRAD' 0,
+            'opsz' 24;
+        }
+        .progress-bar-fill {
+            transition: width 0.5s ease-in-out;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background min-h-screen text-on-surface antialiased font-body-md flex flex-col">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface-dim fixed top-0 w-full flex justify-between items-center px-margin-mobile h-16 w-full z-50">
+<div class="flex items-center gap-4">
+<!-- Navigation Action: Back (Transactional flow) -->
+<button class="text-primary hover:opacity-80 transition-opacity duration-200">
+<span class="material-symbols-outlined" data-icon="arrow_back" data-weight="fill">arrow_back</span>
+</button>
+</div>
+<div class="text-headline-md font-headline-md font-bold text-primary dark:text-on-primary-fixed">LendWise</div>
+<div>
+<!-- Trailing Icon -->
+<button class="text-primary hover:opacity-80 transition-opacity duration-200">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<main class="flex-grow pt-24 px-margin-mobile md:px-margin-desktop pb-24 md:pb-8 flex flex-col items-center">
+<div class="w-full max-w-2xl">
+<!-- Progress Stepper -->
+<div class="mb-lg w-full">
+<div class="flex justify-between items-center mb-sm">
+<span class="font-label-md text-label-md text-secondary">Paso 5 de 6</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Carga de Documentos</span>
+</div>
+<div class="w-full h-2 bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary progress-bar-fill rounded-full" style="width: 83.33%;"></div>
+</div>
+</div>
+<!-- Header Content -->
+<div class="mb-xl text-center">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-sm">Identidad y Domicilio</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Para asegurar tu cuenta, necesitamos verificar tu identidad. Por favor, sube fotos claras y legibles de tus documentos.
+                </p>
+</div>
+<!-- Document Upload Cards -->
+<div class="grid gap-md">
+<!-- INE Frente -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-l-2 border-secondary relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-sm mb-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="id_card">id_card</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">INE Frente</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Asegúrate que los datos sean legibles.</p>
+</div>
+</div>
+<!-- Validation Status (Pending) -->
+<div class="px-2 py-1 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md flex items-center gap-1 opacity-70">
+<span class="material-symbols-outlined text-[16px]" data-icon="pending">pending</span> Pendiente
+                        </div>
+</div>
+<div class="mt-md border-2 border-dashed border-outline-variant rounded-lg p-xl flex flex-col items-center justify-center cursor-pointer hover:border-secondary transition-colors bg-background">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant mb-sm" data-icon="add_a_photo">add_a_photo</span>
+<span class="font-label-md text-label-md text-primary">Tomar Foto o Subir Archivo</span>
+</div>
+</div>
+<!-- INE Reverso -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] relative overflow-hidden group">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-sm mb-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="credit_card">credit_card</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">INE Reverso</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Código de barras claramente visible.</p>
+</div>
+</div>
+</div>
+<div class="mt-md border-2 border-dashed border-outline-variant rounded-lg p-xl flex flex-col items-center justify-center cursor-pointer hover:border-secondary transition-colors bg-background">
+<span class="material-symbols-outlined text-4xl text-on-surface-variant mb-sm" data-icon="upload_file">upload_file</span>
+<span class="font-label-md text-label-md text-primary">Seleccionar Archivo</span>
+</div>
+</div>
+<!-- Comprobante de Domicilio (Success State Example) -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] relative overflow-hidden">
+<div class="flex items-start justify-between">
+<div class="flex items-center gap-sm mb-sm">
+<div class="w-10 h-10 rounded-full bg-[rgba(16,185,129,0.1)] flex items-center justify-center text-[#10B981]">
+<span class="material-symbols-outlined" data-icon="home_pin">home_pin</span>
+</div>
+<div>
+<h3 class="font-headline-md text-headline-md text-primary">Comprobante Domicilio</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">No mayor a 3 meses de antigüedad.</p>
+</div>
+</div>
+<!-- Validation Status (Success) -->
+<div class="px-2 py-1 rounded-full bg-[rgba(16,185,129,0.1)] text-[#10B981] font-label-md text-label-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]" data-icon="check_circle">check_circle</span> Validado
+                        </div>
+</div>
+<!-- Uploaded Preview State -->
+<div class="mt-md rounded-lg overflow-hidden border border-outline-variant relative h-32 w-full bg-surface flex items-center justify-center">
+<!-- Simulated Image preview -->
+<div class="absolute inset-0 bg-cover bg-center opacity-40" data-alt="A close up view of a generic utility bill resting on a clean wooden table. The lighting is soft and natural, emphasizing the text details on the white paper. The overall tone is practical, secure, and modern financial aesthetic." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDws718ZGzlY3im1KjZeXHASuYsEle3gaFBgi-mK8J_zzbsBzIJls2G93sE3CB64UZBJHX9fXYt-u2bMua-4145Pb9qIjXWRV88sv7l3eZ3tRZ-7fb81uqE4F4n1kGrYbiLz7zekn62RcA7p-lvdMjz3Ivz7eIvu7HjUn63_mXwmjuLHCzwRTtyxgrsPkQVl2W5_ZO65K1B_DRivsSxG6_WMjyY0jpAVWpt677XZsP_q1H3FVZOoHq2')"></div>
+<div class="z-10 flex gap-sm">
+<button class="bg-surface-container-lowest text-primary p-2 rounded-full shadow-md hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+<button class="bg-surface-container-lowest text-error p-2 rounded-full shadow-md hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined" data-icon="delete">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Actions -->
+<div class="mt-xl flex flex-col sm:flex-row gap-md justify-end">
+<button class="h-12 px-6 rounded-lg font-label-md text-label-md text-primary border border-primary hover:bg-surface-container-low transition-colors w-full sm:w-auto text-center flex items-center justify-center">
+                    Guardar y Continuar Después
+                </button>
+<button class="h-12 px-6 rounded-lg font-label-md text-label-md text-on-primary bg-primary hover:opacity-90 transition-opacity w-full sm:w-auto text-center flex items-center justify-center gap-2">
+                    Siguiente Paso <span class="material-symbols-outlined text-[20px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Navigation Shell is suppressed as this is a transactional onboarding flow -->
+</body></html>

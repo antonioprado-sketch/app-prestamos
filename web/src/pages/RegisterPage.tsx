@@ -9,7 +9,7 @@ import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 
 function homeFor(role: string) {
-  if (role === 'ADMIN') return '/app/admin';
+  if (role === 'ADMIN') return '/admin/indicadores';
   if (role === 'COLLECTOR') return '/app/cobrador';
   return '/app/cliente';
 }

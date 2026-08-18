@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>LendWise - Verificación de Identidad</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed": "#cfe5ff",
+                        "primary-container": "#1a2b4c",
+                        "on-tertiary-container": "#909395",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-error-container": "#93000a",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#4e5e82",
+                        "surface-container-high": "#dce9ff",
+                        "secondary": "#00629d",
+                        "on-secondary-fixed": "#001d33",
+                        "outline": "#75777f",
+                        "on-tertiary-fixed": "#191c1e",
+                        "surface-container-highest": "#d3e4fe",
+                        "outline-variant": "#c5c6cf",
+                        "surface-bright": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "surface-container": "#e5eeff",
+                        "tertiary": "#141819",
+                        "background": "#f8f9ff",
+                        "surface": "#f8f9ff",
+                        "surface-dim": "#cbdbf5",
+                        "surface-container-low": "#eff4ff",
+                        "on-primary-fixed": "#071b3b",
+                        "primary-fixed-dim": "#b6c6f0",
+                        "secondary-fixed-dim": "#98cbff",
+                        "on-secondary": "#ffffff",
+                        "on-secondary-fixed-variant": "#004a77",
+                        "on-surface": "#0b1c30",
+                        "on-error": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-container": "#8293ba",
+                        "inverse-surface": "#213145",
+                        "primary": "#031636",
+                        "inverse-primary": "#b6c6f0",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary-container": "#292c2e",
+                        "on-tertiary": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "on-primary-fixed-variant": "#364669",
+                        "on-surface-variant": "#44474e",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-container": "#00a2fd",
+                        "on-secondary-container": "#003558",
+                        "inverse-on-surface": "#eaf1ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "xl": "32px",
+                        "3xl": "64px",
+                        "margin-mobile": "16px",
+                        "sm": "12px",
+                        "base": "4px",
+                        "2xl": "48px",
+                        "xs": "8px",
+                        "gutter": "16px",
+                        "md": "16px",
+                        "lg": "24px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "data-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "data-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    },
+                    "boxShadow": {
+                        "level-2": "0px 4px 20px rgba(26, 43, 76, 0.05)",
+                        "level-3": "0px 12px 32px rgba(26, 43, 76, 0.12)"
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #F8FAFC; /* Level 1 Sub-surface per guidelines */
+        }
+        
+        .camera-mask {
+            mask-image: radial-gradient(ellipse at center, transparent 40%, black 100%);
+            -webkit-mask-image: -webkit-radial-gradient(ellipse at center, transparent 50%, black 75%);
+        }
+        
+        .pulse-ring {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: .5; transform: scale(1.05); }
+        }
+        
+        .silhouette-guide {
+            border: 2px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 50% 50% 40% 40% / 60% 60% 40% 40%;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased text-on-surface font-body-md min-h-screen flex flex-col items-center justify-center p-margin-mobile">
+<!-- Top Navigation for Onboarding (Simplified, transactional) -->
+<header class="fixed top-0 w-full bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-mobile h-16 z-50">
+<button aria-label="Volver" class="text-primary hover:opacity-80 transition-opacity duration-200 p-2 -ml-2 rounded-full active:bg-surface-container-high">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">arrow_back</span>
+</button>
+<span class="font-label-md text-label-md text-primary">Paso 6 de 7</span>
+<button aria-label="Ayuda" class="text-primary hover:opacity-80 transition-opacity duration-200 p-2 -mr-2 rounded-full active:bg-surface-container-high">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">help_outline</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-md mt-16 mb-24 flex flex-col gap-lg">
+<!-- Header Text -->
+<div class="text-center px-4">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-2">Video de Identidad</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Para proteger tu cuenta, necesitamos un breve video tuyo diciendo la frase en pantalla.</p>
+</div>
+<!-- Camera Interface Container -->
+<div class="relative w-full aspect-[3/4] bg-surface-container-lowest rounded-xl shadow-level-2 overflow-hidden flex flex-col items-center justify-center p-4">
+<!-- Instructions Overlay (Pre-recording) -->
+<div class="absolute inset-0 z-20 flex flex-col items-center justify-center bg-surface-container-lowest/90 backdrop-blur-sm p-6 transition-opacity duration-300" id="instructions-overlay">
+<div class="flex flex-col gap-6 w-full max-w-xs">
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">lightbulb</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-primary mb-1">Buena iluminación</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Asegúrate de que tu rostro esté bien iluminado, sin sombras fuertes.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">face</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-primary mb-1">Rostro visible</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Quítate lentes oscuros, gorras o cualquier cosa que cubra tu cara.</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-10 h-10 rounded-full bg-secondary-fixed flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-secondary" style="font-variation-settings: 'FILL' 1;">record_voice_over</span>
+</div>
+<div>
+<h3 class="font-label-md text-label-md text-primary mb-1">Habla claro</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Lee la frase que aparecerá en pantalla en voz alta.</p>
+</div>
+</div>
+</div>
+<button class="mt-8 w-full max-w-xs bg-primary text-on-primary h-12 rounded-lg font-label-md text-label-md flex items-center justify-center shadow-md active:scale-95 transition-transform" id="btn-entendido">
+                    Entendido, iniciar
+                </button>
+</div>
+<!-- Simulated Camera Feed -->
+<div class="absolute inset-0 bg-inverse-surface z-0 flex items-center justify-center">
+<img class="object-cover w-full h-full opacity-50" data-alt="A medium shot portrait of a person looking directly into the camera with a neutral expression. They are well lit from the front, creating a clean, modern aesthetic suitable for a high-end fintech application. The background is a slightly blurred, minimalist, and brightly lit modern office environment. The overall tone is professional, secure, and trustworthy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJDp125HVhP5Zi5VaeAYlxYruoSGDEwtMjM034wZ93Zvv6E1bFirvhvatyU0WySvPAlMz2iiWrV5Sh1erexIkWt0cB7PGwaj09MEen1JynntUoqeM25XrVL9qycgNqBFv25xuRFnRYFuVAnXw_8mQWR0asqaInjlXwAsCWM-34JZY5w98Lpzcc-_11ebSwvsaKN4psp0hYBCsFMie52QDJcKzBBa384OerSIqUXgPRc8FwGqvSb9GK"/>
+</div>
+<!-- Camera Overlay UI (Guide & Prompter) -->
+<div class="absolute inset-0 z-10 flex flex-col items-center justify-between p-6 pointer-events-none opacity-0 transition-opacity duration-300" id="camera-ui">
+<!-- Recording Indicator -->
+<div class="w-full flex justify-end">
+<div class="hidden items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full" id="recording-indicator">
+<div class="w-3 h-3 rounded-full bg-error pulse-ring"></div>
+<span class="font-label-md text-label-md text-white text-xs">00:00</span>
+</div>
+</div>
+<!-- Silhouette Guide -->
+<div class="w-48 h-64 silhouette-guide mb-12"></div>
+<!-- Teleprompter / Prompt Text -->
+<div class="w-full bg-black/60 backdrop-blur-md rounded-xl p-4 text-center mb-16 shadow-lg border border-white/10">
+<p class="font-body-sm text-body-sm text-surface-variant mb-1">Por favor, lee en voz alta:</p>
+<p class="font-headline-md text-headline-md text-white tracking-wide">"Confirmo que soy yo abriendo mi cuenta LendWise"</p>
+</div>
+</div>
+</div>
+</main>
+<!-- Bottom Action Area (Fixed for recording control) -->
+<div class="fixed bottom-0 w-full left-0 bg-surface-container-lowest/90 backdrop-blur-md border-t border-outline-variant/30 p-margin-mobile pb-safe flex justify-center items-center z-40 h-24 shadow-[0px_-4px_20px_rgba(26,43,76,0.05)]">
+<!-- Record Button -->
+<button class="hidden group relative w-16 h-16 rounded-full border-4 border-outline hover:border-secondary transition-colors duration-300 flex items-center justify-center focus:outline-none focus:ring-4 focus:ring-secondary/30" id="btn-record">
+<div class="w-12 h-12 bg-error rounded-full transition-all duration-300 group-active:scale-90 group-[.is-recording]:w-6 group-[.is-recording]:h-6 group-[.is-recording]:rounded-sm group-[.is-recording]:bg-error"></div>
+</button>
+<!-- Progress Stepper indicator (Disabled during active recording step) -->
+<div class="w-full max-w-md flex items-center justify-between gap-2 px-4 transition-opacity duration-300" id="stepper">
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary w-full"></div></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary w-full"></div></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary w-full"></div></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary w-full"></div></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary w-full"></div></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"><div class="h-full bg-secondary w-1/2"></div></div>
+<div class="h-1 flex-1 bg-surface-container-highest rounded-full overflow-hidden"></div>
+</div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnEntendido = document.getElementById('btn-entendido');
+            const overlay = document.getElementById('instructions-overlay');
+            const cameraUi = document.getElementById('camera-ui');
+            const btnRecord = document.getElementById('btn-record');
+            const stepper = document.getElementById('stepper');
+            const recordingIndicator = document.getElementById('recording-indicator');
+            const timerText = recordingIndicator.querySelector('span');
+
+            let isRecording = false;
+            let timerInterval;
+            let seconds = 0;
+
+            // Transition from instructions to camera view
+            btnEntendido.addEventListener('click', () => {
+                overlay.style.opacity = '0';
+                setTimeout(() => {
+                    overlay.classList.add('hidden');
+                    cameraUi.style.opacity = '1';
+                    
+                    stepper.classList.add('hidden');
+                    btnRecord.classList.remove('hidden');
+                    btnRecord.classList.add('flex');
+                }, 300);
+            });
+
+            // Toggle Recording state
+            btnRecord.addEventListener('click', () => {
+                if (!isRecording) {
+                    // Start Recording
+                    isRecording = true;
+                    btnRecord.classList.add('is-recording');
+                    recordingIndicator.classList.remove('hidden');
+                    recordingIndicator.classList.add('flex');
+                    
+                    // Simple Timer
+                    seconds = 0;
+                    timerText.textContent = "00:00";
+                    timerInterval = setInterval(() => {
+                        seconds++;
+                        const s = seconds % 60;
+                        timerText.textContent = `00:${s < 10 ? '0' + s : s}`;
+                        
+                        // Auto-stop after 10 seconds for demo purposes
+                        if(seconds >= 10) {
+                            stopRecording();
+                            // In a real app, transition to "Processing" or next step here
+                            alert("Grabación completada. Simulando subida de video...");
+                        }
+                    }, 1000);
+
+                } else {
+                    // Stop Recording manually
+                    stopRecording();
+                }
+            });
+
+            function stopRecording() {
+                isRecording = false;
+                btnRecord.classList.remove('is-recording');
+                recordingIndicator.classList.add('hidden');
+                recordingIndicator.classList.remove('flex');
+                clearInterval(timerInterval);
+            }
+        });
+    </script>
+</body></html>

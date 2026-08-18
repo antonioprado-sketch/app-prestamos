@@ -6,6 +6,7 @@ import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
 import { apiFetch, ApiError } from '../lib/api';
 import { Card } from '../components/ui/Card';
+import { AdminShell } from './dashboard/AdminShell';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 
@@ -75,8 +76,8 @@ export function AdminLocationsPage() {
   }, [loading]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-4xl">
+    <AdminShell active="ubicaciones" title="Ubicación de clientes">
+      <Card className="mx-auto w-full max-w-4xl">
         <h1 className="mb-1 text-center text-xl font-bold text-secondary">
           Ubicación de clientes
         </h1>
@@ -101,6 +102,6 @@ export function AdminLocationsPage() {
           className={`h-[60vh] w-full rounded-xl ${loading ? 'hidden' : ''}`}
         />
       </Card>
-    </main>
+    </AdminShell>
   );
 }

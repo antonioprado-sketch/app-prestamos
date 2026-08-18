@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>LendWise - Dashboard Cobrador</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "secondary-fixed": "#cfe5ff",
+                    "primary-container": "#1a2b4c",
+                    "on-tertiary-container": "#909395",
+                    "tertiary-fixed": "#e0e3e5",
+                    "on-error-container": "#93000a",
+                    "on-primary": "#ffffff",
+                    "surface-tint": "#4e5e82",
+                    "surface-container-high": "#dce9ff",
+                    "secondary": "#00629d",
+                    "on-secondary-fixed": "#001d33",
+                    "outline": "#75777f",
+                    "on-tertiary-fixed": "#191c1e",
+                    "surface-container-highest": "#d3e4fe",
+                    "outline-variant": "#c5c6cf",
+                    "surface-bright": "#f8f9ff",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#c4c7c9",
+                    "surface-container": "#e5eeff",
+                    "tertiary": "#141819",
+                    "background": "#f8f9ff",
+                    "surface": "#f8f9ff",
+                    "surface-dim": "#cbdbf5",
+                    "surface-container-low": "#eff4ff",
+                    "on-primary-fixed": "#071b3b",
+                    "primary-fixed-dim": "#b6c6f0",
+                    "secondary-fixed-dim": "#98cbff",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#004a77",
+                    "on-surface": "#0b1c30",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-container": "#8293ba",
+                    "inverse-surface": "#213145",
+                    "primary": "#031636",
+                    "inverse-primary": "#b6c6f0",
+                    "error-container": "#ffdad6",
+                    "on-tertiary-fixed-variant": "#444749",
+                    "primary-fixed": "#d8e2ff",
+                    "tertiary-container": "#292c2e",
+                    "on-tertiary": "#ffffff",
+                    "on-background": "#0b1c30",
+                    "on-primary-fixed-variant": "#364669",
+                    "on-surface-variant": "#44474e",
+                    "surface-variant": "#d3e4fe",
+                    "secondary-container": "#00a2fd",
+                    "on-secondary-container": "#003558",
+                    "inverse-on-surface": "#eaf1ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "xl": "32px",
+                    "3xl": "64px",
+                    "margin-mobile": "16px",
+                    "sm": "12px",
+                    "base": "4px",
+                    "2xl": "48px",
+                    "xs": "8px",
+                    "gutter": "16px",
+                    "md": "16px",
+                    "lg": "24px"
+            },
+            "fontFamily": {
+                    "label-md": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "data-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "data-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 20px); }
+        .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+        .search-input-focus:focus-within { border-color: #00A3FF; box-shadow: 0 0 0 3px rgba(0, 163, 255, 0.1); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen font-body-md antialiased pt-safe">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-dim transition-opacity duration-200">
+<div class="flex justify-between items-center px-margin-mobile h-16 w-full">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A small, professional portrait photo of a male field agent in his 30s, wearing a crisp navy blue polo shirt, smiling confidently. Bright, neutral lighting with a clean, high-key background suitable for a corporate app profile picture. Modern minimalist style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC1Xxwy3AwOz83xzON1UKq_fNvOBxigM4al__04tC1CMdrh9GLKcgT_vWdd5yj7aQm_K5Dtg_aRQnHp4dKabvuWxmLwcC1Ay0TPtIuOKFWCro4l2mDsdFtbQWI2PYY0PZI5imVLW5yBx83iBirCE7oi6gjIEarEP0zgTN7oFlhIm33Iu8lZS2yO--DHzn-4ERy03Ose2AQyPnCxbGGIoSsa5jpPvISZD8jF0uhzRdNeYOqCMOrqaldB"/>
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-on-primary-fixed">LendWise</h1>
+</div>
+<button aria-label="Ayuda" class="p-xs rounded-full hover:opacity-80 text-primary dark:text-inverse-primary">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 pb-24 px-margin-mobile max-w-lg mx-auto">
+<!-- Summary Header -->
+<section class="mb-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-base">Hola, Carlos</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Ruta del día: Zona Norte</p>
+<div class="mt-md bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex justify-between items-center">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Meta diaria</p>
+<p class="font-data-lg text-data-lg text-primary">$1,250.00</p>
+</div>
+<div class="text-right">
+<p class="font-body-sm text-body-sm text-on-surface-variant">Cobrado (3/12)</p>
+<p class="font-headline-md text-headline-md text-secondary-container">$350.00</p>
+</div>
+</div>
+</section>
+<!-- Search Bar -->
+<section class="mb-lg">
+<div class="relative search-input-focus rounded-lg bg-surface-container-lowest border border-outline-variant transition-all duration-200">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full bg-transparent border-none pl-10 pr-sm py-sm rounded-lg font-body-md text-body-md text-on-surface focus:ring-0 placeholder:text-on-surface-variant/50" placeholder="Buscar cliente..." type="text"/>
+</div>
+</section>
+<!-- Priority List -->
+<section>
+<div class="flex justify-between items-center mb-md">
+<h3 class="font-headline-md text-headline-md text-primary">Cobros de hoy</h3>
+<span class="font-label-md text-label-md text-secondary-container bg-secondary-container/10 px-xs py-base rounded-full flex items-center gap-base">
+<span class="material-symbols-outlined text-[16px]" data-icon="location_on">location_on</span>
+                    Por cercanía
+                </span>
+</div>
+<div class="flex flex-col gap-md">
+<!-- Card 1: Overdue -->
+<article class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-l-2 border-error relative overflow-hidden">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h4 class="font-headline-md text-headline-md text-primary leading-tight">María García</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-base flex items-center gap-base">
+<span class="material-symbols-outlined text-[14px]" data-icon="directions_walk">directions_walk</span>
+                                120m • Abarrotes "La Esperanza"
+                            </p>
+</div>
+<span class="font-label-md text-label-md text-error bg-error/10 px-xs py-base rounded-full">Vencido</span>
+</div>
+<div class="flex justify-between items-end mt-md">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Importe</p>
+<p class="font-data-lg text-data-lg text-primary">$85.00</p>
+</div>
+<button class="bg-[#1A2B4C] text-white px-md py-sm rounded-lg font-label-md text-label-md min-h-[48px] flex items-center gap-xs active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[20px]" data-icon="payments">payments</span>
+                            Registrar Pago
+                        </button>
+</div>
+</article>
+<!-- Card 2: Pending -->
+<article class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-l-2 border-transparent hover:border-secondary transition-colors relative overflow-hidden">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h4 class="font-headline-md text-headline-md text-primary leading-tight">Juan Pérez</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-base flex items-center gap-base">
+<span class="material-symbols-outlined text-[14px]" data-icon="directions_walk">directions_walk</span>
+                                350m • Taller Mecánico
+                            </p>
+</div>
+<span class="font-label-md text-label-md text-secondary-container bg-secondary-container/10 px-xs py-base rounded-full">Pendiente</span>
+</div>
+<div class="flex justify-between items-end mt-md">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Importe</p>
+<p class="font-data-lg text-data-lg text-primary">$150.00</p>
+</div>
+<button class="bg-[#1A2B4C] text-white px-md py-sm rounded-lg font-label-md text-label-md min-h-[48px] flex items-center gap-xs active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[20px]" data-icon="payments">payments</span>
+                            Registrar Pago
+                        </button>
+</div>
+</article>
+<!-- Card 3: Pending -->
+<article class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-l-2 border-transparent hover:border-secondary transition-colors relative overflow-hidden">
+<div class="flex justify-between items-start mb-sm">
+<div>
+<h4 class="font-headline-md text-headline-md text-primary leading-tight">Ana Rodríguez</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-base flex items-center gap-base">
+<span class="material-symbols-outlined text-[14px]" data-icon="directions_walk">directions_walk</span>
+                                800m • Papelería "El Lápiz"
+                            </p>
+</div>
+<span class="font-label-md text-label-md text-secondary-container bg-secondary-container/10 px-xs py-base rounded-full">Pendiente</span>
+</div>
+<div class="flex justify-between items-end mt-md">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Importe</p>
+<p class="font-data-lg text-data-lg text-primary">$60.00</p>
+</div>
+<button class="bg-[#1A2B4C] text-white px-md py-sm rounded-lg font-label-md text-label-md min-h-[48px] flex items-center gap-xs active:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-[20px]" data-icon="payments">payments</span>
+                            Registrar Pago
+                        </button>
+</div>
+</article>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full z-50 bg-surface-container-lowest dark:bg-surface-container-low rounded-t-xl shadow-[0px_-4px_20px_rgba(26,43,76,0.05)]">
+<div class="flex justify-around items-center h-20 pb-safe px-2">
+<button aria-label="Inicio" class="flex flex-col items-center justify-center text-secondary dark:text-secondary-fixed-dim font-bold scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined" data-icon="dashboard" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+<span class="font-label-md text-label-md mt-1">Inicio</span>
+</button>
+<button aria-label="Clientes" class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high rounded-lg scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-label-md text-[12px] font-semibold mt-1">Clientes</span>
+</button>
+<button aria-label="Cobros" class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high rounded-lg scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined" data-icon="receipt_long">receipt_long</span>
+<span class="font-label-md text-[12px] font-semibold mt-1">Cobros</span>
+</button>
+<button aria-label="Perfil" class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-high rounded-lg scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-label-md text-[12px] font-semibold mt-1">Perfil</span>
+</button>
+</div>
+</nav>
+</body></html>

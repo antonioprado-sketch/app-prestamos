@@ -1,94 +1,101 @@
 import { Link } from 'react-router-dom';
-import type { Role } from '../../store/auth';
 import { useAuth } from '../../store/auth';
-import { Button } from '../../components/ui/Button';
+import { Icon } from '../../components/ui/Icon';
 import { LocationConsentBanner } from '../../components/LocationConsentBanner';
 import { WelcomeTour } from '../../components/WelcomeTour';
 import { PushConsentBanner } from '../../components/PushConsentBanner';
 import { NotificationsBell } from '../../components/NotificationsBell';
+import { ClientHome } from './ClientHome';
+import { CollectorHome } from './CollectorHome';
 
-const titles: Record<Role, string> = {
-  CLIENT: 'Panel del Cliente',
-  COLLECTOR: 'Panel del Cobrador',
-  ADMIN: 'Panel del Administrador',
-};
+type DashboardRole = 'CLIENT' | 'COLLECTOR';
 
-const messages: Record<Role, string> = {
-  CLIENT: 'Próximas fechas de pago',
-  COLLECTOR: 'Clientes asignados',
-  ADMIN: 'Resumen general',
-};
+const CLIENT_NAV = [
+  { icon: 'home', label: 'Inicio', to: '/app/cliente' },
+  { icon: 'account_balance_wallet', label: 'Préstamos', to: '/calculadora' },
+  { icon: 'payments', label: 'Pagos', to: '/calculadora' },
+  { icon: 'notifications', label: 'Notificaciones', to: '/app/cliente' },
+  { icon: 'person', label: 'Perfil', to: '/app/cliente' },
+] as const;
 
-export function DashboardShell({ role }: { role: Role }) {
+export function DashboardShell({ role }: { role: DashboardRole }) {
   const { logout } = useAuth();
 
-  return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      {(role === 'CLIENT' || role === 'COLLECTOR') && (
-        <header className="flex justify-end border-b border-gray-200 bg-white p-2">
-          <NotificationsBell />
+  if (role === 'CLIENT') {
+    return (
+      <div className="min-h-screen bg-surface pb-24 text-on-surface">
+        <WelcomeTour />
+        <LocationConsentBanner />
+        <PushConsentBanner />
+        <header className="fixed top-0 z-40 flex h-16 w-full items-center justify-between bg-surface px-margin-mobile">
+          <div className="flex items-center gap-xs">
+            <span className="font-headline-md text-headline-lg-mobile font-bold text-primary">
+              LendWise
+            </span>
+          </div>
+          <div className="flex items-center gap-md">
+            <NotificationsBell />
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="text-primary transition-opacity hover:opacity-80"
+              aria-label="Cerrar sesión"
+            >
+              <Icon name="logout" />
+            </button>
+          </div>
         </header>
-      )}
-      <main className="flex flex-1 flex-col items-center justify-center gap-2 p-4 text-center">
-        {role === 'CLIENT' && <WelcomeTour />}
-        {role === 'CLIENT' && <LocationConsentBanner />}
-        {(role === 'CLIENT' || role === 'COLLECTOR') && <PushConsentBanner />}
-        <h1 className="text-xl font-bold text-secondary">{titles[role]}</h1>
-        <p className="text-secondary">{messages[role]}</p>
-        {role === 'CLIENT' && (
-          <Link to="/calculadora" className="mt-4 w-full max-w-xs">
-            <Button type="button" className="w-full">
-              Solicitar o continuar mi préstamo
-            </Button>
+        <main className="mx-auto max-w-7xl px-margin-mobile pt-20">
+          <ClientHome />
+        </main>
+        <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around rounded-t-xl bg-surface-container-lowest px-2 shadow-[0px_-4px_20px_rgba(26,43,76,0.05)]">
+          {CLIENT_NAV.map((item, i) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              className={`flex w-16 flex-col items-center justify-center gap-1 rounded-lg p-2 transition-transform active:scale-90 ${
+                i === 0 ? 'font-bold text-secondary-container' : 'text-on-surface-variant'
+              }`}
+            >
+              <Icon name={item.icon} filled={i === 0} />
+              <span className="font-label-md text-[11px] leading-none">{item.label}</span>
+            </Link>
+          ))}
+        </nav>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface pb-24 text-on-surface">
+        <PushConsentBanner />
+        <header className="fixed top-0 z-40 flex h-16 w-full items-center justify-between bg-surface px-margin-mobile">
+          <span className="font-headline-md text-headline-md font-bold text-primary">LendWise</span>
+          <div className="flex items-center gap-md">
+            <NotificationsBell />
+            <button
+              type="button"
+              onClick={() => logout()}
+              className="text-primary transition-opacity hover:opacity-80"
+              aria-label="Cerrar sesión"
+            >
+              <Icon name="logout" />
+            </button>
+          </div>
+        </header>
+        <main className="mx-auto max-w-lg px-margin-mobile pt-20">
+          <CollectorHome />
+        </main>
+        <nav className="fixed bottom-0 left-0 z-50 flex h-20 w-full items-center justify-around rounded-t-xl bg-surface-container-lowest px-2 shadow-[0px_-4px_20px_rgba(26,43,76,0.05)]">
+          <div className="flex w-16 flex-col items-center justify-center gap-1 font-bold text-secondary-container">
+            <Icon name="dashboard" filled />
+            <span className="font-label-md text-[11px] leading-none">Inicio</span>
+          </div>
+          <Link to="/collector/cartera" className="flex w-16 flex-col items-center justify-center gap-1 text-on-surface-variant">
+            <Icon name="group" />
+            <span className="font-label-md text-[11px] leading-none">Clientes</span>
           </Link>
-        )}
-        {role === 'COLLECTOR' && (
-          <Link to="/collector/cartera" className="mt-4 w-full max-w-xs">
-            <Button type="button" className="w-full">
-              Mi cartera
-            </Button>
-          </Link>
-        )}
-        {role === 'ADMIN' && (
-          <>
-            <Link to="/admin/solicitudes" className="mt-4 w-full max-w-xs">
-              <Button type="button" className="w-full">
-                Revisar solicitudes
-              </Button>
-            </Link>
-            <Link to="/admin/clientes" className="w-full max-w-xs">
-              <Button type="button" variant="ghost" className="w-full">
-                Clientes
-              </Button>
-            </Link>
-            <Link to="/admin/configuracion" className="w-full max-w-xs">
-              <Button type="button" variant="ghost" className="w-full">
-                Reglas de negocio
-              </Button>
-            </Link>
-            <Link to="/admin/ubicaciones" className="w-full max-w-xs">
-              <Button type="button" variant="ghost" className="w-full">
-                Ubicación de clientes
-              </Button>
-            </Link>
-            <Link to="/admin/indicadores" className="w-full max-w-xs">
-              <Button type="button" variant="ghost" className="w-full">
-                Indicadores
-              </Button>
-            </Link>
-          </>
-        )}
-        <Button variant="ghost" onClick={() => logout()} className="mt-6">
-          Cerrar sesión
-        </Button>
-      </main>
-      <nav className="flex justify-around border-t border-gray-200 bg-white py-2">
-        <span className="text-sm text-primary">Inicio</span>
-        <span className="text-sm text-secondary">
-          {role === 'CLIENT' ? 'Pagos' : role === 'COLLECTOR' ? 'Clientes' : 'Usuarios'}
-        </span>
-        <span className="text-sm text-secondary">Perfil</span>
-      </nav>
-    </div>
+        </nav>
+      </div>
   );
 }

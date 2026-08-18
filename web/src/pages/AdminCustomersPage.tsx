@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { AdminShell } from './dashboard/AdminShell';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { Input } from '../components/ui/Input';
@@ -292,8 +293,8 @@ export function AdminCustomersPage() {
   };
 
   return (
-    <main className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <Card className="w-full max-w-3xl">
+    <AdminShell active="clientes" title="Clientes">
+      <Card className="mx-auto w-full max-w-3xl">
         <div className="mb-1 flex items-center justify-between">
           <h1 className="text-xl font-bold text-secondary">Clientes</h1>
           <Button
@@ -587,7 +588,7 @@ export function AdminCustomersPage() {
         )}
       </Card>
 
-      <Card className="mt-4 w-full max-w-3xl">
+      <Card className="mx-auto mt-4 w-full max-w-3xl">
         <h2 className="mb-1 text-xl font-bold text-secondary">Lista negra</h2>
         <p className="mb-4 text-sm text-secondary">
           Los teléfonos de aquí no pueden registrarse ni solicitar préstamos, aunque
@@ -646,6 +647,6 @@ export function AdminCustomersPage() {
           </div>
         )}
       </Card>
-    </main>
+    </AdminShell>
   );
 }
