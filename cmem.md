@@ -1054,34 +1054,34 @@ El usuario dijo "continua con todos los pendientes". Los tres puntos de UX
 registrados en cortes anteriores quedaron implementados. Dos decisiones
 importantes se tomaron siguiendo el protocolo:
 
-- **UX #1 (fotos solo con cámara):** se preguntó al usuario y eligió la
-  opción fuerte — "Cámara forzada getUserMedia (Recomendado)" — en vez del
+- **UX #1 (fotos solo con cï¿½mara):** se preguntï¿½ al usuario y eligiï¿½ la
+  opciï¿½n fuerte ï¿½ "Cï¿½mara forzada getUserMedia (Recomendado)" ï¿½ en vez del
   atributo `capture="environment"` (que es solo una sugerencia al navegador y
-  muchos siguen ofreciendo la galería). `DocumentsPage` ya no tiene inputs de
+  muchos siguen ofreciendo la galerï¿½a). `DocumentsPage` ya no tiene inputs de
   archivo: abre un modal `CameraCapture` con `getUserMedia({video:{facingMode:
   "environment"}})`, "Tomar foto" captura a canvas ? JPEG, y "Usar esta foto"
-  sube. El comprobante de domicilio **ya no acepta PDF** — solo foto, como
-  pidió el usuario. Lección aprendida a transmitir: en el celular por
-  `http://192.168.68.71` la cámara no se abrirá (contexto seguro obligatorio) —
-  se verá en producción HTTPS. El test usa jsdom donde `navigator.mediaDevices`
-  no existe, así que el flujo que se prueba es el del error amigable + cerrar.
+  sube. El comprobante de domicilio **ya no acepta PDF** ï¿½ solo foto, como
+  pidiï¿½ el usuario. Lecciï¿½n aprendida a transmitir: en el celular por
+  `http://192.168.68.71` la cï¿½mara no se abrirï¿½ (contexto seguro obligatorio) ï¿½
+  se verï¿½ en producciï¿½n HTTPS. El test usa jsdom donde `navigator.mediaDevices`
+  no existe, asï¿½ que el flujo que se prueba es el del error amigable + cerrar.
 - **UX #2 (cobrador, monto precargado + "+/-"):** el dato ya viajaba en la API
   (`AdminLoanResult.schedule[].status/paidAmount`), solo faltaba declararlo en
   el tipo del frontend. El modal "Cobrar" arranca en 1 cuota (remanente de la
-  próxima no pagada), los botones -/+ suman/quitan cuotas sin permitir edición
-  manual del monto, y el total se envía tal cual. `crypto.randomUUID()` sigue
+  prï¿½xima no pagada), los botones -/+ suman/quitan cuotas sin permitir ediciï¿½n
+  manual del monto, y el total se envï¿½a tal cual. `crypto.randomUUID()` sigue
   como `idempotencyKey`.
 - **UX #3 (slider + tope por cliente nuevo):** se necesitaba un endpoint nuevo
-  (`GET /api/v1/loans/quote-limit`) para que el slider supiera su tope máximo
-  según la sesión (anónimo/cliente nuevo ? $3,000; cliente no nuevo ? sin
-  tope ? 20,000). La ruta se declaró antes de `@Get(':id')` (orden NestJS, si
+  (`GET /api/v1/loans/quote-limit`) para que el slider supiera su tope mï¿½ximo
+  segï¿½n la sesiï¿½n (anï¿½nimo/cliente nuevo ? $3,000; cliente no nuevo ? sin
+  tope ? 20,000). La ruta se declarï¿½ antes de `@Get(':id')` (orden NestJS, si
   no `:id` se traga `quote-limit`). El slider va de $500 en $500 y muestra el
   tope de $3,000 cuando aplica. El `aria-label` "Monto a solicitar" se
-  conservó porque un test existente lo usa.
+  conservï¿½ porque un test existente lo usa.
 
 Verificado: API 215/215 e2e (loans +3), web 30/30, builds y lint en verde,
 dist reconstruido. Sigue pendiente (fuera de alcance): pasada visual en
-navegador (extensión de Chrome desconectada) y la cámara/HTTPS en producción.
+navegador (extensiï¿½n de Chrome desconectada) y la cï¿½mara/HTTPS en producciï¿½n.
 ## Fase 7, corte 16: landing del cliente con diseÃ±o `stitch/cliente` + fix de fechas (2026-08-18)
 
 El usuario pidiÃ³ aplicar el diseÃ±o del cotizador de cliente que exportÃ³ en
@@ -1176,3 +1176,32 @@ generate + restart api): anÃ³nimo â†’ `{"maxAmount":null}` y rutas
 `/credit-increase` mapeadas. Pendientes heredados sin cambio: pasada visual en
 navegador (extensiÃ³n Chrome desconectada) y cÃ¡mara/geo/push por HTTPS (Fase 8).
 Pendiente de decisiÃ³n heredado: destino de `stitch/` (se sugiriÃ³ conservarla).
+
+## DocumentaciÃ³n completa del proyecto (2026-08-18)
+
+A pedido del usuario ("documenta todo") se generaron tres documentos nuevos y
+se expandiÃ³ el README. Solo documentaciÃ³n, cero cambios de cÃ³digo:
+
+- `docs/architecture.md` â€” arquitectura tÃ©cnica completa (reemplaza el stub):
+  componentes/diagrama, stack, estructura del monorepo, patrones backend
+  (mÃ³dulos `@Global()`, funciones puras con TDD, errores/validaciÃ³n,
+  seguridad), modelo de datos con enums, flujos de negocio (ciclo de vida del
+  prÃ©stamo, cotizaciÃ³n 1.4Ã—20/10, pagos/penalizaciÃ³n, score, reglas
+  configurables, aumento de crÃ©dito, notificaciones), rutas del frontend por
+  rol, carga diferida (Leaflet/MediaPipe/Recharts), PWA, `stitch/`,
+  infraestructura/despliegue y decisiones de diseÃ±o clave.
+- `docs/api-reference.md` â€” referencia exhaustiva de `/api/v1`: todos los
+  endpoints por Ã¡rea (mÃ©todo, ruta, roles, descripciÃ³n), cÃ³digos de estado
+  frecuentes y convenciones (Bearer, formato de error, ownership â†’ 404).
+- `docs/user-guide.md` â€” guÃ­a de uso por rol: cliente (registro, calculadora,
+  onboarding, documentos con cÃ¡mara, video, pagarÃ©, aumento de crÃ©dito),
+  cobrador (cartera, cobro precargado con "+/-", aumentos) y administrador
+  (BI, solicitudes, clientes, usuarios, configuraciÃ³n, ubicaciones, aumentos).
+- `README.md` â€” secciÃ³n "Funcionalidades por rol" + enlaces a los tres
+  documentos; corregida la nota de `stitch/` (`stitch/cliente/` es el diseÃ±o
+  de referencia vigente; el resto de mocks ya fue eliminado del repo).
+
+Datos para documentar se recolectaron del cÃ³digo real (schema Prisma,
+controllers, router de la web, `business-rules.constants.ts`) â€” no de memoria.
+Pendientes heredados sin cambio: pasada visual en navegador y cÃ¡mara/geo/push
+por HTTPS (Fase 8).

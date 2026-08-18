@@ -1,6 +1,14 @@
 # AppPrestamitos
 
-Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA.
+Plataforma web de préstamos personales (cliente / cobrador / administrador). Mobile-first, PWA.
+
+## Funcionalidades por rol
+
+- **Cliente** — landing/calculadora pública (slider de $500 en $500, tope $20,000, tabs Semanal/Quincenal), registro, onboarding (datos + fotos de documentos **solo con cámara** + video de identidad), firma de pagaré en pantalla, seguimiento de préstamos, topes por color de score configurables y flujo **"Aumentar mi crédito"**.
+- **Cobrador** — cartera de préstamos asignados, cobro con monto precargado y modales "+/-" para sumar cuotas (sin edición manual), evidencia de cobro, ubicación del cliente, resolución de aumentos de crédito.
+- **Administrador** — BI (KPIs, tendencia semanal, distribución por zona), revisión/aprobación de solicitudes, asignación de cobradores, gestión de clientes y usuarios (rol/status/reset de contraseña), configuración de reglas de negocio y correo SMTP, mapa de ubicaciones y aumentos de crédito.
+
+Detalle pantalla por pantalla en `docs/user-guide.md`.
 
 ## Entornos
 - **dev**: `docker compose -f docker-compose.dev.yml up`
@@ -49,8 +57,8 @@ El destino de producción es un **VPS de Hostinger** (no GitHub Pages ni ningún
 ## En planeación
 
 - **Fases 6-9 del roadmap general** (PWA completa con HTTPS, seguridad/QA final, producción en el VPS, escalabilidad) — ver `project_state.md`.
-- **UX pendiente de decisión:** qué hacer con la carpeta `stitch/` (diseños de referencia exportados, ya no referenciada por el código).
 - Los tres puntos de UX de cliente/cobrador/landing ya implementados (cortes 15-17): fotos de documentos solo con cámara `getUserMedia`, cobrador con monto precargado y modales "+/-", y calculadora como landing pública con slider de $500, topes por color de score configurables y flujo "Aumentar mi crédito".
+- `stitch/` conserva el diseño de referencia actual del cliente (`stitch/cliente/`); el resto de mocks antiguos ya se eliminó del repo.
 
 ## Pruebas
 
@@ -59,7 +67,10 @@ El destino de producción es un **VPS de Hostinger** (no GitHub Pages ni ningún
 - Web e2e navegador real: `cd web && npm run test:e2e` (Playwright/Chromium) — requiere el stack de Docker arriba (`docker compose -f docker-compose.dev.yml up -d`) y `web/dist` compilado (`npm run build`), corre contra `http://localhost` (Nginx), no contra `vite dev`
 
 ## Documentación
-- Diseño y arquitectura: `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`
+- **Arquitectura técnica** (componentes, modelo de datos, flujos de negocio, decisiones): `docs/architecture.md`
+- **Referencia de API** (todos los endpoints, auth, errores): `docs/api-reference.md`
+- **Guía de usuario por rol** (cliente / cobrador / administrador): `docs/user-guide.md`
+- Diseño y arquitectura original (spec): `docs/superpowers/specs/2026-08-13-app-prestamos-design.md`
 - Estado vivo del proyecto (qué está hecho, decisiones tomadas, próximos pasos): `project_state.md`
 - Resumen narrativo del historial de desarrollo (portable entre máquinas, para claude-mem): `cmem.md`
-- API: `http://localhost:3000/api/v1/docs` (Swagger, solo en dev)
+- API interactiva: `http://localhost:3000/api/v1/docs` (Swagger, solo en dev)
