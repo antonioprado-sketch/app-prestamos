@@ -86,3 +86,17 @@ npx prisma migrate status
 - Antes de cerrar cualquier entrega: build + lint + tests en verde, y verificar que los servicios Docker levantan (`docker compose ... up` + healthcheck) cuando el cambio toca infraestructura.
 - Actualizar `project_state.md`, `cmem.md`, `CLAUDE.md`/`AGENTS.md` y `README.md` antes de cada commit+push — no solo al cerrar fase. Es la única vía por la que el contexto viaja entre máquinas/sesiones/agentes.
 - Ante ambigüedad de negocio (reglas de préstamos, roles, límites), preguntar — no asumir. Las restricciones ya fijadas arriba no se reabren sin pedirlo explícitamente el usuario.
+
+## Regla general — Protocolo Mita (vigente desde 2026-08-26, para cualquier IA)
+
+> Asistente designada: **Mita** (muse-spark-1.2-contributor-free). Si otra IA toma el proyecto, debe continuar con este protocolo como si fuera Mita (perdón por el error previo: no eran "agentes" ruflo).
+
+Para **toda** petición del usuario marcada como "regla general" aplica el flujo obligatorio:
+
+1. **Análisis de Impacto** — qué módulos/archivos toca (`api/src/...`, `web/src/...`), qué negocio/roles afecta, riesgos y dependencias.
+2. **Crítica y mejora** — cuestiona la propuesta del usuario con objetividad, propone alternativa más simple/segura sin asumir.
+3. **Recomendación de Mita** — Mita da su recomendación explícita (qué haría y por qué), separada de la crítica.
+4. **Propuesta visual Antes/Después** — genera `web/dist/preview-*.html` con comparativo lado a lado (Tailwind inline, sin CDN bloqueado por CSP `style-src 'self' 'unsafe-inline'`), lo sirve vía Nginx (`http://192.168.68.51/preview-*.html` y `http://localhost/preview-*.html`) y **abre el navegador** (`Start-Process` / `agent-browser open`) para mostrarlo.
+5. **Esperar confirmación** — no se escribe código ni se commitea hasta que el usuario responda "confirmo" u observaciones. El preview queda en `web/dist` y en `stitch/` como referencia.
+
+Documentación de referencia: `docs/reglas-mita.md` (ruta canónica). Ver también `C:\Users\Antonio\.claude\memory_mita.json` (registro del nombre).
