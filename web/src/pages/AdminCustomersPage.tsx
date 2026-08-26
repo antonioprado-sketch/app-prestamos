@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { FormEvent } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
-import { formatShortDate } from '../lib/dates';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { AdminShell } from './dashboard/AdminShell';
@@ -61,13 +59,6 @@ interface Collector {
   active: boolean;
 }
 
-interface BlacklistEntry {
-  phone: string;
-  reason: string;
-  createdBy: string;
-  createdAt: string;
-}
-
 const ASSIGNABLE_STATUSES = ['APPROVED', 'ACTIVE'];
 
 const SCORE_DOT: Record<ScoreLevel, string> = {
@@ -94,12 +85,9 @@ export function AdminCustomersPage() {
   const [deleteArmed, setDeleteArmed] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const [blacklist, setBlacklist] = useState<BlacklistEntry[]>([]);
-  const [blPhone, setBlPhone] = useState('');
-  const [blReason, setBlReason] = useState('');
-  const [blLoading, setBlLoading] = useState(false);
-  const [blError, setBlError] = useState<string | null>(null);
-  const [blRemoving, setBlRemoving] = useState<string | null>(null);
+  const [showBlModal, setShowBlModal] = useState(false);
+  const [blDetailReason, setBlDetailReason] = useState('');
+  const [blDetailLoading, setBlDetailLoading] = useState(false);
 
   const [collectors, setCollectors] = useState<Collector[]>([]);
   const [collectorPickerOpen, setCollectorPickerOpen] = useState(false);
@@ -122,12 +110,6 @@ export function AdminCustomersPage() {
       .catch(() => undefined);
   }, []);
 
-  useEffect(() => {
-    apiFetch<BlacklistEntry[]>('/admin/blacklist')
-      .then(setBlacklist)
-      .catch(() => undefined);
-  }, []);
-
   const deleteCustomer = async (phone: string) => {
     setDeleteLoading(true);
     setError(null);
@@ -144,35 +126,18 @@ export function AdminCustomersPage() {
     }
   };
 
-  const addToBlacklist = async (e: FormEvent) => {
-    e.preventDefault();
-    setBlError(null);
-    setBlLoading(true);
+  const addToBlacklistFromDetail = async () => {
+    if (!detail || !blDetailReason.trim()) return;
+    setBlDetailLoading(true);
+    setError(null);
     try {
-      const entry = await apiFetch<BlacklistEntry>('/admin/blacklist', {
-        method: 'POST',
-        body: JSON.stringify({ phone: blPhone, reason: blReason }),
-      });
-      setBlacklist((prev) => [entry, ...prev]);
-      setBlPhone('');
-      setBlReason('');
+      await apiFetch('/admin/blacklist', { method: 'POST', body: JSON.stringify({ phone: detail.phone, reason: blDetailReason }) });
+      setShowBlModal(false);
+      setBlDetailReason('');
     } catch (err) {
-      setBlError(err instanceof ApiError ? err.message : 'No se pudo agregar');
+      setError(err instanceof ApiError ? err.message : 'No se pudo agregar a lista negra');
     } finally {
-      setBlLoading(false);
-    }
-  };
-
-  const removeFromBlacklist = async (phone: string) => {
-    setBlRemoving(phone);
-    setBlError(null);
-    try {
-      await apiFetch(`/admin/blacklist/${phone}`, { method: 'DELETE' });
-      setBlacklist((prev) => prev.filter((b) => b.phone !== phone));
-    } catch (err) {
-      setBlError(err instanceof ApiError ? err.message : 'No se pudo quitar');
-    } finally {
-      setBlRemoving(null);
+      setBlDetailLoading(false);
     }
   };
 
@@ -479,6 +444,10 @@ export function AdminCustomersPage() {
                           )}
                         </div>
 
+                        <Button type="button" variant="ghost" className="w-full border border-outline-variant" onClick={() => setShowBlModal(true)}>
+                          Pasar a lista negra
+                        </Button>
+
                         <div className="flex flex-col gap-2 border-t border-gray-200 pt-3">
                           {!deleteArmed ? (
                             <Button
@@ -529,65 +498,19 @@ export function AdminCustomersPage() {
         )}
       </Card>
 
-      <Card className="mx-auto mt-4 w-full max-w-3xl">
-        <h2 className="mb-1 text-xl font-bold text-secondary">Lista negra</h2>
-        <p className="mb-4 text-sm text-secondary">
-          Los teléfonos de aquí no pueden registrarse ni solicitar préstamos, aunque
-          la cuenta ya esté dada de alta.
-        </p>
-        {blError && <Alert variant="error">{blError}</Alert>}
-        <form onSubmit={addToBlacklist} className="mb-4 flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
-          <Input
-            label="Teléfono (10 dígitos)"
-            value={blPhone}
-            onChange={(e) => setBlPhone(e.target.value)}
-            required
-            pattern="[0-9]{10}"
-            title="Debe tener 10 dígitos"
-          />
-          <Input
-            label="Motivo"
-            value={blReason}
-            onChange={(e) => setBlReason(e.target.value)}
-            required
-            maxLength={255}
-            placeholder="Ej. Fraude detectado"
-          />
-          <Button type="submit" loading={blLoading}>
-            Agregar a la lista negra
-          </Button>
-        </form>
-        {blacklist.length === 0 ? (
-          <p className="py-4 text-center text-sm text-secondary">
-            No hay teléfonos bloqueados.
-          </p>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {blacklist.map((entry) => (
-              <div
-                key={entry.phone}
-                className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 p-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-secondary">{entry.phone}</p>
-                  <p className="text-xs text-secondary">
-                    {entry.reason} · Bloqueado por {entry.createdBy} el{' '}
-                    {formatShortDate(entry.createdAt)}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  loading={blRemoving === entry.phone}
-                  onClick={() => removeFromBlacklist(entry.phone)}
-                >
-                  Quitar
-                </Button>
-              </div>
-            ))}
+      {detail && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" style={{ display: showBlModal ? 'flex' : 'none' }}>
+          <div className="bg-white w-full max-w-md rounded-2xl p-lg shadow-level-3 flex flex-col gap-md">
+            <h3 className="font-headline-md text-headline-md">Pasar a lista negra</h3>
+            <p className="text-sm text-secondary">Se bloqueará a <strong>{detail.phone}</strong> para que no pueda registrarse ni pedir préstamos.</p>
+            <Input label="Motivo" value={blDetailReason} onChange={(e) => setBlDetailReason(e.target.value)} placeholder="Ej. Fraude detectado" required />
+            <div className="flex gap-2 justify-end">
+              <Button type="button" variant="ghost" onClick={() => setShowBlModal(false)}>Cancelar</Button>
+              <Button type="button" variant="danger" loading={blDetailLoading} disabled={!blDetailReason.trim()} onClick={addToBlacklistFromDetail}>Bloquear</Button>
+            </div>
           </div>
-        )}
-      </Card>
+        </div>
+      )}
     </AdminShell>
   );
 }
