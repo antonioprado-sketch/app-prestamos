@@ -5,6 +5,7 @@ import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 import 'leaflet/dist/leaflet.css';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatShortDateTime } from '../lib/dates';
 import { Card } from '../components/ui/Card';
 import { AdminShell } from './dashboard/AdminShell';
 import { Alert } from '../components/ui/Alert';
@@ -59,7 +60,7 @@ export function AdminLocationsPage() {
             .marker([loc.lat, loc.lng])
             .addTo(map)
             .bindPopup(
-              `<strong>${loc.customerName ?? loc.customerPhone}</strong><br/>${new Date(loc.capturedAt).toLocaleString('es-MX')}`,
+              `<strong>${loc.customerName ?? loc.customerPhone}</strong><br/>${formatShortDateTime(loc.capturedAt)}`,
             );
         }
         const bounds = leaflet.latLngBounds(locations.map((loc) => [loc.lat, loc.lng]));

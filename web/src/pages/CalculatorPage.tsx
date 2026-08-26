@@ -4,6 +4,7 @@ import { useAuth } from '../store/auth';
 import { apiFetch, ApiError } from '../lib/api';
 import { captureLocation } from '../lib/location';
 import { nextValidDates } from '../lib/calculator-dates';
+import { formatShortDate } from '../lib/dates';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
@@ -90,18 +91,6 @@ interface CreditIncreaseRequestItem {
 }
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-const longDate = new Intl.DateTimeFormat('es-MX', {
-  weekday: 'long',
-  day: 'numeric',
-  month: 'long',
-  year: 'numeric',
-  timeZone: 'UTC',
-});
-
-function formatLongDate(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number);
-  return longDate.format(new Date(Date.UTC(y, m - 1, d)));
-}
 
 function ScheduleSummary({ quote }: { quote: QuoteResult }) {
   let saldo = quote.total;
@@ -144,7 +133,7 @@ function ScheduleSummary({ quote }: { quote: QuoteResult }) {
                   <tr key={entry.seq} className="border-t border-gray-100">
                     <td className="px-3 py-2 text-secondary">{entry.seq}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-secondary">
-                      {formatLongDate(entry.dueDate)}
+{formatShortDate(entry.dueDate)}
                     </td>
                     <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-secondary">
                       {currency.format(entry.amount)}
@@ -188,7 +177,7 @@ function PenaltySummary({ penalty }: { penalty: PenaltyResult }) {
               <tr key={entry.seq} className="border-t border-gray-100">
                 <td className="px-3 py-2 text-secondary">{entry.seq}</td>
                 <td className="whitespace-nowrap px-3 py-2 text-secondary">
-                  {formatLongDate(entry.dueDate)}
+                  {formatShortDate(entry.dueDate)}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-right font-mono text-secondary">
                   {entry.daysLate}

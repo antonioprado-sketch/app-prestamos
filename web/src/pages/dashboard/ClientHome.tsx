@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiFetch } from '../../lib/api';
+import { formatShortDate } from '../../lib/dates';
 import { useAuth } from '../../store/auth';
 import { Icon } from '../../components/ui/Icon';
 
@@ -53,12 +54,6 @@ const SCORE_RING_PERCENT: Record<ScoreLevel, number> = {
 };
 
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
-const longDate = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long' });
-
-function formatLongDate(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number);
-  return longDate.format(new Date(Date.UTC(y, m - 1, d)));
-}
 
 export function ClientHome() {
   const { user } = useAuth();
@@ -138,7 +133,7 @@ export function ClientHome() {
               <div className="w-full text-center sm:w-auto sm:text-left">
                 <p className="font-body-sm text-body-sm text-on-surface-variant">Próximo pago</p>
                 <p className="font-headline-md text-headline-md text-primary">
-                  {formatLongDate(nextInstallment.dueDate)}
+                  {formatShortDate(nextInstallment.dueDate)}
                 </p>
               </div>
               <div className="hidden h-12 w-px bg-outline-variant sm:block" />

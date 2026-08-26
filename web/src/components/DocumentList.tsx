@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatShortDate } from '../lib/dates';
 import { Button } from './ui/Button';
 import { Alert } from './ui/Alert';
 
@@ -90,7 +91,7 @@ export function DocumentList({ documents }: { documents: AdminDocument[] }) {
                 {documentTypeLabel(doc.type)}
               </p>
               <p className="text-[10px] text-secondary">
-                {new Date(doc.createdAt).toLocaleDateString('es-MX')}
+                {formatShortDate(doc.createdAt)}
                 {doc.sizeBytes ? ` · ${(doc.sizeBytes / 1024).toFixed(0)} KB` : ''}
               </p>
             </div>

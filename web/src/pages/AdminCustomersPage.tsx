@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatShortDate } from '../lib/dates';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { AdminShell } from './dashboard/AdminShell';
@@ -631,7 +632,7 @@ export function AdminCustomersPage() {
                   <p className="text-sm font-medium text-secondary">{entry.phone}</p>
                   <p className="text-xs text-secondary">
                     {entry.reason} · Bloqueado por {entry.createdBy} el{' '}
-                    {new Date(entry.createdAt).toLocaleDateString('es-MX')}
+                    {formatShortDate(entry.createdAt)}
                   </p>
                 </div>
                 <Button

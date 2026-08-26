@@ -4,20 +4,20 @@ import { CalculatorPage } from './CalculatorPage';
 export function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-surface pb-[96px]">
-      <header className="sticky top-0 z-40 flex h-16 w-full items-center bg-surface px-margin-mobile">
+      <header className="sticky top-0 z-40 flex h-16 w-full items-center gap-md bg-surface px-margin-mobile">
         <span className="font-headline-md text-headline-lg-mobile font-bold text-primary">
           Prestamitos
         </span>
-        <div className="ml-auto flex gap-sm">
+        <div className="ml-auto flex items-center gap-sm">
           <Link
             to="/login"
-            className="rounded-lg px-2 py-1 font-label-md text-label-md text-accent transition-colors hover:bg-surface-container"
+            className="min-h-11 rounded-xl border border-primary px-3 py-2.5 text-center font-label-md text-label-md text-primary transition-colors hover:bg-primary-light focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Iniciar sesión
           </Link>
           <Link
             to="/register"
-            className="rounded-lg bg-secondary-container px-2 py-1 font-label-md text-label-md text-on-secondary-container transition-colors"
+            className="min-h-11 rounded-xl bg-primary px-3 py-2.5 text-center font-label-md text-label-md text-white transition-colors hover:bg-primary-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             Registrarse
           </Link>

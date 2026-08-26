@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatShortDate, formatShortDateTime } from '../lib/dates';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
@@ -340,7 +341,7 @@ export function CollectorLoansPage() {
                       {locationByLoan[loan.id] ? (
                         <div className="flex items-center justify-between text-xs text-secondary">
                           <span>
-                            {new Date(locationByLoan[loan.id]!.capturedAt).toLocaleString('es-MX')}
+                            {formatShortDateTime(locationByLoan[loan.id]!.capturedAt)}
                           </span>
                           <a
                             href={mapHref(locationByLoan[loan.id]!.lat, locationByLoan[loan.id]!.lng)}
@@ -367,7 +368,7 @@ export function CollectorLoansPage() {
                         <div className="flex flex-col gap-1">
                           {(paymentsByLoan[loan.id] ?? []).map((p) => (
                             <div key={p.id} className="flex justify-between text-xs text-secondary">
-                              <span>{new Date(p.receivedAt).toLocaleDateString('es-MX')}</span>
+                              <span>{formatShortDate(p.receivedAt)}</span>
                               <span className="font-mono">{currency.format(p.amount)}</span>
                             </div>
                           ))}
@@ -396,7 +397,7 @@ export function CollectorLoansPage() {
                         <div className="flex flex-col gap-1">
                           {(documentsByLoan[loan.id] ?? []).map((d) => (
                             <p key={d.id} className="text-xs text-secondary">
-                              {new Date(d.createdAt).toLocaleString('es-MX')}
+                              {formatShortDateTime(d.createdAt)}
                             </p>
                           ))}
                         </div>

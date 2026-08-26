@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatShortDate } from '../lib/dates';
 import { AdminShell } from './dashboard/AdminShell';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -103,10 +104,7 @@ export function AdminCreditIncreasePage() {
                 <span>Score: {request.scoreLevel ? (SCORE_LABELS[request.scoreLevel] ?? request.scoreLevel) : '—'}</span>
                 <span>
                   Solicitado:{' '}
-                  {new Date(request.createdAt).toLocaleDateString('es-MX', {
-                    day: 'numeric',
-                    month: 'short',
-                  })}
+                  {formatShortDate(request.createdAt)}
                 </span>
               </div>
               <Input

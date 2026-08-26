@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
+import { RequireGps } from '../components/RequireGps';
 
 const TIPS = [
   {
@@ -226,6 +227,7 @@ export function VideoIdentityPage() {
   }
 
   return (
+    <RequireGps source="ONBOARDING">
     <main className="flex min-h-screen flex-col items-center bg-background p-margin-mobile">
       <header className="fixed top-0 z-40 flex h-16 w-full items-center justify-between bg-surface px-margin-mobile">
         <Link to="/documentos" className="text-primary transition-opacity hover:opacity-80" aria-label="Volver">
@@ -349,5 +351,6 @@ export function VideoIdentityPage() {
 
       </div>
     </main>
+    </RequireGps>
   );
 }

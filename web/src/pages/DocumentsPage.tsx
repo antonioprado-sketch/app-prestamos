@@ -6,6 +6,7 @@ import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
 import { CameraCapture } from '../components/CameraCapture';
+import { RequireGps } from '../components/RequireGps';
 
 type DocumentType = 'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF';
 
@@ -85,6 +86,7 @@ export function DocumentsPage() {
 
   return (
     <main className="flex min-h-screen flex-col items-center bg-background pb-margin-mobile pt-16">
+      <RequireGps source="ONBOARDING">
       <div className="w-full max-w-2xl px-margin-mobile">
         <div className="mb-xl text-center">
           <h1 className="font-headline-lg-mobile text-headline-lg-mobile text-primary md:font-headline-lg md:text-headline-lg">
@@ -211,6 +213,7 @@ export function DocumentsPage() {
           onCancel={() => setCaptureType(null)}
         />
       )}
+      </RequireGps>
     </main>
   );
 }

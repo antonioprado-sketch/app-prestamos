@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
+import { formatShortDate } from '../lib/dates';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
@@ -445,7 +446,7 @@ export function AdminLoansPage() {
                             {(paymentsByLoan[loan.id] ?? []).map((p) => (
                               <div key={p.id} className="flex justify-between text-xs text-secondary">
                                 <span>
-                                  {new Date(p.receivedAt).toLocaleDateString('es-MX')} · {p.createdBy}
+                                  {formatShortDate(p.receivedAt)} · {p.createdBy}
                                 </span>
                                 <span className="font-mono">{currency.format(p.amount)}</span>
                               </div>
