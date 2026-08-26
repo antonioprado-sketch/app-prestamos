@@ -67,7 +67,9 @@ export function AdminManualLoanPage() {
   const [abonoSaving, setAbonoSaving] = useState(false);
   const [abonos, setAbonos] = useState<{ id: string; amount: number; receivedAt: string; notes: string | null }[]>([]);
   const [abonoError, setAbonoError] = useState<string | null>(null);
+  const dateValidationError = useMemo(() => { try { generateSchedule(amount, model, openingDate); return null; } catch (err) { return err instanceof Error ? err.message : 'Fecha inválida'; } }, [amount, model, openingDate]);
   const preview = useMemo(() => { try { return generateSchedule(amount, model, openingDate); } catch { return null; } }, [amount, model, openingDate]);
+  const tempDateValidationError = useMemo(() => { try { generateSchedule(amount, model, tempDate); return null; } catch (err) { return err instanceof Error ? err.message : 'Fecha inválida'; } }, [amount, model, tempDate]);
 
   const search = async () => {
     setSearching(true); setSearchError(null); setCustomer(null);
@@ -233,11 +235,15 @@ export function AdminManualLoanPage() {
               </div>
               <div>
                 <label className="block font-label-md text-label-md font-semibold text-on-surface mb-md">Fecha de Apertura</label>
-                <button type="button" onClick={() => { setTempDate(openingDate); setShowDateModal(true); }} className="w-full flex items-center justify-between px-md py-3 rounded-xl border-2 border-outline-variant bg-white text-on-surface hover:border-primary hover:bg-primary/5 transition-colors font-body-md text-[15px] text-left group">
+                <button type="button" onClick={() => { setTempDate(openingDate); setShowDateModal(true); }} className={`w-full flex items-center justify-between px-md py-3 rounded-xl border-2 bg-white text-on-surface hover:bg-primary/5 transition-colors font-body-md text-[15px] text-left group ${dateValidationError ? 'border-error' : 'border-outline-variant hover:border-primary'}`}>
                   <span className="flex items-center gap-2"><span className="w-9 h-9 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary"><Icon name="event" size={18} /></span> {formatDateLong(openingDate)}</span>
                   <Icon name="edit_calendar" className="text-on-surface-variant group-hover:text-primary" size={20} />
                 </button>
-                <p className="mt-1 text-xs text-on-surface-variant">Puede ser pasada para préstamos de papel.</p>
+                {dateValidationError ? (
+                  <p className="mt-1 text-xs text-error flex items-center gap-1"><Icon name="error" size={14} /> {dateValidationError}</p>
+                ) : (
+                  <p className="mt-1 text-xs text-on-surface-variant">Puede ser pasada para préstamos de papel.</p>
+                )}
               </div>
             </div>
           </Card>
@@ -344,12 +350,13 @@ export function AdminManualLoanPage() {
               </div>
               <div className="flex flex-col gap-2">
                 <label className="font-label-md text-label-md text-on-surface">Seleccionar fecha</label>
-                <input type="date" value={tempDate} onChange={(e) => setTempDate(e.target.value)} className="w-full bg-white border-2 border-outline-variant rounded-xl px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary h-[52px]" />
+                <input type="date" value={tempDate} onChange={(e) => setTempDate(e.target.value)} className={`w-full bg-white border-2 rounded-xl px-4 py-3 font-body-md text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary h-[52px] ${tempDateValidationError ? 'border-error focus:border-error' : 'border-outline-variant focus:border-primary'}`} />
+                {tempDateValidationError && <p className="text-xs text-error flex items-center gap-1"><Icon name="error" size={14} /> {tempDateValidationError}</p>}
               </div>
             </div>
             <div className="flex items-center justify-end gap-sm p-lg border-t border-outline-variant bg-surface-container-low">
               <Button type="button" variant="ghost" onClick={() => setShowDateModal(false)}>Cancelar</Button>
-              <Button type="button" onClick={() => { setOpeningDate(tempDate); setShowDateModal(false); }}>Confirmar</Button>
+              <Button type="button" disabled={!!tempDateValidationError} onClick={() => { if (tempDateValidationError) return; setOpeningDate(tempDate); setShowDateModal(false); }}>Confirmar</Button>
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 > Plataforma web de préstamos (cliente / cobrador / administrador). Mobile-first, PWA. Desarrollo bajo protocolo `addv-web-app` (Analizar → Proponer → Confirmar → Implementar; ver `CLAUDE.md`).
 
-Última actualización: 2026-08-18 (Fase 7 en curso; corte 17 — topes de préstamo por color de score configurables en Reglas de negocio + flujo "Aumentar mi crédito": el cliente con límite solicita un aumento, admin o cobrador lo resuelve por correo y app; el anónimo ya no tiene tope de $3,000 y el cliente con préstamo APPROVED/ACTIVE va directo a su home sin calculadora).
+Última actualización: 2026-08-26 (Fase 7 en curso; corte 17 + alta manual de préstamo + 4 fixes menores — pagaré con fecha pasada, alta rápida con nombre y validación BIWEEKLY inline).
 
 ## Fase actual: Fase 7 — Seguridad y QA (en curso, sin plan escrito task-por-task). Fases 1-6 completas.
 
@@ -651,9 +651,9 @@ Sin cambios de código: solo documentación. No se corrió build/tests (nada que
 - Frontend: `AdminManualLoanPage.tsx:1` (`/admin/prestamos/nuevo`, dentro de `AdminShell` con `active="manual"`, nav nuevo `AdminShell.tsx:16`), réplica fiel del mock (buscar cliente + alta rápida `POST /admin/customers`, slider $500, tabs modelo, botón fecha apertura → modal con chips Hoy/Hace 7/30 + `input type=date`, preview `generateSchedule` con total/intereses/abono + tabla 3 filas, CTA fijo "Crear préstamo (DRAFT)"), `AdminLoanHistoricalPage.tsx:1` (`/admin/prestamos/:id/historial`, grid 8/4: plan pagos vs lista `receipt_long`, modal añadir abono con fecha/monto/nota, `info` banner, cronológico validado), link en `AdminLoansPage.tsx:438` "Historial papel →", `AdminShell.tsx` nuevo nav "Nuevo préstamo".
 - Sin migración de schema (reusa `Loan`, `Payment`, `Document PAGARE`).
 
-**Pendientes documentados (funcionalidad no considerada hoy, no bloquea entrega):**
-- (1) Pagaré con fecha del pasado aún usa `signedAt=now()` en `renderPagarePdf` — falta que el PDF tome `openingDate` pasada como fecha de firma para migrados (hoy solo `openingDate` del préstamo es pasada, el pagaré sigue con fecha actual).
-- (2) Alta rápida de cliente en el mock muestra nombre pero `POST /admin/customers` hoy solo crea con teléfono (nombre queda vacío hasta onboarding) — falta capturar `nombres`/`apellidos` en la misma alta si se quiere.
-- (3) Cálculo de multa para histórico usa `penaltyDate=receivedAt` (correcto) pero `BI` semanal (`getWeeklyTrends`) sigue agrupando por fecha real de pago (recibido) — no por fecha vencimiento, diferencia menor no documentada.
-- (4) Validación de día apertura para `BIWEEKLY` en pasado no se muestra con error inline en modal (solo `QuoteError` del backend) — falta feedback visual de "debe ser 15 o último día del mes" en frontend.
-- Estado: **IMPLEMENTADO y verificado en build**, pendiente solo los 4 puntos menores arriba. Producción pausada (posible Vercel) sigue igual.
+**Fixes 2026-08-26 — 4 pendientes resueltos (mismo día, sin corte nuevo):**
+- (1) **Pagaré con fecha pasada corregido** — `loans.service.ts:324` `signedAt = loan.openingDate < now ? loan.openingDate : now` antes de `renderPagarePdf`. Migrados con `openingDate` 2025-08-11 ahora generan PDF con fecha de firma histórica, no actual. Verificado build API.
+- (2) **Alta rápida con nombre ya existía** — `admin-customers.service.ts:86` + `dto/create-customer.dto.ts:10` (`nombre?`) ya capturan `nombres`/`apellidos`; `AdminManualLoanPage.tsx:85` envía `nombre`. Sin cambio adicional (solo formateo por lint).
+- (3) **BI semanal documentado como correcto** — `bi.service.ts:268` agrupa por `receivedAt` (capital cobrado cuando se recibió). Para históricos con `receivedAt` en pasado cae en la semana histórica correcta; no se agrupa por `dueDate`.
+- (4) **Validación BIWEEKLY inline** — `AdminManualLoanPage.tsx:70` `dateValidationError`/`tempDateValidationError` vía `try generateSchedule`; borde `border-error` + mensaje con `Icon error` bajo el botón de fecha y dentro del modal; botón Confirmar deshabilitado si hay error (`disabled={!!tempDateValidationError}`). Verificado: `npm run build` + `npm test` web 44/44 + `npm test` api 70/70.
+- Estado: **4/4 cerrados**. Alta manual queda completa. Producción pausada (posible Vercel) sigue igual.

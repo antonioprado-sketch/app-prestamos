@@ -299,7 +299,12 @@ export class AdminLoansService {
 
   async createManualLoan(
     adminPhone: string,
-    input: { customerPhone: string; amount: number; model: 'WEEKLY' | 'BIWEEKLY'; openingDate: string },
+    input: {
+      customerPhone: string;
+      amount: number;
+      model: 'WEEKLY' | 'BIWEEKLY';
+      openingDate: string;
+    },
     ip: string,
     ua: string,
   ): Promise<AdminLoanResult> {
@@ -327,14 +332,27 @@ export class AdminLoansService {
     const existing = await this.prisma.loan.findFirst({
       where: {
         customerPhone: input.customerPhone,
-        status: { in: ['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'REQUIRES_CORRECTION', 'APPROVED', 'ACTIVE'] as never },
+        status: {
+          in: [
+            'DRAFT',
+            'SUBMITTED',
+            'IN_REVIEW',
+            'REQUIRES_CORRECTION',
+            'APPROVED',
+            'ACTIVE',
+          ] as never,
+        },
       },
       select: { id: true },
     });
-    if (existing) throw new ConflictException('El cliente ya tiene una solicitud en curso');
+    if (existing)
+      throw new ConflictException('El cliente ya tiene una solicitud en curso');
 
     const MAX_FOLIO_ATTEMPTS = 10;
-    const generateFolio = () => `ppni-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+    const generateFolio = () =>
+      `ppni-${Math.floor(Math.random() * 10000)
+        .toString()
+        .padStart(4, '0')}`;
 
     let attempt = 0;
     for (;;) {
@@ -369,7 +387,14 @@ export class AdminLoansService {
           action: 'loan_created_manual',
           entity: 'loan',
           entityId: String(loan.id),
-          newValue: { folio, customerPhone: input.customerPhone, amount: quote.amount, model: quote.model, openingDate: quote.openingDate, bypassedMaxAmount: true },
+          newValue: {
+            folio,
+            customerPhone: input.customerPhone,
+            amount: quote.amount,
+            model: quote.model,
+            openingDate: quote.openingDate,
+            bypassedMaxAmount: true,
+          },
           ip,
           userAgent: ua,
         });
@@ -380,7 +405,11 @@ export class AdminLoansService {
         });
         return toAdminLoanResult(full!);
       } catch (err: unknown) {
-        if (attempt < MAX_FOLIO_ATTEMPTS && (err as { code?: string })?.code === 'P2002') continue;
+        if (
+          attempt < MAX_FOLIO_ATTEMPTS &&
+          (err as { code?: string })?.code === 'P2002'
+        )
+          continue;
         throw err;
       }
     }
@@ -389,18 +418,30 @@ export class AdminLoansService {
   async registerHistoricalPayment(
     adminPhone: string,
     loanId: string,
-    input: { amount: number; receivedAt: string; notes?: string; idempotencyKey?: string },
+    input: {
+      amount: number;
+      receivedAt: string;
+      notes?: string;
+      idempotencyKey?: string;
+    },
     ip: string,
     ua: string,
   ) {
     const loan = await this.loadLoan(loanId);
     if (!['APPROVED', 'ACTIVE'].includes(loan.status as string)) {
-      throw new ConflictException('Solo se puede registrar historial en préstamos aprobados o activos');
+      throw new ConflictException(
+        'Solo se puede registrar historial en préstamos aprobados o activos',
+      );
     }
     const receivedAt = new Date(input.receivedAt);
-    if (Number.isNaN(receivedAt.getTime())) throw new BadRequestException('Fecha inválida');
-    if (receivedAt > new Date()) throw new BadRequestException('La fecha no puede ser futura');
-    if (receivedAt < loan.openingDate) throw new BadRequestException('La fecha no puede ser anterior a la apertura');
+    if (Number.isNaN(receivedAt.getTime()))
+      throw new BadRequestException('Fecha inválida');
+    if (receivedAt > new Date())
+      throw new BadRequestException('La fecha no puede ser futura');
+    if (receivedAt < loan.openingDate)
+      throw new BadRequestException(
+        'La fecha no puede ser anterior a la apertura',
+      );
 
     // validar cronológico: no puede ser anterior al último pago
     const lastPayment = await this.prisma.payment.findFirst({
@@ -408,15 +449,27 @@ export class AdminLoansService {
       orderBy: { receivedAt: 'desc' },
     });
     if (lastPayment && receivedAt < lastPayment.receivedAt) {
-      throw new BadRequestException('La fecha debe ser cronológica (no anterior al último abono)');
+      throw new BadRequestException(
+        'La fecha debe ser cronológica (no anterior al último abono)',
+      );
     }
 
-    const idempotencyKey = input.idempotencyKey ?? `hist-${loan.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    const idempotencyKey =
+      input.idempotencyKey ??
+      `hist-${loan.id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-    const existing = await this.prisma.payment.findUnique({ where: { idempotencyKey } });
+    const existing = await this.prisma.payment.findUnique({
+      where: { idempotencyKey },
+    });
     if (existing) {
-      if (String(existing.loanId) !== String(loan.id)) throw new ConflictException('idempotencyKey ya usado para otro préstamo');
-      const full = await this.prisma.loan.findUnique({ where: { id: loan.id }, include: ADMIN_LOAN_INCLUDE });
+      if (String(existing.loanId) !== String(loan.id))
+        throw new ConflictException(
+          'idempotencyKey ya usado para otro préstamo',
+        );
+      const full = await this.prisma.loan.findUnique({
+        where: { id: loan.id },
+        include: ADMIN_LOAN_INCLUDE,
+      });
       return {
         paymentId: String(existing.id),
         amount: Number(existing.amount),
@@ -430,57 +483,94 @@ export class AdminLoansService {
     const penaltyDate = receivedAt;
     const outstandingPenalty = Math.max(
       0,
-      Math.round((calculateLoanPenalty(loan.schedule.map((s) => ({ seq: s.seq, dueDate: s.dueDate, status: s.status })), penaltyDate, penaltyPerDay).totalPenalty - Number(loan.penaltyPaid) + Number.EPSILON) * 100) / 100,
+      Math.round(
+        (calculateLoanPenalty(
+          loan.schedule.map((s) => ({
+            seq: s.seq,
+            dueDate: s.dueDate,
+            status: s.status,
+          })),
+          penaltyDate,
+          penaltyPerDay,
+        ).totalPenalty -
+          Number(loan.penaltyPaid) +
+          Number.EPSILON) *
+          100,
+      ) / 100,
     );
 
     let application;
     try {
       application = applyPayment(
-        loan.schedule.map((s) => ({ seq: s.seq, amount: Number(s.amount), paidAmount: Number(s.paidAmount) })),
+        loan.schedule.map((s) => ({
+          seq: s.seq,
+          amount: Number(s.amount),
+          paidAmount: Number(s.paidAmount),
+        })),
         outstandingPenalty,
         input.amount,
       );
     } catch (err) {
-      if (err instanceof PaymentAmountExceedsOutstandingError) throw new BadRequestException(err.message);
+      if (err instanceof PaymentAmountExceedsOutstandingError)
+        throw new BadRequestException(err.message);
       throw err;
     }
 
     const round2 = (v: number) => Math.round((v + Number.EPSILON) * 100) / 100;
-    const newPenaltyPaid = round2(Number(loan.penaltyPaid) + application.penaltyApplied);
-    const newStatus = application.fullyPaidOff ? 'LIQUIDATED' : loan.status === 'APPROVED' ? 'ACTIVE' : loan.status;
+    const newPenaltyPaid = round2(
+      Number(loan.penaltyPaid) + application.penaltyApplied,
+    );
+    const newStatus = application.fullyPaidOff
+      ? 'LIQUIDATED'
+      : loan.status === 'APPROVED'
+        ? 'ACTIVE'
+        : loan.status;
 
-    const { payment, updatedLoan } = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.payment.create({
-        data: {
-          loanId: loan.id,
-          amount: input.amount,
-          penaltyApplied: application.penaltyApplied,
-          idempotencyKey,
-          notes: input.notes ?? 'migración papel',
-          createdBy: adminPhone,
-          receivedAt,
-        },
-      });
-      for (const u of application.scheduleUpdates) {
-        await tx.loanSchedule.updateMany({
-          where: { loanId: loan.id, seq: u.seq },
-          data: { paidAmount: u.newPaidAmount, status: u.newStatus },
+    const { payment, updatedLoan } = await this.prisma.$transaction(
+      async (tx) => {
+        const created = await tx.payment.create({
+          data: {
+            loanId: loan.id,
+            amount: input.amount,
+            penaltyApplied: application.penaltyApplied,
+            idempotencyKey,
+            notes: input.notes ?? 'migración papel',
+            createdBy: adminPhone,
+            receivedAt,
+          },
         });
-      }
-      const updated = await tx.loan.update({
-        where: { id: loan.id },
-        data: { penaltyPaid: newPenaltyPaid, status: newStatus as never, liquidatedAt: application.fullyPaidOff ? new Date() : loan.liquidatedAt },
-        include: ADMIN_LOAN_INCLUDE,
-      });
-      return { payment: created, updatedLoan: updated };
-    });
+        for (const u of application.scheduleUpdates) {
+          await tx.loanSchedule.updateMany({
+            where: { loanId: loan.id, seq: u.seq },
+            data: { paidAmount: u.newPaidAmount, status: u.newStatus },
+          });
+        }
+        const updated = await tx.loan.update({
+          where: { id: loan.id },
+          data: {
+            penaltyPaid: newPenaltyPaid,
+            status: newStatus as never,
+            liquidatedAt: application.fullyPaidOff
+              ? new Date()
+              : loan.liquidatedAt,
+          },
+          include: ADMIN_LOAN_INCLUDE,
+        });
+        return { payment: created, updatedLoan: updated };
+      },
+    );
 
     await this.audit.log({
       userPhone: adminPhone,
       action: 'payment_historical_registered',
       entity: 'loan',
       entityId: String(loan.id),
-      newValue: { amount: input.amount, receivedAt, penaltyApplied: application.penaltyApplied, newStatus },
+      newValue: {
+        amount: input.amount,
+        receivedAt,
+        penaltyApplied: application.penaltyApplied,
+        newStatus,
+      },
       ip,
       userAgent: ua,
     });

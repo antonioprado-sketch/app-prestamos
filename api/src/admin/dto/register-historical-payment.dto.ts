@@ -1,4 +1,10 @@
-import { IsNumber, IsOptional, IsString, IsUUID, MaxLength } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+} from 'class-validator';
 
 export class RegisterHistoricalPaymentDto {
   @IsNumber({ maxDecimalPlaces: 2 })

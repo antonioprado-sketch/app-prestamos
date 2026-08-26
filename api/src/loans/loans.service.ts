@@ -321,6 +321,9 @@ export class LoansService {
 
     const signatureBuffer = decodeSignaturePng(input.signature);
 
+    const signedAt =
+      loan.openingDate < new Date() ? loan.openingDate : new Date();
+
     const pdfBuffer = await renderPagarePdf({
       folio: loan.folio,
       fullName: input.fullName,
@@ -343,7 +346,7 @@ export class LoansService {
         amount: Number(s.amount),
       })),
       signature: signatureBuffer,
-      signedAt: new Date(),
+      signedAt,
       ip,
     });
 
