@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { apiFetch, ApiError } from '../lib/api';
-import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
@@ -39,18 +38,8 @@ interface FinancialKpis {
   customers: CustomerSegmentation;
 }
 const STATUS_LABEL: Record<string, string> = { DRAFT: 'Borradores', SUBMITTED: 'Enviadas', IN_REVIEW: 'En revisión', REQUIRES_CORRECTION: 'Requieren corrección', APPROVED: 'Aprobadas', REJECTED: 'Rechazadas', ACTIVE: 'Activas', LIQUIDATED: 'Liquidadas', CANCELLED: 'Canceladas' };
-const SCORE_LABEL: Record<string, string> = { GREEN: 'Verde', YELLOW: 'Amarillo', ORANGE: 'Naranja', RED: 'Rojo' };
 const currency = new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' });
 const percent = (v: number) => `${v.toFixed(1)}%`;
-
-function StatTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-gray-200 p-4">
-      <p className="text-xs text-secondary">{label}</p>
-      <p className="mt-1 text-xl font-bold text-secondary">{value}</p>
-    </div>
-  );
-}
 
 export function AdminBiPage() {
   const [kpis, setKpis] = useState<FinancialKpis | null>(null);
@@ -197,79 +186,77 @@ export function AdminBiPage() {
             </div>
           </div>
 
-          {/* Resto de KPIs — se mantienen pero con estilo Card */}
-          <Card className="w-full">
-            <div className="flex flex-col gap-6">
-              <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-4">
-                <StatTile label="Capital Colocado" value={currency.format(kpis.capitalColocado)} />
-                <StatTile label="Capital Recuperado" value={currency.format(kpis.capitalCobrado)} />
-                <StatTile label="Por Cobrar (Pendiente)" value={currency.format(kpis.capitalPendiente)} />
-                <StatTile label="Cartera Vencida" value={currency.format(kpis.carteraVencida)} />
-              </div>
-
-              <div>
-                <p className="mb-2 text-sm font-medium text-secondary">Clientes</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  <StatTile label="Total" value={String(kpis.customers.totalClientes)} />
-                  <StatTile label="Activos" value={String(kpis.customers.clientesActivos)} />
-                  <StatTile label="Nuevos" value={String(kpis.customers.clientesNuevos)} />
-                  <StatTile label="Recurrentes" value={String(kpis.customers.clientesRecurrentes)} />
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-medium text-secondary">Clientes por score</p>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                  {Object.entries(kpis.customers.porScore).map(([level, count]) => (
-                    <StatTile key={level} label={SCORE_LABEL[level] ?? level} value={String(count)} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-medium text-secondary">Por cobrador</p>
-                {collectors.length === 0 ? (
-                  <p className="text-xs text-secondary">Sin cobradores registrados.</p>
-                ) : (
-                  <div className="overflow-x-auto rounded-xl border border-gray-200">
-                    <table className="w-full text-left text-sm">
-                      <thead><tr className="border-b border-gray-200 text-xs text-secondary"><th className="p-3">Cobrador</th><th className="p-3">Cartera</th><th className="p-3">Pagos registrados</th><th className="p-3">Cumplimiento</th><th className="p-3">Cartera vencida</th></tr></thead>
-                      <tbody>{collectors.map((c) => (
-                        <tr key={c.collectorId} className="border-b border-gray-100 last:border-0">
-                          <td className="p-3 text-secondary">{c.collectorName}{!c.active && <span className="ml-1 text-xs">(inactivo)</span>}</td>
-                          <td className="p-3 font-mono text-secondary">{c.carteraSize}</td>
-                          <td className="p-3 font-mono text-secondary">{c.pagosRegistrados}</td>
-                          <td className="p-3 font-mono text-secondary">{percent(c.cumplimientoPct)}</td>
-                          <td className="p-3 font-mono text-secondary">{currency.format(c.carteraVencida)}</td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-              <div>
-                <p className="mb-2 text-sm font-medium text-secondary">Distribución por zona</p>
-                {geoZones.length === 0 ? (
-                  <p className="text-xs text-secondary">Ningún cliente tiene ciudad/colonia registrada todavía.</p>
-                ) : (
-                  <div className="overflow-x-auto rounded-xl border border-gray-200">
-                    <table className="w-full text-left text-sm">
-                      <thead><tr className="border-b border-gray-200 text-xs text-secondary"><th className="p-3">Ciudad</th><th className="p-3">Colonia</th><th className="p-3">Clientes</th><th className="p-3">Verde</th><th className="p-3">Amarillo</th><th className="p-3">Naranja</th><th className="p-3">Rojo</th></tr></thead>
-                      <tbody>{geoZones.map((z) => (
-                        <tr key={`${z.ciudad}|${z.colonia}`} className="border-b border-gray-100 last:border-0">
-                          <td className="p-3 text-secondary">{z.ciudad}</td>
-                          <td className="p-3 text-secondary">{z.colonia}</td>
-                          <td className="p-3 font-mono text-secondary">{z.totalClientes}</td>
-                          <td className="p-3 font-mono text-secondary">{z.porScore.GREEN ?? 0}</td>
-                          <td className="p-3 font-mono text-secondary">{z.porScore.YELLOW ?? 0}</td>
-                          <td className="p-3 font-mono text-secondary">{z.porScore.ORANGE ?? 0}</td>
-                          <td className="p-3 font-mono text-secondary">{z.porScore.RED ?? 0}</td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
-                  </div>
-                )}
+          {/* Clientes + por score — diseño Dash_admin + datos previos conservados */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-md">
+            <div className="bg-surface-container-lowest p-md rounded-xl shadow-level-2">
+              <h2 className="font-headline-md text-headline-md text-primary mb-6">Clientes</h2>
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-xs text-on-surface-variant">Total</p><p className="text-data-lg font-bold">{kpis.customers.totalClientes}</p></div>
+                <div><p className="text-xs text-on-surface-variant">Activos</p><p className="text-data-lg font-bold text-secondary">{kpis.customers.clientesActivos}</p></div>
+                <div><p className="text-xs text-on-surface-variant">Nuevos</p><p className="text-data-lg font-bold text-success">{kpis.customers.clientesNuevos}</p></div>
+                <div><p className="text-xs text-on-surface-variant">Recurrentes</p><p className="text-data-lg font-bold">{kpis.customers.clientesRecurrentes}</p></div>
               </div>
             </div>
-          </Card>
+            <div className="lg:col-span-2 bg-surface-container-lowest p-md rounded-xl shadow-level-2">
+              <h2 className="font-headline-md text-headline-md text-primary mb-6">Clientes por score</h2>
+              <div className="flex items-center justify-around h-32">
+                {[
+                  { k: 'GREEN', label: 'Verde', bg: 'bg-success', count: kpis.customers.porScore.GREEN ?? 0 },
+                  { k: 'YELLOW', label: 'Amarillo', bg: 'bg-yellow-400', count: kpis.customers.porScore.YELLOW ?? 0 },
+                  { k: 'ORANGE', label: 'Naranja', bg: 'bg-orange-400', count: kpis.customers.porScore.ORANGE ?? 0 },
+                  { k: 'RED', label: 'Rojo', bg: 'bg-error', count: kpis.customers.porScore.RED ?? 0 },
+                ].map((s) => (
+                  <div key={s.k} className="flex flex-col items-center">
+                    <div className={`w-12 h-12 rounded-full ${s.bg} flex items-center justify-center text-white font-bold`}>{s.count}</div>
+                    <span className="text-xs mt-2">{s.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-xl">
+            <div className="bg-surface-container-lowest rounded-xl shadow-level-2 overflow-hidden">
+              <div className="p-md border-b border-outline-variant/30"><h2 className="font-headline-md text-headline-md text-primary">Por cobrador</h2></div>
+              {collectors.length === 0 ? (
+                <p className="p-md text-xs text-secondary">Sin cobradores registrados.</p>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-surface-container-low text-on-surface-variant text-xs uppercase"><tr><th className="p-4">Cobrador</th><th className="p-4">Cartera</th><th className="p-4">Pagos registrados</th><th className="p-4">Cumplimiento</th><th className="p-4">Cartera vencida</th></tr></thead>
+                  <tbody className="text-body-sm">{collectors.map((c) => (
+                    <tr key={c.collectorId} className="border-b border-outline-variant/30">
+                      <td className="p-4">{c.collectorName}{!c.active && <span className="ml-1 text-xs">(inactivo)</span>}</td>
+                      <td className="p-4">{c.carteraSize}</td>
+                      <td className="p-4">{c.pagosRegistrados}</td>
+                      <td className="p-4">{percent(c.cumplimientoPct)}</td>
+                      <td className="p-4">{currency.format(c.carteraVencida)}</td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              )}
+            </div>
+            <div className="bg-surface-container-lowest rounded-xl shadow-level-2 overflow-hidden">
+              <div className="p-md border-b border-outline-variant/30"><h2 className="font-headline-md text-headline-md text-primary">Distribución por zona</h2></div>
+              {geoZones.length === 0 ? (
+                <p className="p-md text-xs text-secondary">Ningún cliente tiene ciudad/colonia registrada todavía.</p>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-surface-container-low text-on-surface-variant text-xs uppercase"><tr><th className="p-4">Ciudad</th><th className="p-4">Colonia</th><th className="p-4">Clientes</th><th className="p-4">Verde</th><th className="p-4">Amarillo</th><th className="p-4">Naranja</th><th className="p-4">Rojo</th></tr></thead>
+                  <tbody className="text-body-sm">{geoZones.map((z) => (
+                    <tr key={`${z.ciudad}|${z.colonia}`} className="border-b border-outline-variant/30">
+                      <td className="p-4">{z.ciudad}</td>
+                      <td className="p-4">{z.colonia}</td>
+                      <td className="p-4">{z.totalClientes}</td>
+                      <td className="p-4"><div className="w-3 h-3 rounded-full bg-success mx-auto" /><p className="text-center text-xs mt-1">{z.porScore.GREEN ?? 0}</p></td>
+                      <td className="p-4"><div className="w-3 h-3 rounded-full bg-yellow-400 mx-auto" /><p className="text-center text-xs mt-1">{z.porScore.YELLOW ?? 0}</p></td>
+                      <td className="p-4"><div className="w-3 h-3 rounded-full bg-orange-400 mx-auto" /><p className="text-center text-xs mt-1">{z.porScore.ORANGE ?? 0}</p></td>
+                      <td className="p-4"><div className="w-3 h-3 rounded-full bg-error mx-auto" /><p className="text-center text-xs mt-1">{z.porScore.RED ?? 0}</p></td>
+                    </tr>
+                  ))}</tbody>
+                </table>
+              )}
+            </div>
+          </div>
         </div>
       ) : null}
     </AdminShell>
