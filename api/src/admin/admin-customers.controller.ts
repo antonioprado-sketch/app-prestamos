@@ -47,6 +47,7 @@ export class AdminCustomersController {
       dto.phone,
       req.ip ?? '',
       req.headers['user-agent'] ?? '',
+      dto.nombre,
     );
   }
 

@@ -89,14 +89,7 @@ export function AdminCustomersPage() {
   const [toggleLoading, setToggleLoading] = useState(false);
   const [overrideLoading, setOverrideLoading] = useState(false);
 
-  const [showNewCustomer, setShowNewCustomer] = useState(false);
-  const [newCustomerPhone, setNewCustomerPhone] = useState('');
-  const [newCustomerResult, setNewCustomerResult] = useState<{
-    phone: string;
-    tempPassword: string;
-  } | null>(null);
-  const [customerFormLoading, setCustomerFormLoading] = useState(false);
-  const [customerFormError, setCustomerFormError] = useState<string | null>(null);
+  // Alta manual movida a /admin/prestamos/nuevo — ya no se crea cliente desde aquí
 
   const [deleteArmed, setDeleteArmed] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -274,74 +267,15 @@ export function AdminCustomersPage() {
     }
   };
 
-  const createCustomer = async (e: FormEvent) => {
-    e.preventDefault();
-    setCustomerFormError(null);
-    setCustomerFormLoading(true);
-    try {
-      const res = await apiFetch<{ phone: string; tempPassword: string }>('/admin/customers', {
-        method: 'POST',
-        body: JSON.stringify({ phone: newCustomerPhone }),
-      });
-      setNewCustomerResult(res);
-      setNewCustomerPhone('');
-      load();
-    } catch (err) {
-      setCustomerFormError(err instanceof ApiError ? err.message : 'No se pudo crear el cliente');
-    } finally {
-      setCustomerFormLoading(false);
-    }
-  };
+  // createCustomer removido — ahora en Nuevo préstamo (AdminManualLoanPage)
 
   return (
     <AdminShell active="clientes" title="Clientes">
       <Card className="mx-auto w-full max-w-3xl">
-        <div className="mb-1 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-secondary">Clientes</h1>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => {
-              setShowNewCustomer((v) => !v);
-              setNewCustomerResult(null);
-              setCustomerFormError(null);
-            }}
-          >
-            {showNewCustomer ? 'Cerrar' : 'Alta manual de cliente'}
-          </Button>
-        </div>
+        <h1 className="mb-1 text-center text-xl font-bold text-secondary">Clientes</h1>
         <p className="mb-4 text-center text-sm text-secondary">
-          Listado de clientes registrados, score y tope de nuevo cliente
+          Listado de clientes registrados, score y tope de nuevo cliente — alta manual ahora en <strong>Nuevo préstamo</strong>
         </p>
-
-        {showNewCustomer && (
-          <div className="mb-6 flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
-            <p className="text-sm text-secondary">
-              Registra un cliente sin que él lo haga desde su celular. El cliente inicia sesión
-              con la contraseña temporal y la cambia en su primer ingreso; completa su propio
-              onboarding (nombres, aval, dirección) después.
-            </p>
-            {customerFormError && <Alert variant="error">{customerFormError}</Alert>}
-            {newCustomerResult && (
-              <Alert variant="success">
-                Cliente <strong>{newCustomerResult.phone}</strong> creado. Contraseña temporal
-                (compártela por un canal seguro, no se vuelve a mostrar):{' '}
-                <strong>{newCustomerResult.tempPassword}</strong>
-              </Alert>
-            )}
-            <form onSubmit={createCustomer} className="flex flex-col gap-2">
-              <Input
-                label="Teléfono (10 dígitos)"
-                value={newCustomerPhone}
-                onChange={(e) => setNewCustomerPhone(e.target.value)}
-                required
-              />
-              <Button type="submit" loading={customerFormLoading}>
-                Crear cliente
-              </Button>
-            </form>
-          </div>
-        )}
 
         {error && <Alert variant="error">{error}</Alert>}
 

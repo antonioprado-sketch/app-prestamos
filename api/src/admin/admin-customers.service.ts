@@ -71,6 +71,7 @@ export class AdminCustomersService {
     phone: string,
     ip: string,
     ua: string,
+    nombre?: string,
   ): Promise<CreatedCustomerResult> {
     const existing = await this.prisma.user.findUnique({ where: { phone } });
     if (existing) {
@@ -82,13 +83,15 @@ export class AdminCustomersService {
       type: argon2.argon2id,
     });
 
+    const nombres = nombre?.trim() ? nombre.trim().split(' ').slice(0, 1).join(' ') : null;
+    const apellidos = nombre?.trim() ? nombre.trim().split(' ').slice(1).join(' ') || null : null;
     await this.prisma.user.create({
       data: {
         phone,
         passwordHash,
         role: 'CLIENT',
         mustChangePassword: true,
-        customer: { create: { isNewCustomer: true } },
+        customer: { create: { isNewCustomer: true, nombres, apellidos } },
       },
     });
 

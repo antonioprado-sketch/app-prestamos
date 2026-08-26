@@ -74,7 +74,7 @@ export function AdminManualLoanPage() {
   const quickCreate = async () => {
     setError(null);
     try {
-      await apiFetch('/admin/customers', { method: 'POST', body: JSON.stringify({ phone: quickPhone }) });
+      await apiFetch('/admin/customers', { method: 'POST', body: JSON.stringify({ phone: quickPhone, nombre: quickName || undefined }) });
       setCustomer({ phone: quickPhone, nombres: quickName }); setShowQuickCreate(false); setSearchError(null);
     } catch (err) { setError(err instanceof ApiError ? err.message : 'No se pudo crear cliente'); }
   };
@@ -165,12 +165,12 @@ export function AdminManualLoanPage() {
         </Card>
 
         {/* Parámetros + Preview — dos tonos para evitar todo blanco */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-md">
           <Card className="lg:col-span-7 border-0 shadow-level-2 bg-white overflow-hidden p-0">
-            <div className="bg-surface-container-low px-lg py-md border-b border-outline-variant/30">
-              <h3 className="font-label-md text-label-md font-semibold text-on-surface flex items-center gap-2"><Icon name="tune" size={18} className="text-primary" /> 2. Configura el préstamo</h3>
+            <div className="bg-surface-container-low px-md py-sm border-b border-outline-variant/30">
+              <h3 className="font-label-md text-label-md font-semibold text-on-surface flex items-center gap-2"><Icon name="tune" size={16} className="text-primary" /> 2. Configura</h3>
             </div>
-            <div className="p-lg flex flex-col gap-xl">
+            <div className="p-md flex flex-col gap-md">
               <div className="rounded-xl bg-primary/5 p-md border border-primary/10">
                 <div className="flex justify-between items-end mb-md">
                   <label className="font-label-md text-label-md font-semibold text-primary">Monto Solicitado</label>
@@ -204,36 +204,35 @@ export function AdminManualLoanPage() {
 
           <div className="lg:col-span-5 flex flex-col gap-lg">
             <Card className="border-0 shadow-level-2 bg-primary text-white overflow-hidden p-0">
-              <div className="p-lg">
-                <h4 className="font-label-md text-label-md font-semibold text-white/80 flex items-center gap-2"><Icon name="analytics" size={16} /> Resumen de Operación</h4>
-                <div className="mt-md grid grid-cols-2 gap-md">
-                  <div className="rounded-xl bg-white/10 p-md backdrop-blur"><p className="font-body-sm text-[13px] text-white/70 mb-1">Total a pagar</p><p className="font-headline-md text-[22px] font-bold">{preview ? currency.format(preview.total) : '-'}</p></div>
-                  <div className="rounded-xl bg-white/10 p-md backdrop-blur"><p className="font-body-sm text-[13px] text-white/70 mb-1">Intereses (40%)</p><p className="font-headline-md text-[22px] font-bold">{preview ? currency.format(preview.intereses) : '-'}</p></div>
+              <div className="p-md">
+                <h4 className="font-label-md text-label-md font-semibold text-white/80 flex items-center gap-2"><Icon name="analytics" size={16} /> Resumen</h4>
+                <div className="mt-sm grid grid-cols-2 gap-sm">
+                  <div className="rounded-xl bg-white/10 p-sm"><p className="font-body-sm text-xs text-white/70 mb-0">Total</p><p className="font-headline-md text-[18px] font-bold leading-tight">{preview ? currency.format(preview.total) : '-'}</p></div>
+                  <div className="rounded-xl bg-white/10 p-sm"><p className="font-body-sm text-xs text-white/70 mb-0">Intereses</p><p className="font-headline-md text-[18px] font-bold leading-tight">{preview ? currency.format(preview.intereses) : '-'}</p></div>
                 </div>
-                <div className="mt-md rounded-xl bg-secondary-container p-md flex flex-col items-center justify-center text-on-secondary-container">
-                  <p className="font-body-sm text-[13px] font-medium opacity-80">Abono {model === 'WEEKLY' ? 'Semanal' : 'Quincenal'}</p>
-                  <p className="font-data-lg text-data-lg font-bold">{preview ? currency.format(preview.payment) : '-'}</p>
-                  <p className="text-xs opacity-70">{preview ? `${preview.schedule.length} cuotas` : ''}</p>
+                <div className="mt-sm rounded-xl bg-secondary-container px-md py-sm flex items-center justify-between text-on-secondary-container">
+                  <div><p className="font-body-sm text-xs font-medium opacity-80">Abono {model === 'WEEKLY' ? 'Semanal' : 'Quincenal'}</p><p className="font-data-lg text-data-lg font-bold leading-none">{preview ? currency.format(preview.payment) : '-'}</p></div>
+                  <span className="text-xs bg-white/20 px-2 py-1 rounded-full font-bold">{preview ? `${preview.schedule.length}c` : ''}</span>
                 </div>
               </div>
             </Card>
 
             <Card className="border border-outline-variant shadow-level-2 overflow-hidden p-0">
-              <div className="px-md py-sm bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
-                <h4 className="font-label-md text-[14px] font-semibold text-on-surface flex items-center gap-2"><Icon name="table_chart" size={18} className="text-primary" /> Tabla de Pagos (prevista)</h4>
-                <span className="text-xs bg-secondary-fixed text-on-secondary-fixed px-2 py-1 rounded-full font-bold">{preview?.schedule.length ?? 0}</span>
+              <div className="px-md py-2 bg-surface-container-low border-b border-outline-variant flex justify-between items-center">
+                <h4 className="font-label-md text-label-md font-semibold text-on-surface flex items-center gap-2"><Icon name="table_chart" size={16} className="text-primary" /> Pagos</h4>
+                <span className="text-xs bg-secondary-fixed text-on-secondary-fixed px-2 py-0.5 rounded-full font-bold">{preview?.schedule.length ?? 0}</span>
               </div>
-              <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
+              <div className="overflow-x-auto max-h-[220px] overflow-y-auto">
                 <table className="w-full text-left border-collapse">
-                  <thead><tr className="border-b border-outline-variant/50 text-on-surface-variant font-label-md text-[12px] uppercase tracking-wider bg-surface-container-low/50"><th className="py-3 px-4 font-semibold">No.</th><th className="py-3 px-4 font-semibold">Fecha</th><th className="py-3 px-4 font-semibold text-right">Monto</th></tr></thead>
-                  <tbody className="font-body-sm text-[14px] text-on-surface">
+                  <thead><tr className="border-b border-outline-variant/50 text-on-surface-variant font-label-md text-[11px] uppercase tracking-wider bg-surface-container-low/50"><th className="py-2 px-3 font-semibold">No.</th><th className="py-2 px-3 font-semibold">Fecha</th><th className="py-2 px-3 font-semibold text-right">Monto</th></tr></thead>
+                  <tbody className="font-body-sm text-[13px] text-on-surface">
                     {(preview?.schedule.slice(0, 5) ?? []).map((row) => (
-                      <tr key={row.seq} className="border-b border-outline-variant/30 hover:bg-surface-container-low/50"><td className="py-3 px-4 text-on-surface-variant">{row.seq}</td><td className="py-3 px-4 font-medium">{formatDateLong(row.dueDate)}</td><td className="py-3 px-4 text-right font-bold text-primary">{currency.format(row.amount)}</td></tr>
+                      <tr key={row.seq} className="border-b border-outline-variant/30 hover:bg-surface-container-low/50"><td className="py-2 px-3 text-on-surface-variant">{row.seq}</td><td className="py-2 px-3 font-medium">{formatDateLong(row.dueDate)}</td><td className="py-2 px-3 text-right font-bold text-primary">{currency.format(row.amount)}</td></tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <div className="p-sm text-center bg-surface-container-low/30"><span className="font-body-sm text-body-sm text-primary">+ {preview ? Math.max(0, preview.schedule.length - 5) : 0} cuotas más</span></div>
+              {preview && preview.schedule.length > 5 && <div className="py-1 text-center bg-surface-container-low/30"><span className="font-body-sm text-xs text-primary">+ {preview.schedule.length - 5} más</span></div>}
             </Card>
           </div>
         </div>
