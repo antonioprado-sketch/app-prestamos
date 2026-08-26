@@ -7,6 +7,7 @@ import { NotificationsBell } from '../../components/NotificationsBell';
 export type AdminNavKey =
   | 'dashboard'
   | 'solicitudes'
+  | 'manual'
   | 'clientes'
   | 'usuarios'
   | 'ubicaciones'
@@ -16,6 +17,7 @@ export type AdminNavKey =
 const NAV_ITEMS: { key: AdminNavKey; label: string; icon: string; to: string }[] = [
   { key: 'dashboard', label: 'Dashboard', icon: 'grid_view', to: '/admin/indicadores' },
   { key: 'solicitudes', label: 'Solicitudes', icon: 'pending_actions', to: '/admin/solicitudes' },
+  { key: 'manual', label: 'Nuevo préstamo', icon: 'add', to: '/admin/prestamos/nuevo' },
   { key: 'clientes', label: 'Clientes', icon: 'badge', to: '/admin/clientes' },
   { key: 'usuarios', label: 'Usuarios', icon: 'directions_run', to: '/admin/usuarios' },
   { key: 'aumentos', label: 'Aumentos', icon: 'trending_up', to: '/admin/aumentos' },

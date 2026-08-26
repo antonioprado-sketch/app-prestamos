@@ -86,6 +86,19 @@ export function todayInMexicoCity(): Date {
 }
 
 export function calculateQuote(input: QuoteInput): QuoteResult {
+  return calculateQuoteInternal(input, false);
+}
+
+export function calculateManualQuote(
+  input: Omit<QuoteInput, 'maxAmount'>,
+): QuoteResult {
+  return calculateQuoteInternal({ ...input, maxAmount: null }, true);
+}
+
+function calculateQuoteInternal(
+  input: QuoteInput,
+  allowPast: boolean,
+): QuoteResult {
   if (!Number.isFinite(input.amount) || input.amount <= 0) {
     throw new QuoteError('El monto debe ser mayor a cero');
   }
@@ -94,7 +107,7 @@ export function calculateQuote(input: QuoteInput): QuoteResult {
   }
 
   const openingDate = parseCalendarDate(input.openingDate);
-  if (openingDate < todayInMexicoCity()) {
+  if (!allowPast && openingDate < todayInMexicoCity()) {
     throw new QuoteError('La fecha de apertura no puede ser en el pasado');
   }
 

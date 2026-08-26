@@ -15,6 +15,8 @@ import { AdminLoansService } from './admin-loans.service';
 import { RejectLoanDto } from './dto/reject-loan.dto';
 import { RequestCorrectionDto } from './dto/request-correction.dto';
 import { AssignCollectorDto } from './dto/assign-collector.dto';
+import { CreateManualLoanDto } from './dto/create-manual-loan.dto';
+import { RegisterHistoricalPaymentDto } from './dto/register-historical-payment.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -29,6 +31,38 @@ export class AdminLoansController {
   @Get()
   async findAll(@Query('status') status?: string) {
     return this.adminLoans.findAll(status);
+  }
+
+  @Post('manual')
+  @HttpCode(HttpStatus.OK)
+  async createManual(
+    @Body() dto: CreateManualLoanDto,
+    @CurrentUser() user: { phone: string },
+    @Req() req: Request,
+  ) {
+    return this.adminLoans.createManualLoan(
+      user.phone,
+      dto,
+      req.ip ?? '',
+      req.headers['user-agent'] ?? '',
+    );
+  }
+
+  @Post(':id/historical-payments')
+  @HttpCode(HttpStatus.OK)
+  async registerHistorical(
+    @Param('id') id: string,
+    @Body() dto: RegisterHistoricalPaymentDto,
+    @CurrentUser() user: { phone: string },
+    @Req() req: Request,
+  ) {
+    return this.adminLoans.registerHistoricalPayment(
+      user.phone,
+      id,
+      dto,
+      req.ip ?? '',
+      req.headers['user-agent'] ?? '',
+    );
   }
 
   @Get(':id')

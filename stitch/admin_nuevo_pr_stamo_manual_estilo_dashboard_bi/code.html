@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nuevo préstamo manual - LendWise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-container": "#181c1d",
+                        "on-secondary": "#ffffff",
+                        "outline-variant": "#c5c6cf",
+                        "tertiary-fixed-dim": "#c4c7c8",
+                        "surface-container": "#efedf0",
+                        "inverse-primary": "#b6c6ef",
+                        "on-background": "#1b1b1e",
+                        "secondary-container": "#7bbeff",
+                        "surface-container-highest": "#e4e2e5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-high": "#e9e7eb",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#cfe5ff",
+                        "on-secondary-fixed-variant": "#004a78",
+                        "tertiary": "#000000",
+                        "on-primary": "#ffffff",
+                        "surface-variant": "#e4e2e5",
+                        "surface-dim": "#dbd9dd",
+                        "on-primary-fixed": "#081b3b",
+                        "primary-container": "#081b3b",
+                        "error-container": "#ffdad6",
+                        "inverse-on-surface": "#f2f0f3",
+                        "primary-fixed": "#d8e2ff",
+                        "surface-tint": "#4e5e82",
+                        "on-error-container": "#93000a",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed": "#181c1d",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "on-surface-variant": "#44474e",
+                        "on-surface": "#1b1b1e",
+                        "surface-bright": "#fbf8fc",
+                        "on-secondary-container": "#004c7c",
+                        "on-primary-container": "#7384a9",
+                        "surface": "#f8f9ff",
+                        "primary": "#0046e3",
+                        "on-tertiary-fixed-variant": "#434748",
+                        "on-secondary-fixed": "#001d34",
+                        "on-tertiary-container": "#818485",
+                        "secondary-fixed-dim": "#99cbff",
+                        "on-primary-fixed-variant": "#364669",
+                        "inverse-surface": "#303033",
+                        "error": "#ba1a1a",
+                        "outline": "#75777f",
+                        "background": "#f8f9ff",
+                        "tertiary-fixed": "#e0e3e4",
+                        "surface-container-low": "#f5f3f6",
+                        "secondary": "#01629d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.5rem",
+                        "lg": "0.75rem",
+                        "xl": "1rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "base": "4px",
+                        "xs": "8px",
+                        "sm": "12px",
+                        "md": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "2xl": "48px",
+                        "3xl": "64px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "sans": ["Inter", "sans-serif"],
+                        "data-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "data-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    },
+                    boxShadow: {
+                        'dashboard-card': '0px 1px 3px rgba(0, 0, 0, 0.1), 0px 1px 2px rgba(0, 0, 0, 0.06)'
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; background-color: theme('colors.surface'); color: theme('colors.on-surface'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .filled-icon { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background-color: theme('colors.outline-variant'); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background-color: theme('colors.outline'); }
+    </style>
+</head>
+<body class="bg-surface antialiased overflow-hidden flex h-screen text-on-surface">
+<!-- SideNavBar -->
+<nav class="h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant flex flex-col h-full py-lg px-md z-20 hidden md:flex">
+<div class="mb-xl px-sm flex items-center gap-sm">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-[20px]" data-icon="account_balance">account_balance</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-on-surface">LendWise</h1>
+<p class="text-on-surface-variant font-label-md text-label-md mt-0 opacity-80 text-xs">Loan Management</p>
+</div>
+</div>
+<ul class="space-y-xs flex-1">
+<li>
+<a class="flex items-center gap-sm px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all duration-200 font-label-md text-label-md font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="dashboard">dashboard</span>
+                Dashboard
+            </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-sm py-sm rounded-lg bg-primary/10 text-primary transition-all duration-200 font-label-md text-label-md font-medium" href="#">
+<span class="material-symbols-outlined text-[20px] filled-icon text-primary" data-icon="payments">payments</span>
+                Préstamos
+            </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all duration-200 font-label-md text-label-md font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="groups">groups</span>
+                Clientes
+            </a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-sm py-sm rounded-lg text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-all duration-200 font-label-md text-label-md font-medium" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+                Configuración
+            </a>
+</li>
+</ul>
+<div class="mt-auto pt-lg flex items-center gap-sm border-t border-outline-variant px-sm">
+<img alt="Admin Profile" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A small circular avatar image of a male professional in his 30s, smiling subtly, wearing a light blue button-down shirt, isolated on a neutral background, high resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcsW4EWn1Cy8KBh59o512TC3giDS4q46WdkzGUCxv73pFHsixnGRvKL9HBw5Uhgv3N3IhAxft5W1-o09kNr9fOI5RB5rR8YeX91crSkzFhAxrqGhzlxyo1wvQnchbJV2rTzTE0oD_0cHaKk8ub5X5q3oIUtB3mVDGBbVReHHxfBrTf-wuCxU4d9gOZJQBzA2VTWlRfsN-e37Dr82kBQGnOEDDdn0Qmh_iZgV-RSheLI16nrE4IkY4w"/>
+<div>
+<span class="block font-label-md text-label-md text-on-surface font-semibold">Admin User</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant text-xs">Administrador</span>
+</div>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="docked full-width top-0 h-16 ml-64 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center px-margin-desktop w-[calc(100%-16rem)] z-10 fixed hidden md:flex">
+<div class="flex items-center gap-md w-full max-w-md">
+<!-- Search bar like in dashboard -->
+<div class="relative w-full">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="w-full pl-xl pr-md py-2 bg-surface border border-outline-variant rounded-full font-body-sm text-body-sm text-on-surface focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none transition-shadow" placeholder="Buscar..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 ml-0 md:ml-64 mt-0 md:mt-16 h-full md:h-[calc(100vh-4rem)] overflow-y-auto bg-surface p-margin-mobile md:p-margin-desktop pb-3xl">
+<div class="max-w-5xl mx-auto space-y-lg">
+<!-- Page Header -->
+<div class="mb-lg">
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-on-surface font-bold tracking-tight">Nuevo préstamo manual</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1">Da de alta un préstamo de papel o presencial en el sistema.</p>
+</div>
+<!-- SECTION 1: Client Card -->
+<section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-dashboard-card">
+<h3 class="font-headline-md text-[18px] font-semibold text-on-surface mb-md">Buscar Cliente</h3>
+<div class="flex flex-col md:flex-row gap-sm items-start md:items-center">
+<div class="relative w-full md:w-2/3">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant" data-icon="search">search</span>
+<input class="w-full pl-xl pr-md py-[10px] bg-surface-container-lowest border border-outline-variant rounded-lg font-body-md text-body-md text-on-surface focus:ring-1 focus:ring-primary focus:border-primary focus:outline-none transition-shadow" placeholder="Teléfono o Identificación..." type="text" value="5512345678"/>
+</div>
+<button class="w-full md:w-auto px-lg py-[10px] rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-label-md font-semibold text-label-md hover:bg-surface-container-low transition-colors shadow-sm">
+                    Buscar
+                </button>
+</div>
+<!-- Search Result -->
+<div class="mt-lg p-md bg-primary/5 rounded-lg border border-primary/20 flex items-center justify-between">
+<div class="flex items-center gap-md">
+<img alt="Roberto Gómez Bolaños" class="w-12 h-12 rounded-full object-cover border border-outline-variant bg-white" data-alt="A portrait of a senior man with a gentle expression, wearing a modest collared shirt, well-lit studio lighting, conveying approachability and trust." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-j3WnNUahFo-YcKTuGsSjLy5YFfTfssLWMSzgYKivzsS_lxzUEQ0aME0y6SOpGEjSdaO41H3Oyh1mhSD_yTheAlEXUT5TtzkEiNcBqEF5699d__7zJdmlu5ASI-uwUO5R2z8GqrVwh8vVuW11QXkjtX3xZI99vAU54Rf5dAinygQiCB8qqMQjLPRVgMH2KyrdC3QglG2hfvjF2T5_KlieW0Fu8HHO5TEp4QXaPCoKxqGc2gQkMPMp"/>
+<div>
+<p class="font-headline-md text-headline-md text-on-surface text-base font-semibold">Roberto Gómez Bolaños</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Tel: 5512345678</p>
+</div>
+</div>
+<span class="px-sm py-1 bg-secondary/10 text-secondary rounded-full font-label-md text-[12px] font-semibold whitespace-nowrap">
+                    Cliente Nuevo
+                </span>
+</div>
+</section>
+<!-- SECTION 2: Loan Parameters Card & Live Preview (Bento-ish Layout) -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg pb-24">
+<!-- Parameters Form -->
+<section class="lg:col-span-7 bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-dashboard-card flex flex-col gap-xl">
+<div>
+<div class="flex justify-between items-end mb-md">
+<label class="font-label-md text-label-md font-semibold text-on-surface">Monto Solicitado</label>
+<span class="font-data-lg text-[28px] font-bold text-on-surface">$15,000</span>
+</div>
+<input class="w-full h-2 bg-surface-variant rounded-lg appearance-none cursor-pointer accent-primary" max="20000" min="500" type="range" value="15000"/>
+<div class="flex justify-between mt-sm font-body-sm text-[13px] text-on-surface-variant font-medium">
+<span>$500</span>
+<span>$20,000</span>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-md">Modelo de Pago</label>
+<div class="flex gap-sm">
+<button class="flex-1 py-3 px-md rounded-lg border-2 border-primary bg-primary/5 text-primary font-label-md text-label-md font-semibold transition-colors">
+                            Semanal (20)
+                        </button>
+<button class="flex-1 py-3 px-md rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface-variant hover:bg-surface-container-low font-label-md text-label-md font-semibold transition-colors">
+                            Quincenal (10)
+                        </button>
+</div>
+</div>
+<div>
+<label class="block font-label-md text-label-md font-semibold text-on-surface mb-md">Fecha de Apertura</label>
+<button class="w-full flex items-center justify-between px-md py-3 rounded-lg border border-outline-variant text-on-surface hover:bg-surface-container-low transition-colors font-body-md text-[15px] text-left">
+                        12 Octubre 2023
+                        <span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="calendar_today">calendar_today</span>
+</button>
+</div>
+</section>
+<!-- Live Preview / Summary -->
+<section class="lg:col-span-5 flex flex-col gap-lg">
+<!-- Summary Grid -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-dashboard-card grid grid-cols-2 gap-y-lg gap-x-sm">
+<div class="col-span-2 border-b border-outline-variant/50 pb-sm mb-xs">
+<h4 class="font-label-md text-label-md font-semibold text-on-surface">Resumen de Operación</h4>
+</div>
+<div>
+<p class="font-body-sm text-[13px] font-medium text-on-surface-variant mb-1">Total a pagar</p>
+<p class="font-headline-md text-[22px] font-bold text-on-surface">$21,000</p>
+</div>
+<div>
+<p class="font-body-sm text-[13px] font-medium text-on-surface-variant mb-1">Intereses</p>
+<p class="font-headline-md text-[22px] font-bold text-on-surface">$6,000</p>
+</div>
+<div class="col-span-2 bg-surface p-md rounded-lg mt-sm border border-outline-variant/50 flex flex-col items-center justify-center">
+<p class="font-body-sm text-[13px] font-medium text-on-surface-variant mb-1">Abono Semanal</p>
+<p class="font-data-lg text-[28px] font-bold text-on-surface">$1,050</p>
+</div>
+</div>
+<!-- Amortization Sneak Peek -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-dashboard-card flex-1 flex flex-col">
+<div class="bg-surface-container-lowest px-md py-sm border-b border-outline-variant flex justify-between items-center">
+<h4 class="font-label-md text-[14px] font-semibold text-on-surface">Tabla de Pagos (Prevista)</h4>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]" data-icon="table_chart">table_chart</span>
+</div>
+<div class="overflow-x-auto flex-1 p-0">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/50 text-on-surface-variant font-label-md text-[12px] uppercase tracking-wider bg-surface/50">
+<th class="py-3 px-4 font-semibold">No.</th>
+<th class="py-3 px-4 font-semibold">Fecha Venc.</th>
+<th class="py-3 px-4 font-semibold text-right">Monto</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-[14px] text-on-surface">
+<tr class="border-b border-outline-variant/50 hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface-variant">1</td>
+<td class="py-3 px-4 font-medium">19 Oct 2023</td>
+<td class="py-3 px-4 text-right font-medium">$1,050</td>
+</tr>
+<tr class="border-b border-outline-variant/50 hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface-variant">2</td>
+<td class="py-3 px-4 font-medium">26 Oct 2023</td>
+<td class="py-3 px-4 text-right font-medium">$1,050</td>
+</tr>
+<tr class="hover:bg-surface/50 transition-colors">
+<td class="py-3 px-4 text-on-surface-variant">3</td>
+<td class="py-3 px-4 font-medium">02 Nov 2023</td>
+<td class="py-3 px-4 text-right font-medium">$1,050</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="p-sm text-center border-t border-outline-variant/50 bg-surface/30">
+<a class="font-label-md text-[13px] font-semibold text-primary hover:underline" href="#">Ver tabla completa</a>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Bottom CTA Fixed Bar -->
+<div class="fixed bottom-0 left-0 md:left-64 right-0 bg-surface-container-lowest border-t border-outline-variant p-md px-margin-desktop flex justify-end gap-md z-30 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+<button class="px-lg py-[10px] rounded-lg border border-outline-variant bg-surface-container-lowest text-on-surface font-label-md font-semibold text-label-md hover:bg-surface-container-low transition-colors shadow-sm">
+        Cancelar
+    </button>
+<button class="px-lg py-[10px] rounded-lg bg-on-surface text-surface-container-lowest font-label-md font-semibold text-label-md hover:bg-on-surface/90 transition-colors shadow-md flex items-center gap-sm">
+        Crear préstamo (DRAFT)
+        <span class="material-symbols-outlined text-[18px]" data-icon="save">save</span>
+</button>
+</div>
+</body></html>

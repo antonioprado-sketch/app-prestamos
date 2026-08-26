@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Historial papel - LendWise</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-surface": "#303033",
+                        "surface-container-low": "#f5f3f6",
+                        "surface-bright": "#fbf8fc",
+                        "on-tertiary-fixed": "#181c1d",
+                        "surface-container-high": "#e9e7eb",
+                        "on-surface": "#1b1b1e",
+                        "on-primary": "#ffffff",
+                        "on-primary-container": "#7384a9",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#b6c6ef",
+                        "surface-dim": "#dbd9dd",
+                        "secondary-container": "#7bbeff",
+                        "on-tertiary-container": "#818485",
+                        "on-surface-variant": "#44474e",
+                        "tertiary-fixed-dim": "#c4c7c8",
+                        "tertiary": "#000000",
+                        "primary": "#000000",
+                        "secondary": "#01629d",
+                        "primary-fixed-dim": "#b6c6ef",
+                        "surface-variant": "#e4e2e5",
+                        "primary-container": "#081b3b",
+                        "on-primary-fixed-variant": "#364669",
+                        "surface-container-lowest": "#ffffff",
+                        "tertiary-fixed": "#e0e3e4",
+                        "secondary-fixed": "#cfe5ff",
+                        "surface-tint": "#4e5e82",
+                        "on-error-container": "#93000a",
+                        "on-secondary": "#ffffff",
+                        "background": "#fbf8fc",
+                        "on-secondary-fixed": "#001d34",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#081b3b",
+                        "secondary-fixed-dim": "#99cbff",
+                        "on-background": "#1b1b1e",
+                        "surface-container-highest": "#e4e2e5",
+                        "on-secondary-container": "#004c7c",
+                        "on-error": "#ffffff",
+                        "on-secondary-fixed-variant": "#004a78",
+                        "surface": "#fbf8fc",
+                        "primary-fixed": "#d8e2ff",
+                        "outline": "#75777f",
+                        "inverse-on-surface": "#f2f0f3",
+                        "on-tertiary-fixed-variant": "#434748",
+                        "surface-container": "#e5eeff",
+                        "outline-variant": "#c5c6cf",
+                        "tertiary-container": "#181c1d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "md": "16px",
+                        "3xl": "64px",
+                        "margin-mobile": "16px",
+                        "lg": "24px",
+                        "xl": "32px",
+                        "2xl": "48px",
+                        "margin-desktop": "32px",
+                        "gutter": "16px",
+                        "base": "4px",
+                        "xs": "8px",
+                        "sm": "12px"
+                    },
+                    "fontFamily": {
+                        "label-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "data-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "data-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        /* Custom scrollbar for data tables */
+        .table-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .table-container::-webkit-scrollbar-track {
+            background: theme('colors.surface-container-high'); 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb {
+            background: theme('colors.outline-variant'); 
+            border-radius: 4px;
+        }
+        .table-container::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.outline'); 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen w-full flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-primary-container dark:bg-primary-container h-screen w-64 fixed left-0 top-0 border-r border-outline-variant flex flex-col py-lg px-md z-40 hidden md:flex">
+<div class="mb-2xl flex items-center gap-xs px-2">
+<div class="w-8 h-8 rounded bg-primary-fixed flex items-center justify-center text-on-primary-fixed">
+<span class="material-symbols-outlined icon-filled">account_balance</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-on-primary dark:text-on-primary">LendWise</h1>
+<p class="font-label-md text-label-md text-on-primary-container">Loan Management</p>
+</div>
+</div>
+<ul class="flex flex-col gap-xs flex-grow">
+<li>
+<a class="flex items-center gap-sm p-sm rounded-DEFAULT text-on-primary-fixed-variant opacity-80 hover:opacity-100 hover:bg-on-primary-fixed-variant hover:text-on-primary transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-label-md text-label-md">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm p-sm rounded-DEFAULT text-on-primary bg-on-primary-fixed-variant rounded-lg mx-2 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined icon-filled">payments</span>
+<span class="font-label-md text-label-md">Préstamos</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm p-sm rounded-DEFAULT text-on-primary-fixed-variant opacity-80 hover:opacity-100 hover:bg-on-primary-fixed-variant hover:text-on-primary transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">groups</span>
+<span class="font-label-md text-label-md">Clientes</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm p-sm rounded-DEFAULT text-on-primary-fixed-variant opacity-80 hover:opacity-100 hover:bg-on-primary-fixed-variant hover:text-on-primary transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-md text-label-md">Configuración</span>
+</a>
+</li>
+</ul>
+<div class="mt-auto border-t border-on-primary-fixed-variant pt-lg flex items-center gap-sm px-2">
+<img alt="LendWise Admin" class="w-10 h-10 rounded-full object-cover border border-outline-variant" data-alt="A close up professional headshot of an administrator wearing a dark suit in a well lit office environment. Bright modern lighting, sharp focus, corporate aesthetic, subtle blue tones in the background to convey trust and reliability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2FsEq2iyqoKgVfhRKxzSsU5QxWCuL0c9K1d07cknwczwqxREM_24-xZWhKebuoSngMX0vMIqPzYow_PMN9tB4RtMsOwWaMWUY5ub85FMGNZFmqpFuZtBSGquxU7UFi9FbVl457ENo7V235YIMa1JM4jaaNtkIJzF3PMjfN-ZkepSYbpW9DDPLG2hIdfKFttf868tferRLsFpBrMv8fLI-yn4PW7YgJrHUZ3S387Kmvbj9HjI6b5t_"/>
+<div class="flex-grow">
+<p class="font-label-md text-label-md text-on-primary">Admin User</p>
+<p class="font-body-sm text-body-sm text-on-primary-container truncate">admin@lendwise.co</p>
+</div>
+<button class="text-on-primary-container hover:text-on-primary transition-colors">
+<span class="material-symbols-outlined">logout</span>
+</button>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex flex-col flex-grow ml-0 md:ml-64 w-full md:w-[calc(100%-16rem)] h-screen overflow-hidden">
+<!-- TopAppBar -->
+<header class="bg-surface-container-lowest dark:bg-surface-container-lowest border-b border-outline-variant h-16 flex justify-between items-center px-margin-desktop w-full shrink-0 z-30">
+<div class="flex items-center gap-md">
+<button class="md:hidden text-on-surface hover:bg-surface-container-low p-2 rounded-DEFAULT transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="hidden md:flex relative w-64 group">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-full py-2 pl-10 pr-4 font-body-sm text-body-sm text-on-surface placeholder:text-on-surface-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Buscar..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-sm">
+<button class="text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors p-2 rounded-full relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-colors p-2 rounded-full">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="md:hidden ml-xs">
+<img alt="Admin Profile" class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A close up professional headshot of an administrator wearing a dark suit in a well lit office environment. Bright modern lighting, sharp focus, corporate aesthetic, subtle blue tones in the background to convey trust and reliability." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWVtUtlmMVBi1oVq2uJP0zhNcrfcKN2UqbqUgsU43ZfAr5VDYOW3cKU0P0et8ktNskotDuMHt22oJgLKltUGU9NDiLv0mqv6b-OQmXVPI8f_t-gMiPrxlYGBpDrn119Zc7v0NueUBZaLreH5YveYpXMpzq0btyd3Q5n9rjx9J3aBfQwckWmSE6-Y5YnwXGmW3YgR_33-LdC2Y79tItQVmMAvOZRnYJTK6vYadzIpil15AuF01ibwvM"/>
+</div>
+</div>
+</header>
+<!-- Canvas -->
+<main class="flex-grow bg-surface overflow-y-auto p-margin-mobile md:p-margin-desktop relative">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-md mb-xl">
+<div>
+<div class="flex items-center gap-sm mb-xs">
+<a class="text-on-surface-variant hover:text-primary font-body-sm text-body-sm flex items-center gap-1 transition-colors" href="#">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+                            Volver a Detalle
+                        </a>
+<span class="text-outline-variant text-sm">/</span>
+<span class="text-on-surface-variant font-body-sm text-body-sm">Préstamo #4829</span>
+</div>
+<div class="flex items-center gap-md flex-wrap">
+<h2 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface flex items-center gap-sm">
+                            Historial papel
+                            <span class="text-on-surface-variant font-headline-md text-headline-md font-normal">— abonos ya dados</span>
+</h2>
+<span class="bg-secondary-container text-on-secondary-container font-label-md text-label-md px-3 py-1 rounded-full border border-secondary/20 flex items-center gap-1 shadow-sm">
+<span class="w-2 h-2 bg-secondary rounded-full animate-pulse"></span>
+                            ACTIVE
+                        </span>
+</div>
+</div>
+<button class="bg-primary hover:bg-inverse-surface text-on-primary font-label-md text-label-md px-lg py-sm rounded-DEFAULT flex items-center justify-center gap-2 transition-all duration-200 shadow-sm whitespace-nowrap self-start md:self-auto">
+<span class="material-symbols-outlined text-[20px]">history_edu</span>
+                    Añadir abono histórico
+                </button>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-lg">
+<!-- Left Column: Payment Plan Table -->
+<div class="lg:col-span-8 flex flex-col gap-lg">
+<div class="bg-surface-container-lowest rounded-lg border border-surface-dim overflow-hidden flex flex-col h-full shadow-sm">
+<div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest sticky top-0 z-10">
+<div>
+<h3 class="font-headline-md text-headline-md text-on-surface">Plan de Pagos Original</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Cuotas programadas vs estado actual</p>
+</div>
+<span class="material-symbols-outlined text-outline">calendar_month</span>
+</div>
+<div class="overflow-x-auto table-container flex-grow">
+<table class="w-full text-left border-collapse min-w-[600px]">
+<thead class="bg-surface-container-high sticky top-0 z-10">
+<tr>
+<th class="p-sm font-label-md text-label-md text-on-surface border-b border-outline-variant">Seq</th>
+<th class="p-sm font-label-md text-label-md text-on-surface border-b border-outline-variant">Fecha Esperada</th>
+<th class="p-sm font-label-md text-label-md text-on-surface border-b border-outline-variant text-right">Abono Esperado</th>
+<th class="p-sm font-label-md text-label-md text-on-surface border-b border-outline-variant">Estado</th>
+<th class="p-sm font-label-md text-label-md text-on-surface border-b border-outline-variant"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant bg-surface-container-lowest">
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-sm font-body-sm text-body-sm text-on-surface-variant">01</td>
+<td class="p-sm font-body-sm text-body-sm text-on-surface">15 Sep 2023</td>
+<td class="p-sm font-body-sm text-body-sm text-on-surface text-right font-medium">$ 500.00</td>
+<td class="p-sm">
+<span class="inline-flex items-center gap-1 bg-surface-container-high text-on-surface font-label-md text-label-md px-2 py-0.5 rounded-full border border-outline-variant/50 text-[12px]">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                                PAGADO
+                                            </span>
+</td>
+<td class="p-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors bg-error-container/10">
+<td class="p-sm font-body-sm text-body-sm text-on-surface-variant">02</td>
+<td class="p-sm font-body-sm text-body-sm text-error font-medium">15 Oct 2023</td>
+<td class="p-sm font-body-sm text-body-sm text-on-surface text-right font-medium">$ 500.00</td>
+<td class="p-sm">
+<span class="inline-flex items-center gap-1 bg-error-container text-on-error-container font-label-md text-label-md px-2 py-0.5 rounded-full border border-error/20 text-[12px]">
+<span class="material-symbols-outlined text-[14px]">error</span>
+                                                VENCIDO
+                                            </span>
+</td>
+<td class="p-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-sm font-body-sm text-body-sm text-on-surface-variant">03</td>
+<td class="p-sm font-body-sm text-body-sm text-on-surface">15 Nov 2023</td>
+<td class="p-sm font-body-sm text-body-sm text-on-surface text-right font-medium">$ 500.00</td>
+<td class="p-sm">
+<span class="inline-flex items-center gap-1 bg-surface-container text-on-surface-variant font-label-md text-label-md px-2 py-0.5 rounded-full border border-outline-variant/50 text-[12px]">
+                                                PENDIENTE
+                                            </span>
+</td>
+<td class="p-sm text-right">
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column: Loaded History -->
+<div class="lg:col-span-4 flex flex-col gap-lg">
+<div class="bg-surface-container-lowest rounded-lg border border-surface-dim shadow-sm flex flex-col h-full overflow-hidden">
+<div class="p-lg border-b border-outline-variant bg-surface-container-lowest sticky top-0 z-10">
+<h3 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">receipt_long</span>
+                                Pagos Históricos Cargados
+                            </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Registros migrados de papel</p>
+</div>
+<div class="p-md flex-grow overflow-y-auto space-y-md">
+<!-- History Item -->
+<div class="bg-surface rounded-DEFAULT border border-outline-variant p-md relative overflow-hidden group hover:border-secondary transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">event</span>
+<span class="font-label-md text-label-md text-on-surface">25 Sep 2023</span>
+</div>
+<span class="font-data-lg text-data-lg text-primary">$500.00</span>
+</div>
+<div class="bg-surface-container-low rounded p-2 mt-2 border border-surface-dim flex items-start gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px] mt-0.5">sticky_note_2</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">"migración papel"</p>
+</div>
+</div>
+<!-- History Item (Older) -->
+<div class="bg-surface rounded-DEFAULT border border-outline-variant p-md relative overflow-hidden group hover:border-secondary transition-colors opacity-75">
+<div class="absolute top-0 left-0 w-1 h-full bg-surface-dim"></div>
+<div class="flex justify-between items-start mb-2">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">event</span>
+<span class="font-label-md text-label-md text-on-surface">25 Ago 2023</span>
+</div>
+<span class="font-data-lg text-data-lg text-on-surface-variant">$500.00</span>
+</div>
+<div class="bg-surface-container-low rounded p-2 mt-2 border border-surface-dim flex items-start gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px] mt-0.5">sticky_note_2</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant italic">"migración papel incial"</p>
+</div>
+</div>
+</div>
+<div class="p-md border-t border-outline-variant bg-surface-container-lowest mt-auto">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Total Cargado</span>
+<span class="font-headline-md text-headline-md text-on-surface">$1,000.00</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Modal Overlay: Añadir abono histórico -->
+<!-- Applying z-50 to ensure it sits above everything, bg-black/50 for backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-margin-mobile bg-tertiary/40 backdrop-blur-sm">
+<!-- Modal Card -->
+<div class="bg-surface-container-lowest w-full max-w-lg rounded-xl border border-surface-dim shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+<!-- Modal Header -->
+<div class="px-lg py-md border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<h2 class="font-headline-md text-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">history_edu</span>
+                    Añadir abono histórico
+                </h2>
+<button class="text-on-surface-variant hover:text-error hover:bg-error-container/20 p-1 rounded-DEFAULT transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Modal Body (Form) -->
+<div class="p-lg flex-grow overflow-y-auto">
+<div class="bg-secondary-fixed/30 border border-secondary/20 rounded-DEFAULT p-md mb-lg flex gap-3 items-start">
+<span class="material-symbols-outlined text-secondary mt-0.5">info</span>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Este registro afectará el saldo principal pero no generará recibos formales ni notificaciones al cliente. Úselo solo para conciliar registros en papel.</p>
+</div>
+<form class="space-y-lg">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md">
+<!-- Fecha Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface">Fecha de pago</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">calendar_today</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-DEFAULT py-2 pl-10 pr-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" type="text" value="11/28/2023"/>
+</div>
+</div>
+<!-- Monto Input -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface">Monto</label>
+<div class="relative">
+<span class="absolute left-3 top-1/2 -translate-y-1/2 font-headline-md text-headline-md text-on-surface-variant">$</span>
+<input class="w-full bg-surface-container-low border border-outline-variant rounded-DEFAULT py-2 pl-8 pr-3 font-data-lg text-data-lg text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-right font-medium" style="font-family: 'Inter', sans-serif;" type="text" value="500.00"/>
+</div>
+</div>
+</div>
+<!-- Note Textarea -->
+<div class="flex flex-col gap-1">
+<label class="font-label-md text-label-md text-on-surface flex justify-between">
+                            Nota interna
+                            <span class="text-on-surface-variant font-normal text-xs">Requerido</span>
+</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded-DEFAULT p-3 font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none" rows="3">migración papel</textarea>
+</div>
+</form>
+</div>
+<!-- Modal Footer -->
+<div class="px-lg py-md border-t border-outline-variant bg-surface-container-low flex justify-end gap-md">
+<button class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:bg-surface-variant px-md py-sm rounded-DEFAULT transition-colors">
+                    Cancelar
+                </button>
+<button class="bg-primary hover:bg-inverse-surface text-on-primary font-label-md text-label-md px-lg py-sm rounded-DEFAULT flex items-center gap-2 transition-all shadow-sm">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                    Registrar abono
+                </button>
+</div>
+</div>
+</div>
+</body></html>

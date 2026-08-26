@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { apiFetch, ApiError } from '../lib/api';
 import { formatShortDate } from '../lib/dates';
 import { Button } from '../components/ui/Button';
@@ -435,7 +436,10 @@ export function AdminLoansPage() {
 
                     {PAYABLE_STATUSES.includes(loan.status) && (
                       <div className="flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
-                        <p className="text-sm font-medium text-secondary">Pagos</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-medium text-secondary">Pagos</p>
+                          <Link to={`/admin/prestamos/${loan.id}/historial`} className="text-xs font-semibold text-primary hover:underline">Historial papel →</Link>
+                        </div>
 
                         {paymentError && <Alert variant="error">{paymentError}</Alert>}
 
