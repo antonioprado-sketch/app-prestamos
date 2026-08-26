@@ -18,6 +18,7 @@ import { AdminBiPage } from './pages/AdminBiPage';
 import { AdminCreditIncreasePage } from './pages/AdminCreditIncreasePage';
 import { AdminManualLoanPage } from './pages/AdminManualLoanPage';
 import { AdminLoanHistoricalPage } from './pages/AdminLoanHistoricalPage';
+import { AdminBlacklistPage } from './pages/AdminBlacklistPage';
 import { CollectorLoansPage } from './pages/CollectorLoansPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
 import { Spinner } from './components/ui/Spinner';
@@ -135,6 +136,12 @@ export default function App() {
         path="/admin/prestamos/:id/historial"
         element={
           user?.role === 'ADMIN' ? <AdminLoanHistoricalPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/admin/blacklist"
+        element={
+          user?.role === 'ADMIN' ? <AdminBlacklistPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
         }
       />
       <Route

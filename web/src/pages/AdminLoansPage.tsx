@@ -553,16 +553,16 @@ export function AdminLoansPage() {
         )}
       </Card>
 
-      <Card className="mt-4 w-full max-w-3xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-secondary">Cobradores</h2>
-          <Button type="button" variant="ghost" onClick={() => setShowNewCollector((v) => !v)}>
+      <Card className="mt-4 w-full max-w-3xl rounded-2xl border-0 shadow-level-2 bg-surface-container-lowest overflow-hidden p-0">
+        <div className="flex items-center justify-between p-lg border-b border-outline-variant/30">
+          <h2 className="font-headline-md text-headline-md font-bold text-on-surface">Cobradores</h2>
+          <Button type="button" variant="ghost" onClick={() => setShowNewCollector((v) => !v)} className="text-primary font-semibold">
             {showNewCollector ? 'Cerrar' : 'Nuevo cobrador'}
           </Button>
         </div>
-
+        <div className="p-lg">
         {showNewCollector && (
-          <div className="mb-4 flex flex-col gap-2 rounded-xl border border-gray-200 p-3">
+          <div className="mb-4 flex flex-col gap-3 rounded-xl border border-outline-variant bg-surface-container-low p-md">
             {collectorError && <Alert variant="error">{collectorError}</Alert>}
             {newCollectorResult && (
               <Alert variant="success">
@@ -593,24 +593,25 @@ export function AdminLoansPage() {
         )}
 
         {collectors.length === 0 ? (
-          <p className="py-4 text-center text-sm text-secondary">Sin cobradores registrados.</p>
+          <p className="py-8 text-center text-sm text-on-surface-variant">Sin cobradores registrados.</p>
         ) : (
           <div className="flex flex-col gap-2">
             {collectors.map((c) => (
               <div
                 key={c.id}
-                className="flex items-center justify-between rounded-xl border border-gray-200 p-3 text-sm"
+                className="flex items-center justify-between rounded-xl border border-outline-variant bg-white p-4 text-sm shadow-sm"
               >
-                <span className="text-secondary">
+                <span className="font-body-md text-body-md text-on-surface">
                   {c.name} · {c.phone}
                 </span>
-                <span className={c.active ? 'text-primary' : 'text-secondary'}>
+                <span className={`font-body-md text-body-md font-medium ${c.active ? 'text-primary' : 'text-on-surface-variant'}`}>
                   {c.active ? 'Activo' : 'Inactivo'}
                 </span>
               </div>
             ))}
           </div>
         )}
+        </div>
       </Card>
     </AdminShell>
   );

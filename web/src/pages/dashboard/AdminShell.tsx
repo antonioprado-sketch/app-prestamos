@@ -10,6 +10,7 @@ export type AdminNavKey =
   | 'manual'
   | 'clientes'
   | 'usuarios'
+  | 'blacklist'
   | 'ubicaciones'
   | 'aumentos'
   | 'configuracion';
@@ -20,6 +21,7 @@ const NAV_ITEMS: { key: AdminNavKey; label: string; icon: string; to: string }[]
   { key: 'manual', label: 'Nuevo préstamo', icon: 'add', to: '/admin/prestamos/nuevo' },
   { key: 'clientes', label: 'Clientes', icon: 'badge', to: '/admin/clientes' },
   { key: 'usuarios', label: 'Usuarios', icon: 'directions_run', to: '/admin/usuarios' },
+  { key: 'blacklist', label: 'Lista negra', icon: 'block', to: '/admin/blacklist' },
   { key: 'aumentos', label: 'Aumentos', icon: 'trending_up', to: '/admin/aumentos' },
   { key: 'ubicaciones', label: 'Ubicaciones', icon: 'location_on', to: '/admin/ubicaciones' },
   { key: 'configuracion', label: 'Configuración', icon: 'settings', to: '/admin/configuracion' },
