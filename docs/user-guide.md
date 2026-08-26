@@ -34,11 +34,12 @@ Completa, en orden:
 Al firmar, la solicitud pasa a **enviada** (`SUBMITTED`) y queda en revisión del administrador.
 
 ### 1.4 Seguimiento
-- Tu home (`/app/cliente`) muestra tus préstamos y su estado:
-  - **En revisión** / **Requiere corrección** (te notifican el motivo y puedes corregir y volver a firmar).
-  - **Aprobado** → un cobrador se pondrá en contacto.
-  - **Activo** → pagando cuotas.
-  - **Liquidado** → pagado por completo.
+- Tu home (`/app/cliente`, `DashboardShell` → `ClientHome`) muestra:
+  - Si no tienes préstamo activo → CTA "Solicitar un préstamo" a `/calculadora`.
+  - Si tienes `APPROVED`/`ACTIVE` → tarjeta "Tu préstamo actual" con **saldo pendiente** (`total - ΣpaidAmount`), **próximo pago** (fecha + importe restante de la primera cuota no `PAID`), **barra de progreso** % y **score** con anillo (`GREEN 100% / YELLOW 66% / ORANGE 33% / RED 10%`).
+  - Estados intermedios: **En revisión** / **Requiere corrección** (ves el motivo del admin y puedes corregir y volver a firmar) antes de llegar a `APPROVED`.
+  - **Activo** → pagando cuotas; **Liquidado** → pagado por completo (ya no aparece como activo).
+- **Historial de pagos:** no hay página separada de "mis pagos". El avance se ve en el home (saldo/progreso) y en el calendario de la solicitud (`CalculatorPage` cuando hay `DRAFT`/`SUBMITTED`/`REQUIRES_CORRECTION`), donde cada cuota muestra `paidAmount`/`status` (`PENDING`/`PARTIAL`/`PAID`). El detalle cuota por cuota con multa se registra en `GET /loans/:id/payments` (visible para admin/cobrador; el cliente ve el efecto agregado en su home).
 - Recibes **notificaciones** en la app (campana) y push al instalarla.
 
 ### 1.5 Aumentar mi crédito

@@ -4,7 +4,7 @@ Plataforma web de préstamos personales (cliente / cobrador / administrador). Mo
 
 ## Funcionalidades por rol
 
-- **Cliente** — landing/calculadora pública (slider de $500 en $500, tope $20,000, tabs Semanal/Quincenal), registro, onboarding (datos + fotos de documentos **solo con cámara** + video de identidad), firma de pagaré en pantalla, seguimiento de préstamos, topes por color de score configurables y flujo **"Aumentar mi crédito"**.
+- **Cliente** — landing/calculadora pública (slider de $500 en $500, tope $20,000, tabs Semanal/Quincenal), registro, onboarding (datos + fotos de documentos **solo con cámara** + video de identidad), firma de pagaré en pantalla (con fecha histórica para migrados), home con **saldo pendiente / próximo pago / progreso % / score** y seguimiento de préstamos, topes por color de score configurables y flujo **"Aumentar mi crédito"** (historial de pagos visible como avance en el home y en el calendario por cuota).
 - **Cobrador** — cartera de préstamos asignados, cobro con monto precargado y modales "+/-" para sumar cuotas (sin edición manual), evidencia de cobro, ubicación del cliente, resolución de aumentos de crédito.
 - **Administrador** — BI (KPIs, tendencia semanal, distribución por zona), revisión/aprobación de solicitudes, asignación de cobradores, gestión de clientes y usuarios (rol/status/reset de contraseña), configuración de reglas de negocio y correo SMTP, mapa de ubicaciones y aumentos de crédito.
 

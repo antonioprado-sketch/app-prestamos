@@ -242,12 +242,12 @@ Públicas:
 Cliente:
 | Ruta | Página |
 |---|---|
-| `/app/cliente` | Home (dashboard con tour, consentimiento de ubicación, push) |
+| `/app/cliente` | Home (`ClientHome`): saldo pendiente, próximo pago, progreso % y anillo de score; sin préstamo activo muestra CTA a `/calculadora` |
 | `/onboarding` | Datos personales + aval + dirección |
 | `/documentos` | Fotos de documentos con cámara (`CameraCapture`, `getUserMedia`) |
 | `/video` | Video de identidad (MediaPipe autocontenido) |
-| `/pagare` | Firma de pagaré |
-| `/calculadora` | Solicitar préstamo / aumento |
+| `/pagare` | Firma de pagaré (PDF con `signedAt = openingDate` si es migrado) |
+| `/calculadora` | Solicitar préstamo / aumento; historial de pagos visible como `schedule` con `paidAmount`/`status` |
 
 Cobrador:
 | Ruta | Página |
