@@ -290,23 +290,27 @@ export function AdminLoansPage() {
           Revisa, aprueba, rechaza o pide corrección
         </p>
 
-        <div className="mb-4 flex flex-col gap-1">
-          <label htmlFor="status-filter" className="text-sm font-medium text-secondary">
-            Estado
-          </label>
+        <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
+          {STATUS_FILTERS.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => { setStatusFilter(s.value); setSelectedId(null); }}
+              className={`px-4 py-2 rounded-full font-label-md text-label-md border whitespace-nowrap transition-colors ${statusFilter===s.value ? 'bg-primary text-white border-primary' : 'bg-white text-on-surface-variant border-outline-variant hover:bg-surface-container-low'}`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <div className="mb-4 flex flex-col gap-1 sm:hidden">
           <select
             id="status-filter"
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setSelectedId(null);
-            }}
+            onChange={(e) => { setStatusFilter(e.target.value); setSelectedId(null); }}
             className="min-h-11 rounded-xl border border-gray-300 px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             {STATUS_FILTERS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
+              <option key={s.value} value={s.value}>{s.label}</option>
             ))}
           </select>
         </div>
@@ -321,8 +325,10 @@ export function AdminLoansPage() {
           <p className="py-8 text-center text-sm text-secondary">No hay solicitudes en este estado.</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {loans.map((loan) => (
-              <div key={loan.id} className="rounded-xl border border-gray-200">
+            {loans.map((loan) => {
+              const borderColor = loan.status === 'SUBMITTED' ? 'border-l-warning' : loan.status === 'APPROVED' ? 'border-l-success' : loan.status === 'ACTIVE' ? 'border-l-primary' : loan.status === 'REJECTED' ? 'border-l-error' : loan.status === 'DRAFT' ? 'border-l-gray-400' : 'border-l-outline-variant';
+              return (
+              <div key={loan.id} className={`rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm overflow-hidden border-l-4 ${borderColor}`}>
                 <button
                   type="button"
                   onClick={() => selectLoan(loan.id)}
@@ -348,7 +354,7 @@ export function AdminLoansPage() {
                 </button>
 
                 {selected?.id === loan.id && (
-                  <div className="flex flex-col gap-3 border-t border-gray-200 p-3">
+                  <div className="flex flex-col gap-3 border-t border-outline-variant bg-surface-container-low/30 p-3">
                     <div className="grid grid-cols-2 gap-2 text-sm text-secondary">
                       <span>Teléfono</span>
                       <span className="text-right font-mono">{loan.customerPhone}</span>
@@ -541,7 +547,8 @@ export function AdminLoansPage() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

@@ -287,33 +287,38 @@ export function AdminCustomersPage() {
           <p className="py-8 text-center text-sm text-secondary">No hay clientes registrados.</p>
         ) : (
           <div className="flex flex-col gap-3">
-            {customers.map((c) => (
-              <div key={c.phone} className="rounded-xl border border-gray-200">
+            {customers.map((c) => {
+              const borderColor = c.scoreLevel === 'GREEN' ? 'border-l-success' : c.scoreLevel === 'YELLOW' ? 'border-l-warning' : c.scoreLevel === 'ORANGE' ? 'border-l-orange-400' : 'border-l-error';
+              return (
+              <div key={c.phone} className={`rounded-xl border border-outline-variant bg-surface-container-lowest shadow-sm overflow-hidden border-l-4 ${borderColor}`}>
                 <button
                   type="button"
                   onClick={() => selectCustomer(c.phone)}
-                  className="flex w-full items-center justify-between gap-2 p-3 text-left"
+                  className="flex w-full items-center justify-between gap-2 p-md text-left hover:bg-surface-container-low/50 transition-colors"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className={`inline-block h-2.5 w-2.5 rounded-full ${SCORE_DOT[c.scoreLevel]}`} />
-                    <div>
-                      <p className="font-semibold text-secondary">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">{(c.nombres?.[0] ?? c.phone[0]).toUpperCase()}</div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-on-surface truncate">
                         {c.nombres || c.apellidos ? `${c.nombres ?? ''} ${c.apellidos ?? ''}`.trim() : c.phone}
                       </p>
-                      <p className="text-xs text-secondary">
-                        {c.phone} · {c.isNewCustomer ? 'Cliente nuevo' : 'Cliente regular'}
+                      <p className="text-xs text-on-surface-variant truncate flex items-center gap-1">
+                        {c.phone} · <span className={`px-1.5 py-0.5 rounded-full text-[11px] font-bold ${c.isNewCustomer ? 'bg-success/10 text-success' : 'bg-surface-container-low text-on-surface-variant'}`}>{c.isNewCustomer ? 'Nuevo' : 'Regular'}</span>
                         {c.latestLoanStatus ? ` · ${c.latestLoanStatus}` : ''}
-                        {c.isManualScoreOverride ? ' · score manual' : ''}
+                        {c.isManualScoreOverride ? ' · manual' : ''}
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm text-primary">
-                    {selectedPhone === c.phone ? 'Ocultar' : 'Ver'}
+                  <span className="flex items-center gap-2 shrink-0">
+                    <span className={`inline-block w-2 h-2 rounded-full ${SCORE_DOT[c.scoreLevel]}`} />
+                    <span className="text-sm text-primary font-semibold">
+                    {selectedPhone === c.phone ? 'Ocultar' : 'Ver →'}
+                    </span>
                   </span>
                 </button>
 
                 {selectedPhone === c.phone && (
-                  <div className="flex flex-col gap-3 border-t border-gray-200 p-3">
+                  <div className="flex flex-col gap-3 border-t border-outline-variant bg-surface-container-low/30 p-3">
                     {detailLoading || !detail ? (
                       <div className="flex justify-center py-4">
                         <Spinner />
@@ -518,7 +523,8 @@ export function AdminCustomersPage() {
                   </div>
                 )}
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </Card>

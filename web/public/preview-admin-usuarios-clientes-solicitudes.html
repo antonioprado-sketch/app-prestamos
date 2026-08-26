@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Mita — Admin Usuarios/Clientes/Solicitudes — Antes/Después</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui;background:#F8F9FF;color:#0b1c30;padding:24px}
+h1{font-size:20px;margin:0;color:#031636}.badge{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:700}
+.badge-red{background:#fee2e2;color:#dc2626}.badge-green{background:#dcfce7;color:#15803d}
+.card{background:#fff;border-radius:16px;box-shadow:0 4px 20px rgba(26,43,76,.05);border:1px solid #e5e7eb;padding:16px;margin-top:12px}
+.header-navy{background:#031636;color:#fff;border-radius:12px;padding:16px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.pill{padding:6px 10px;border-radius:999px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:6px}
+.pill-client{background:#00A2FD;color:#fff}.pill-collector{background:#F5A623;color:#fff}.pill-admin{background:#031636;color:#fff}
+.row{padding:12px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center}
+.row:last-child{border:none}
+.left-border{border-left:4px solid transparent}
+.left-green{border-left-color:#1A9E63}.left-yellow{border-left-color:#F5A623}.left-orange{border-left-color:#F2802A}.left-red{border-left-color:#BA1A1A}
+.left-submitted{border-left-color:#F5A623}.left-approved{border-left-color:#1A9E63}
+.tabs{display:flex;gap:8px;overflow-x:auto;padding-bottom:8px}
+.tab{padding:8px 14px;border-radius:999px;border:1px solid #cbd5e1;font-size:12px;white-space:nowrap}
+.tab-on{background:#031636;color:#fff;border-color:#031636}
+.dot{width:10px;height:10px;border-radius:999px;display:inline-block}
+</style>
+</head>
+<body>
+<h1>Mita — Antes / Después — Usuarios · Clientes · Solicitudes</h1>
+<p style="color:#64748b;font-size:13px;margin:6px 0 18px">Regla general: Análisis → Crítica → Recomendación → Visual → Espero confirmación. Todo conserva marca #031636/#00A2FD.</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+  <!-- USUARIOS ANTES -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge badge-red">ANTES — Usuarios</span><span style="font-size:12px;color:#64748b">Plano, filtros select sin iconos</span></div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;background:#fff">
+      <div style="display:flex;gap:8px;margin-bottom:12px"><select style="flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-size:12px"><option>Filtrar por rol</option></select><select style="flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-size:12px"><option>Estado</option></select></div>
+      <div class="row"><span>5512345678 · CLIENT</span><span style="font-size:11px;color:#64748b">reset | activar | rol</span></div>
+      <div class="row"><span>5533334444 · COLLECTOR</span><span style="font-size:11px;color:#64748b">reset | desactivar</span></div>
+      <p style="font-size:11px;color:#94a3b8;margin-top:8px">Texto plano, sin avatar, sin pills de rol, acciones grises iguales.</p>
+    </div>
+  </div>
+  <!-- USUARIOS DESPUÉS -->
+  <div class="card" style="border:2px solid #031636">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge badge-green">DESPUÉS — Usuarios</span><span style="font-size:12px;color:#64748b">Bento con rol pills + avatar</span></div>
+    <div class="header-navy" style="padding:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:700">Usuarios</div><div style="font-size:11px;opacity:.7">12 total · 8 activos</div></div><div style="width:36px;height:36px;border-radius:12px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center">👥</div></div>
+    <div style="display:flex;gap:8px;margin:12px 0"><span class="pill pill-client">● CLIENT 8</span><span class="pill pill-collector">● COLLECTOR 3</span><span class="pill pill-admin">● ADMIN 1</span></div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
+      <div class="row" style="background:#fff"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:999px;background:#00A2FD;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">5</div><div><div style="font-size:13px;font-weight:600">5512345678</div><div style="font-size:11px;color:#64748b">CLIENT · Activo</div></div></div><span class="pill pill-client" style="font-size:11px">CLIENT</span></div>
+      <div class="row" style="background:#fff"><div style="display:flex;align-items:center;gap:10px"><div style="width:32px;height:32px;border-radius:999px;background:#F5A623;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">C</div><div><div style="font-size:13px;font-weight:600">Cobrador Prueba</div><div style="font-size:11px;color:#64748b">COLLECTOR · 5533334444</div></div></div><span class="pill pill-collector" style="font-size:11px">COLLECTOR</span></div>
+    </div>
+    <p style="font-size:11px;color:#15803d;margin-top:8px">✓ Avatar inicial + pill de rol con color, filtros como pills con iconos, no selects.</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+  <!-- CLIENTES ANTES -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge badge-red">ANTES — Clientes</span><span style="font-size:12px;color:#64748b">Lista gris plana</span></div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px">
+      <div class="row"><span><span class="dot" style="background:#1A9E63"></span> 5511112222 · Cliente nuevo</span><span style="font-size:12px">Ver</span></div>
+      <div class="row"><span><span class="dot" style="background:#F5A623"></span> 5500112244 · Regular</span><span style="font-size:12px">Ver</span></div>
+      <p style="font-size:11px;color:#94a3b8;margin-top:8px">Detalle expandido: 2 cols grises sin acento, score dots 10px poco legibles.</p>
+    </div>
+  </div>
+  <!-- CLIENTES DESPUÉS -->
+  <div class="card" style="border:2px solid #031636">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge badge-green">DESPUÉS — Clientes</span><span style="font-size:12px;color:#64748b">Left-border score + grid</span></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div class="card left-border left-green" style="margin:0;padding:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:13px">Roberto Gómez · 5511112222</div><div style="font-size:11px;color:#64748b">Nuevo · DRAFT</div></div><span style="background:#1A9E63;color:#fff;padding:4px 8px;border-radius:999px;font-size:11px">Verde</span></div>
+      <div class="card left-border left-yellow" style="margin:0;padding:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font-weight:600;font-size:13px">5512345678</div><div style="font-size:11px;color:#64748b">Regular · ACTIVE</div></div><span style="background:#F5A623;color:#fff;padding:4px 8px;border-radius:999px;font-size:11px">Amarillo</span></div>
+    </div>
+    <div style="margin-top:12px;background:#EFF4FF;border:1px solid #DCE9FF;border-radius:12px;padding:12px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><div style="font-size:11px;color:#64748b">Aval</div><div style="font-size:13px;font-weight:600">Juan Pérez</div></div>
+      <div><div style="font-size:11px;color:#64748b">Préstamos</div><div style="font-size:13px;font-weight:600">2 · ppni-1234 ACTIVE</div></div>
+    </div>
+    <p style="font-size:11px;color:#15803d;margin-top:8px">✓ Left-border 4px por score, grid 2 cols para detalle, DocumentList en grid.</p>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:24px">
+  <!-- SOLICITUDES ANTES -->
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge badge-red">ANTES — Solicitudes</span><span style="font-size:12px;color:#64748b">Lista plana, 3 botones iguales</span></div>
+    <div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px">
+      <select style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:8px;font-size:12px;margin-bottom:10px"><option>Enviadas (pendientes)</option></select>
+      <div style="border:1px solid #e5e7eb;border-radius:12px;padding:12px;display:flex;justify-content:space-between"><div><div style="font-size:13px;font-weight:600">ppni-1234 · Juan</div><div style="font-size:11px;color:#64748b">$7,000 · SUBMITTED</div></div><span style="font-size:12px;color:#00A2FD">Ver</span></div>
+      <div style="display:flex;gap:8px;margin-top:10px"><button style="flex:1;padding:8px;border-radius:8px;background:#031636;color:#fff;font-size:12px">Aprobar</button><button style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:12px">Pedir corrección</button><button style="flex:1;padding:8px;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:12px">Rechazar</button></div>
+    </div>
+  </div>
+  <!-- SOLICITUDES DESPUÉS -->
+  <div class="card" style="border:2px solid #031636">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><span class="badge badge-green">DESPUÉS — Solicitudes</span><span style="font-size:12px;color:#64748b">Tabs + border-l-4</span></div>
+    <div style="display:flex;gap:6px;overflow-x:auto;margin-bottom:10px"><span class="tab tab-on">Enviadas 4</span><span class="tab">Aprobadas 1</span><span class="tab">Activas 1</span></div>
+    <div style="border-left:4px solid #F5A623;background:#fff;border:1px solid #e5e7eb;border-left-width:4px;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center">
+      <div><div style="font-size:14px;font-weight:700;color:#031636">ppni-1234 · Juan Pérez</div><div style="font-size:11px;color:#64748b">$21,000 · <span style="background:#FEF3C7;color:#92400e;padding:2px 6px;border-radius:999px;font-size:11px">SUBMITTED</span> <span style="display:inline-block;width:12px;height:12px;border-radius:999px;background:#F5A623;vertical-align:middle"></span></div></div>
+      <span style="color:#00A2FD;font-size:12px;font-weight:600">Ver →</span>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px"><button style="flex:1;padding:8px;border-radius:8px;background:#1A9E63;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;gap:4px">✓ Aprobar</button><button style="flex:1;padding:8px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;font-size:12px">✎ Corrección</button><button style="flex:1;padding:8px;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:12px">✕ Rechazar</button></div>
+    <p style="font-size:11px;color:#15803d;margin-top:8px">✓ Tabs con contadores, border-l-4 por estado, folio data-lg, score dot 12px, acciones con iconos y color semántico.</p>
+  </div>
+</div>
+
+<p style="text-align:center;color:#64748b;font-size:12px;margin-top:18px">Mita — Todo conserva marca #031636/#00A2FD. Abre <code>http://192.168.68.51/preview-admin-usuarios-clientes-solicitudes.html</code> para verlo a pantalla completa. Espero tu confirmación.</p>
+</body>
+</html>
