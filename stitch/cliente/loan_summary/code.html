@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LendWise Calculator Results</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "surface-container-highest": "#d3e4fe",
+                      "primary-fixed": "#d8e2ff",
+                      "tertiary": "#141819",
+                      "on-primary-container": "#8293ba",
+                      "surface-container-lowest": "#ffffff",
+                      "secondary": "#00629d",
+                      "surface-container": "#e5eeff",
+                      "tertiary-fixed": "#e0e3e5",
+                      "on-surface": "#0b1c30",
+                      "surface": "#f8f9ff",
+                      "error": "#ba1a1a",
+                      "surface-variant": "#d3e4fe",
+                      "secondary-fixed": "#cfe5ff",
+                      "tertiary-fixed-dim": "#c4c7c9",
+                      "primary-fixed-dim": "#b6c6f0",
+                      "on-primary-fixed-variant": "#364669",
+                      "outline": "#75777f",
+                      "surface-tint": "#4e5e82",
+                      "on-tertiary-container": "#909395",
+                      "inverse-surface": "#213145",
+                      "on-tertiary-fixed": "#191c1e",
+                      "primary-container": "#1a2b4c",
+                      "on-secondary-fixed": "#001d33",
+                      "inverse-on-surface": "#eaf1ff",
+                      "on-secondary-fixed-variant": "#004a77",
+                      "on-secondary-container": "#003558",
+                      "tertiary-container": "#292c2e",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed": "#071b3b",
+                      "on-primary": "#ffffff",
+                      "on-background": "#0b1c30",
+                      "on-tertiary": "#ffffff",
+                      "inverse-primary": "#b6c6f0",
+                      "on-error-container": "#93000a",
+                      "surface-container-high": "#dce9ff",
+                      "background": "#f8f9ff",
+                      "on-tertiary-fixed-variant": "#444749",
+                      "primary": "#031636",
+                      "on-surface-variant": "#44474e",
+                      "outline-variant": "#c5c6cf",
+                      "on-secondary": "#ffffff",
+                      "surface-dim": "#cbdbf5",
+                      "secondary-container": "#00a2fd",
+                      "surface-bright": "#f8f9ff",
+                      "on-error": "#ffffff",
+                      "surface-container-low": "#eff4ff",
+                      "secondary-fixed-dim": "#98cbff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "xs": "8px",
+                      "gutter": "16px",
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px",
+                      "2xl": "48px",
+                      "3xl": "64px",
+                      "lg": "24px",
+                      "md": "16px",
+                      "base": "4px",
+                      "xl": "32px",
+                      "sm": "12px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter"],
+                      "headline-md": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "label-md": ["Inter"],
+                      "data-lg": ["Inter"],
+                      "body-md": ["Inter"],
+                      "body-sm": ["Inter"],
+                      "display-lg": ["Inter"],
+                      "headline-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "headline-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "label-md": ["14px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "data-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}]
+              }
+            }
+          }
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background antialiased min-h-screen flex flex-col pt-16 pb-20 md:pl-72 md:pb-0">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-on-primary-container text-primary dark:text-primary-fixed font-headline-md text-headline-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] flex justify-between items-center px-margin-mobile h-16 w-full z-40 fixed top-0">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed">LendWise</span>
+</div>
+<span class="material-symbols-outlined text-primary" data-icon="notifications">notifications</span>
+</header>
+<!-- SideNav (Desktop) -->
+<nav class="hidden md:flex flex-col h-screen fixed left-0 top-0 border-r border-outline-variant w-72 bg-surface-container-low dark:bg-tertiary-container z-50 pt-20">
+<div class="px-6 pb-6">
+<span class="font-headline-lg text-headline-lg font-bold text-primary block mb-2">LendWise</span>
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold">AU</div>
+<div>
+<div class="font-headline-md text-headline-md text-primary">LendWise Admin</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Operations Manager</div>
+</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col">
+<a class="text-on-surface-variant px-6 py-4 hover:bg-surface-container dark:hover:bg-on-primary-container transition-all flex items-center gap-3 font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span> Dashboard
+            </a>
+<a class="text-secondary font-bold border-l-4 border-secondary bg-surface-container-highest dark:bg-on-primary-fixed-variant px-6 py-4 flex items-center gap-3 font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="pending_actions">pending_actions</span> Loan Requests
+            </a>
+<a class="text-on-surface-variant px-6 py-4 hover:bg-surface-container dark:hover:bg-on-primary-container transition-all flex items-center gap-3 font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span> Clients
+            </a>
+</div>
+</nav>
+<!-- Main Canvas -->
+<main class="flex-1 p-margin-mobile md:p-margin-desktop max-w-4xl mx-auto w-full">
+<div class="mb-lg">
+<h1 class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-2">Loan Summary</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Review your calculated loan details before applying.</p>
+</div>
+<!-- Summary Card -->
+<div class="bg-surface-container-lowest rounded-xl p-md shadow-[0px_4px_20px_rgba(26,43,76,0.05)] mb-lg border-l-2 border-secondary-container">
+<div class="grid grid-cols-2 gap-y-lg gap-x-md">
+<div class="col-span-2 md:col-span-1">
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Requested Amount</p>
+<p class="font-data-lg text-data-lg text-primary">$5,000.00</p>
+</div>
+<div class="col-span-2 md:col-span-1">
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Total to Pay</p>
+<p class="font-data-lg text-data-lg text-primary">$5,750.00</p>
+</div>
+<div class="w-full h-px bg-outline-variant col-span-2 my-2"></div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Weekly Payment</p>
+<p class="font-headline-md text-headline-md text-on-surface">$143.75</p>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Duration</p>
+<p class="font-headline-md text-headline-md text-on-surface">40 Weeks</p>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Start Date</p>
+<p class="font-body-md text-body-md text-on-surface">Nov 15, 2023</p>
+</div>
+<div>
+<p class="font-label-md text-label-md text-on-surface-variant mb-1">Next Payment</p>
+<p class="font-body-md text-body-md text-on-surface">Nov 22, 2023</p>
+</div>
+</div>
+</div>
+<!-- Penalty Guide -->
+<div class="bg-surface-container-low rounded-xl p-md mb-lg">
+<h2 class="font-headline-md text-headline-md text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+                What happens if you miss a payment?
+            </h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-6">A late fee is applied cumulatively for each consecutive missed payment.</p>
+<div class="flex flex-col md:flex-row items-center gap-4 justify-between w-full">
+<div class="flex flex-col items-center p-4 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+<span class="font-label-md text-label-md text-error mb-2">Overdue</span>
+<span class="material-symbols-outlined text-on-surface-variant mb-2" data-icon="event_busy">event_busy</span>
+<span class="font-body-sm text-body-sm text-center">Missed Payment</span>
+</div>
+<span class="material-symbols-outlined text-outline md:rotate-0 rotate-90" data-icon="arrow_forward">arrow_forward</span>
+<div class="flex flex-col items-center p-4 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+<span class="font-label-md text-label-md text-on-surface mb-2">Week 1</span>
+<span class="font-headline-md text-headline-md text-error mb-1">+$50</span>
+<span class="font-body-sm text-body-sm text-center">Late Fee</span>
+</div>
+<span class="material-symbols-outlined text-outline md:rotate-0 rotate-90" data-icon="arrow_forward">arrow_forward</span>
+<div class="flex flex-col items-center p-4 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+<span class="font-label-md text-label-md text-on-surface mb-2">Week 2</span>
+<span class="font-headline-md text-headline-md text-error mb-1">+$50</span>
+<span class="font-body-sm text-body-sm text-center">Additional Fee</span>
+</div>
+<span class="material-symbols-outlined text-outline md:rotate-0 rotate-90" data-icon="arrow_forward">arrow_forward</span>
+<div class="flex flex-col items-center p-4 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+<span class="font-label-md text-label-md text-on-surface mb-2">Week 3</span>
+<span class="font-headline-md text-headline-md text-error mb-1">+$50</span>
+<span class="font-body-sm text-body-sm text-center">Additional Fee</span>
+</div>
+</div>
+</div>
+<!-- CTA -->
+<div class="mt-xl flex justify-center">
+<button class="w-full md:w-auto bg-primary-container text-on-primary hover:opacity-90 transition-opacity font-headline-md text-headline-md py-4 px-12 rounded-lg shadow-[0px_4px_20px_rgba(26,43,76,0.15)] active:scale-95 duration-150">
+                I Want It (LO QUIERO)
+            </button>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center px-2 py-3 bg-surface dark:bg-on-primary-container shadow-[0px_-4px_20px_rgba(26,43,76,0.05)] rounded-t-xl md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest transition-colors w-16 h-14 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-2xl px-4 py-1 font-label-md text-label-md hover:bg-surface-container-highest transition-colors w-20 h-14" href="#">
+<span class="material-symbols-outlined" data-icon="account_balance_wallet" data-weight="fill" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+<span class="mt-1">Loans</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest transition-colors w-16 h-14 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="payments">payments</span>
+<span class="mt-1">Payments</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant font-label-md text-label-md hover:bg-surface-container-highest transition-colors w-16 h-14 rounded-xl" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

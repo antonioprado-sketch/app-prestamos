@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -14,6 +15,7 @@ import {
 import type { Request } from 'express';
 import { AdminUsersService } from './admin-users.service';
 import { ChangeUserRoleDto } from './dto/change-user-role.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -29,20 +31,23 @@ export class AdminUsersController {
   async findAll(
     @Query('role') role?: string,
     @Query('status') status?: string,
+    @Query('search') search?: string,
   ) {
-    return this.adminUsers.findAll({ role, status });
+    return this.adminUsers.findAll({ role, status, search });
   }
 
   @Post(':phone/reset-password')
   @HttpCode(HttpStatus.OK)
   async resetPassword(
     @Param('phone') phone: string,
+    @Body() dto: ResetPasswordDto,
     @CurrentUser() user: { phone: string },
     @Req() req: Request,
   ) {
     return this.adminUsers.resetPassword(
       user.phone,
       phone,
+      dto.newPassword,
       req.ip ?? '',
       req.headers['user-agent'] ?? '',
     );
@@ -62,5 +67,15 @@ export class AdminUsersController {
       req.ip ?? '',
       req.headers['user-agent'] ?? '',
     );
+  }
+
+  @Delete(':phone')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteUser(
+    @Param('phone') phone: string,
+    @CurrentUser() user: { phone: string },
+    @Req() req: Request,
+  ) {
+    await this.adminUsers.deleteUser(user.phone, phone, req.ip ?? '', req.headers['user-agent'] ?? '');
   }
 }

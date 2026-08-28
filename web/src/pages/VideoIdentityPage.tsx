@@ -50,22 +50,32 @@ export function VideoIdentityPage() {
   const detectionLoopRef = useRef<number | null>(null);
   const faceDetectionCountRef = useRef(0);
   const recordingStartRef = useRef(0);
+  const modelReadyAtStartRef = useRef(false);
 
   const [modelReady, setModelReady] = useState(false);
+  const [modelLoading, setModelLoading] = useState(true);
+  const [isSecure, setIsSecure] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
   const [recording, setRecording] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
 
   useEffect(() => {
+    setIsSecure(window.isSecureContext);
     let cancelled = false;
 
-    (async () => {
+    const load = async (retry = false) => {
       try {
+        if (!window.isSecureContext && !retry) {
+          setModelLoading(false);
+          return;
+        }
+        setModelLoading(true);
         const visionModule = await import('@mediapipe/tasks-vision');
         const fileset = await visionModule.FilesetResolver.forVisionTasks(WASM_BASE_URL);
         const detector = await visionModule.FaceDetector.createFromOptions(fileset, {
@@ -75,10 +85,21 @@ export function VideoIdentityPage() {
         if (cancelled) return;
         detectorRef.current = detector as unknown as FaceDetectorInstance;
         setModelReady(true);
-      } catch {
-        if (!cancelled) setError('No se pudo cargar la detección facial. Recarga la página.');
+      } catch (e: unknown) {
+        if (cancelled) return;
+        const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+        console.error('[MediaPipe] load failed', msg, e);
+        if (!retry) {
+          await new Promise((r) => setTimeout(r, 1200));
+          if (!cancelled) await load(true);
+        } else {
+          setError(`No se pudo cargar la detección facial (${msg}). Verifica tu conexión y recarga. Si persiste, prueba en https://192.168.68.71/video`);
+        }
+      } finally {
+        if (!cancelled) setModelLoading(false);
       }
-    })();
+    };
+    load();
 
     return () => {
       cancelled = true;
@@ -87,6 +108,10 @@ export function VideoIdentityPage() {
   }, []);
 
   useEffect(() => {
+    if (!window.isSecureContext) {
+      setError('Estás en HTTP. Abre en https://localhost o https://192.168.68.51 para usar la cámara. En HTTP el navegador la bloquea.');
+      return;
+    }
     let cancelled = false;
 
     (async () => {
@@ -100,10 +125,13 @@ export function VideoIdentityPage() {
           return;
         }
         streamRef.current = stream;
-        if (videoRef.current) videoRef.current.srcObject = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play().catch(() => undefined);
+        }
         setCameraReady(true);
       } catch {
-        if (!cancelled) setError('No se pudo acceder a la cámara. Revisa los permisos del navegador.');
+        if (!cancelled) setError('No se pudo acceder a la cámara. Revisa los permisos del navegador y que estés en HTTPS.');
       }
     })();
 
@@ -133,23 +161,41 @@ export function VideoIdentityPage() {
     detectionLoopRef.current = null;
   };
 
+  // Maneja preview blob URL con revoke
+  useEffect(() => {
+    if (!videoBlob) { setPreviewUrl(null); return; }
+    const url = URL.createObjectURL(videoBlob);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [videoBlob]);
+
   const startRecording = () => {
     const stream = streamRef.current;
     if (!stream) return;
+    if (!isSecure) { setError('Requiere HTTPS para usar la cámara.'); return; }
     setError(null);
     setVideoBlob(null);
     chunksRef.current = [];
     faceDetectionCountRef.current = 0;
+    modelReadyAtStartRef.current = modelReady;
     recordingStartRef.current = Date.now();
     setElapsedSeconds(0);
 
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    const mimeType = (() => {
+      const candidates = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm', 'video/mp4'];
+      for (const t of candidates) {
+        try { if ((window as unknown as { MediaRecorder: { isTypeSupported: (t: string) => boolean } }).MediaRecorder?.isTypeSupported(t)) return t; } catch { /* ignore */ }
+      }
+      return undefined;
+    })();
+    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) chunksRef.current.push(e.data);
     };
     recorder.onstop = () => {
       stopDetectionLoop();
-      const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+      const blobType = mimeType ?? chunksRef.current[0]?.type ?? 'video/webm';
+      const blob = new Blob(chunksRef.current, { type: blobType });
       validateAndSet(blob);
     };
     recorder.start();
@@ -184,12 +230,22 @@ export function VideoIdentityPage() {
       setError('La resolución de tu cámara es muy baja. Intenta con otra cámara.');
       return;
     }
-    if (faceDetectionCountRef.current < MIN_FACE_DETECTIONS) {
-      setError('No detectamos tu rostro con claridad. Grábalo de nuevo mirando a la cámara.');
+    // Si el modelo no estaba listo al iniciar (red lenta, cert no confiado), no bloqueamos por rostro;
+    // el admin revisará visualmente. Si sí estaba listo, exigimos detecciones.
+    if (modelReadyAtStartRef.current && faceDetectionCountRef.current < MIN_FACE_DETECTIONS) {
+      setError('No detectamos tu rostro con claridad. Grábalo de nuevo mirando a la cámara y con buena luz.');
       return;
     }
     setVideoBlob(blob);
   };
+
+  // Re-engancha el stream si el video se montó después de obtenerlo (ej. tras cerrar instrucciones)
+  useEffect(() => {
+    if (!showInstructions && !videoBlob && videoRef.current && streamRef.current && !videoRef.current.srcObject) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch(() => undefined);
+    }
+  }, [showInstructions, videoBlob, cameraReady]);
 
   const retry = () => {
     setVideoBlob(null);
@@ -201,9 +257,14 @@ export function VideoIdentityPage() {
     setUploading(true);
     setError(null);
     try {
+      // El Blob de MediaRecorder puede traer 'video/webm;codecs=vp8,opus' que multer/busboy
+      // mal-parsea (coma) como text/plain. Normalizamos a mime base sin parámetros.
+      const baseType = (videoBlob.type.split(';')[0].trim() || 'video/webm').toLowerCase();
+      const safeBlob = new Blob([videoBlob], { type: baseType });
+      const ext = baseType === 'video/mp4' ? 'mp4' : 'webm';
       const form = new FormData();
       form.append('type', 'VIDEO_IDENTITY');
-      form.append('file', videoBlob, 'video-identidad.webm');
+      form.append('file', safeBlob, `video-identidad.${ext}`);
       await apiFetch('/documents', { method: 'POST', body: form });
       setDone(true);
     } catch (err) {
@@ -247,10 +308,20 @@ export function VideoIdentityPage() {
           </p>
         </div>
 
-        <div className="mb-md">
-          <Alert variant="warning">&ldquo;{DECLARED_PHRASE}&rdquo;</Alert>
-        </div>
+        <p className="mb-md text-center font-body-sm text-[12px] leading-snug text-on-surface-variant">
+          Frase a declarar: &ldquo;{DECLARED_PHRASE}&rdquo;
+        </p>
 
+        {!isSecure && (
+          <div className="mb-md">
+            <Alert variant="warning">Estás en HTTP. El navegador bloquea cámara y micrófono. Abre <b>https://localhost</b> o <b>https://192.168.68.51</b> para grabar el video.</Alert>
+          </div>
+        )}
+        {modelLoading && !modelReady && isSecure && (
+          <div className="mb-md">
+            <Alert variant="warning">Descargando modelo facial (11 MB)… puede tardar unos segundos en 4G.</Alert>
+          </div>
+        )}
         {error && (
           <div className="mb-md">
             <Alert variant="error">{error}</Alert>
@@ -285,26 +356,33 @@ export function VideoIdentityPage() {
 
           {videoBlob ? (
             <video
-              src={URL.createObjectURL(videoBlob)}
+              src={previewUrl ?? undefined}
               controls
+              playsInline
               className="h-full w-full object-cover"
               data-testid="preview"
+              onError={() => setError('No se pudo cargar el video grabado. Prueba grabar de nuevo (usa Chrome/Edge actualizado).')}
             />
           ) : (
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full -scale-x-100 object-cover" />
           )}
 
           {!showInstructions && !videoBlob && (
-            <div className="pointer-events-none absolute inset-0 z-10 flex flex-col items-center justify-end p-md">
-              <div className="w-full rounded-xl border border-white/10 bg-black/60 p-md text-center shadow-lg backdrop-blur-md">
-                <p className="mb-1 font-body-sm text-body-sm text-surface-variant">
-                  Por favor, lee en voz alta:
-                </p>
-                <p className="font-headline-md text-headline-md tracking-wide text-white">
-                  &ldquo;{DECLARED_PHRASE}&rdquo;
-                </p>
+            <>
+              <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center pt-10">
+                <div className="h-52 w-38 rounded-full border-2 border-white/60 shadow-[0_0_0_9999px_rgba(0,0,0,0.18)]" style={{ width: '9.5rem', height: '13rem' }} aria-hidden="true" />
               </div>
-            </div>
+              <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center px-3">
+                <div className="w-full max-w-[92%] rounded-lg border border-white/10 bg-black/55 px-2.5 py-1.5 text-center shadow backdrop-blur-sm">
+                  <p className="font-body-sm text-[12px] font-semibold tracking-wide text-amber-300">
+                    Centra tu rostro y lee en voz alta:
+                  </p>
+                  <p className="mt-0.5 font-body-sm text-[12px] leading-snug tracking-wide text-white">
+                    &ldquo;{DECLARED_PHRASE}&rdquo;
+                  </p>
+                </div>
+              </div>
+            </>
           )}
         </div>
 
@@ -322,8 +400,8 @@ export function VideoIdentityPage() {
               </p>
             )}
             {!recording ? (
-              <Button type="button" disabled={!modelReady} onClick={startRecording}>
-                {modelReady ? 'Iniciar grabación' : 'Cargando detección facial…'}
+              <Button type="button" disabled={!isSecure || !cameraReady} onClick={startRecording}>
+                {!isSecure ? 'Requiere HTTPS' : !cameraReady ? 'Cámara cargando…' : modelReady ? 'Iniciar grabación' : modelLoading ? 'Descargando modelo… (puedes grabar)' : 'Iniciar grabación (sin detección)'}
               </Button>
             ) : (
               <Button

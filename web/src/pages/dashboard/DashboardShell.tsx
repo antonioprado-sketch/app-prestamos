@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../store/auth';
 import { Icon } from '../../components/ui/Icon';
 import { LocationConsentBanner } from '../../components/LocationConsentBanner';
@@ -12,16 +12,22 @@ type DashboardRole = 'CLIENT' | 'COLLECTOR';
 
 const CLIENT_NAV = [
   { icon: 'home', label: 'Inicio', to: '/app/cliente' },
-  { icon: 'account_balance_wallet', label: 'Préstamos', to: '/calculadora' },
-  { icon: 'payments', label: 'Pagos', to: '/calculadora' },
-  { icon: 'notifications', label: 'Notificaciones', to: '/app/cliente' },
-  { icon: 'person', label: 'Perfil', to: '/app/cliente' },
+  { icon: 'payments', label: 'Pagos', to: '/app/cliente/pagos' },
+  { icon: 'notifications', label: 'Notificaciones', to: '/app/cliente/notificaciones' },
+  { icon: 'person', label: 'Perfil', to: '/app/cliente/perfil' },
 ] as const;
 
 export function DashboardShell({ role }: { role: DashboardRole }) {
   const { logout } = useAuth();
+  const location = useLocation();
 
   if (role === 'CLIENT') {
+    const activeIndex = (() => {
+      if (location.pathname.startsWith('/app/cliente/perfil')) return 3;
+      if (location.pathname.startsWith('/app/cliente/notificaciones')) return 2;
+      if (location.pathname.startsWith('/app/cliente/pagos')) return 1;
+      return 0;
+    })();
     return (
       <div className="min-h-screen bg-surface pb-24 text-on-surface">
         <WelcomeTour />
@@ -54,10 +60,10 @@ export function DashboardShell({ role }: { role: DashboardRole }) {
               key={item.label}
               to={item.to}
               className={`flex w-16 flex-col items-center justify-center gap-1 rounded-lg p-2 transition-transform active:scale-90 ${
-                i === 0 ? 'font-bold text-secondary-container' : 'text-on-surface-variant'
+                i === activeIndex ? 'font-bold text-secondary-container' : 'text-on-surface-variant'
               }`}
             >
-              <Icon name={item.icon} filled={i === 0} />
+              <Icon name={item.icon} filled={i === activeIndex} />
               <span className="font-label-md text-[11px] leading-none">{item.label}</span>
             </Link>
           ))}

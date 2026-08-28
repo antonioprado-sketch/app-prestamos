@@ -119,8 +119,10 @@ export function DocumentList({ documents }: { documents: AdminDocument[] }) {
             <video
               controls
               preload="metadata"
+              crossOrigin="anonymous"
               className="mt-1 w-full rounded-lg bg-black"
               src={urls[doc.id]}
+              onError={() => setError('No se pudo reproducir el video. Si es Firefox, prueba en Chrome. El archivo puede ser webm no compatible.')}
             />
           )}
         </div>

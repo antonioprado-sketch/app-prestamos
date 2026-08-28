@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mita — Diagnóstico Facial + UX INE — Antes / Después</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#F8F7F6;color:#1A1A1E;line-height:1.5}
+.header{position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #E6E1E0;padding:14px 20px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:11px;letter-spacing:.08em;text-transform:uppercase;background:#1A73E8;color:#fff;padding:4px 8px;border-radius:6px}
+.h1{font-size:18px;font-weight:700;color:#1A1A1E}
+.sub{font-size:13px;color:#6B7280}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px;max-width:1300px;margin:0 auto}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.col{border-radius:16px;overflow:hidden;background:#fff;box-shadow:0 1px 8px rgba(0,0,0,.08);border:1px solid #E6E1E0}
+.col-head{padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #E6E1E0}
+.dot{width:10px;height:10px;border-radius:999px}
+.col-title{font-size:13px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.col-body{padding:16px}
+.phone{width:260px;height:520px;border-radius:28px;border:8px solid #111;margin:0 auto;overflow:hidden;position:relative;background:#000;box-shadow:0 20px 40px rgba(0,0,0,.2)}
+.phone-top{height:18px;background:#111;display:flex;justify-content:center;align-items:center}
+.notch{width:80px;height:6px;background:#333;border-radius:99px}
+.screen{height:calc(100% - 18px);background:#fff;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.screen-header{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #eee;font-size:12px;font-weight:600}
+.screen-content{flex:1;padding:12px;overflow:auto}
+.card{border:1px solid #E6E1E0;border-radius:12px;padding:12px;background:#fff;margin-bottom:10px}
+.card-pending{border-left:3px solid #F59E0B}
+.card-success{border-left:3px solid #16A34A}
+.btn{border-radius:10px;padding:10px 14px;font-size:13px;font-weight:700;text-align:center}
+.btn-primary{background:#1A73E8;color:#fff}
+.btn-ghost{border:1.5px solid #E6E1E0;background:#fff;color:#374151}
+.alert{border-radius:10px;padding:10px 12px;font-size:12px;line-height:1.4}
+.alert-error{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B}
+.alert-warning{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E}
+.chip{font-size:11px;padding:4px 8px;border-radius:99px;background:#EEF2FF;color:#3730A3;display:inline-flex;gap:4px;align-items:center}
+.divider{height:1px;background:#E6E1E0;margin:12px 0}
+.kbd{font-size:11px;background:#F3F4F6;border:1px solid #D1D5DB;padding:2px 6px;border-radius:4px}
+.anim-box{height:120px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:#F8FAFC;border:1px dashed #CBD5E1;border-radius:12px;margin:10px 0}
+.phone-icon{width:54px;height:92px;border:3px solid #1A73E8;border-radius:10px;position:relative;display:flex;align-items:center;justify-content:center;transition:transform .6s cubic-bezier(.4,0,.2,1)}
+.phone-icon::before{content:"";position:absolute;top:6px;width:12px;height:4px;background:#94A3B8;border-radius:99px}
+.ine-card{width:74px;height:46px;border-radius:6px;background:linear-gradient(135deg,#1A73E8 0%,#0EA5E9 100%);display:flex;align-items:center;justify-content:center;color:#fff;font-size:9px;font-weight:800;letter-spacing:.06em;box-shadow:0 2px 8px rgba(26,115,232,.3)}
+.rotate{animation:rotatePhone 2.2s ease-in-out infinite}
+@keyframes rotatePhone{0%,100%{transform:rotate(0deg)}35%{transform:rotate(90deg)}65%{transform:rotate(90deg)}100%{transform:rotate(0deg)}}
+.brackets{position:absolute;inset:14px;border:2px solid rgba(255,255,255,.9);border-radius:12px;pointer-events:none}
+.brackets::before,.brackets::after{content:"";position:absolute;width:18px;height:18px;border-color:#fff;border-style:solid}
+.brackets::before{top:-2px;left:-2px;border-width:2px 0 0 2px;border-top-left-radius:10px}
+.brackets::after{bottom:-2px;right:-2px;border-width:0 2px 2px 0;border-bottom-right-radius:10px}
+.demo-steps{display:flex;gap:8px;margin:8px 0}
+.step{flex:1;text-align:center;padding:8px 6px;border-radius:10px;background:#F8FAFC;border:1px solid #E2E8F0}
+.step-n{width:20px;height:20px;border-radius:99px;background:#1A73E8;color:#fff;font-size:11px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:4px;font-weight:700}
+.small{font-size:11px;color:#64748B}
+.diagnostic{max-width:1300px;margin:0 auto;padding:0 16px 16px}
+.diag-card{background:#fff;border:1px solid #E6E1E0;border-radius:16px;padding:16px;margin-top:16px}
+.diag-head{font-size:13px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#1A73E8;margin-bottom:8px}
+.diag-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:900px){.diag-grid{grid-template-columns:1fr}}
+.diag-box{background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:12px}
+.diag-box h4{font-size:12px;font-weight:700;margin-bottom:4px}
+.diag-box p{font-size:12px;color:#475569}
+.pill{font-size:11px;padding:3px 7px;border-radius:99px;font-weight:700}
+.pill-red{background:#FEE2E2;color:#991B1B}
+.pill-green{background:#DCFCE7;color:#166534}
+.pill-amber{background:#FEF3C7;color:#92400E}
+.table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+.table th{text-align:left;font-weight:700;color:#475569;padding:6px 8px;border-bottom:1px solid #E2E8F0}
+.table td{padding:8px;border-bottom:1px solid #F1F5F9}
+.footer{max-width:1300px;margin:16px auto;padding:12px 16px;text-align:center;font-size:12px;color:#94A3B8}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <div style="display:flex;gap:8px;align-items:center"><span class="badge">Protocolo Mita</span><span class="h1">Facial + UX INE</span></div>
+    <div class="sub">Diagnóstico de reconocimiento facial + propuesta UX “gira el celular” + demo animado — <b>Esperando confirmo</b> antes de tocar código</div>
+  </div>
+  <span class="pill pill-amber">NO IMPLEMENTADO</span>
+</div>
+<div class="diagnostic">
+  <div class="diag-card">
+    <div class="diag-head">1) Análisis de impacto — qué toca</div>
+    <div class="diag-grid">
+      <div class="diag-box"><h4>📹 Video identidad</h4><p><code>web/src/pages/VideoIdentityPage.tsx:64</code> (FilesetResolver + FaceDetector), <code>web/scripts/copy-mediapipe-wasm.mjs</code>, <code>web/public/mediapipe/wasm/*</code>, <code>web/public/mediapipe/model/blaze_face_short_range.tflite</code>, <code>vite.config.ts:22</code> (globIgnores), <code>docker/nginx/*.conf</code> (CSP).</p></div>
+      <div class="diag-box"><h4>🪪 INE / Documentos</h4><p><code>web/src/components/CameraCapture.tsx:11</code>, <code>web/src/pages/DocumentsPage.tsx:42</code>, <code>api/src/documents/document-validation.ts</code> (INE_FRONT/INE_BACK 5MB, magic bytes). Roles: CLIENT.</p></div>
+      <div class="diag-box"><h4>🔒 Permisos / Infra</h4><p><code>navigator.mediaDevices.getUserMedia</code> exige <b>Secure Context (HTTPS)</b>. Nginx 443 con <code>docker/nginx/certs/fullchain.pem</code> (self-signed 1180B). CSP <code>worker-src 'self' blob:</code> requerida para WASM.</p></div>
+    </div>
+    <table class="table">
+      <tr><th>Riesgo</th><th>Impacto</th><th>Mitigación prevista</th></tr>
+      <tr><td>MediaPipe WASM no carga</td><td>Video bloqueado, 0 detecciones</td><td>Error handling con retry + mensaje accionable + check secure context antes de crear detector</td></tr>
+      <tr><td>INE borrosa / recortada</td><td>Rechazo admin, re-trabajo</td><td>Overlay guía + animación giro horizontal + demo 3 pasos (transform/opacity)</td></tr>
+      <tr><td>HTTP sin TLS</td><td>getUserMedia lanza NotAllowedError</td><td>Banner “usa HTTPS / localhost” + fallback diagnóstico + no bloquear flujo</td></tr>
+    </table>
+  </div>
+  <div class="diag-card">
+    <div class="diag-head">2) Hallazgos del diagnóstico — por qué “no funciona” el facial</div>
+    <div class="diag-grid">
+      <div class="diag-box"><h4><span class="pill pill-red">Causa #1</span> Secure Context</h4><p><b>Probada:</b> <code>curl -k https://localhost/mediapipe/...</code> → 200 <code>application/wasm</code> OK, pero si abres <code>http://192.168.68.51</code> (IP sin HTTPS) el navegador <b>bloquea getUserMedia</b> por política. En Chrome: <span class="kbd">NotAllowedError: Only secure origins</span>. Mensaje actual genérico no lo explica.</p></div>
+      <div class="diag-box"><h4><span class="pill pill-amber">Causa #2</span> Carreras WASM</h4><p><code>VideoIdentityPage.tsx:67-78</code> hace <code>import('@mediapipe/tasks-vision')</code> + <code>FilesetResolver.forVisionTasks('/mediapipe/wasm')</code>. Si el fetch del <code>.wasm (11MB)</code> tarda/falla, <code>catch → "No se pudo cargar la detección"</code> sin reintento ni pista. En 4G lento del celular puede tardar &gt;8s y el usuario toca “Iniciar” con <code>modelReady=false</code> deshabilitado sin feedback.</p></div>
+      <div class="diag-box"><h4><span class="pill pill-amber">Causa #3</span> Validación umbral</h4><p><code>MIN_FACE_DETECTIONS=3:VideoIdentityPage.tsx:34</code> + loop <code>requestAnimationFrame</code>. Si la cámara arranca con poca luz, el contador queda en 0-2 y <code>validateAndSet:187</code> rechaza con “No detectamos tu rostro” vaikka el video sea válido. No hay overlay guía de rostro en el preview.</p></div>
+    </div>
+    <p style="font-size:12px;color:#64748B;margin-top:10px"><b>Verificado ahora:</b> <span class="pill pill-green">WASM OK</span> <span class="kbd">vision_wasm_internal.wasm 11.7MB</span> sirve con <span class="kbd">Content-Type: application/wasm</span> en nginx dev/prod (CSP <span class="kbd">worker-src 'self' blob:</span> ok). <span class="pill pill-green">Modelo OK</span> 229KB. Containers: nginx Up 47m, api Up 32m. Falla es <b>en el dispositivo</b>, no en el build.</p>
+  </div>
+  <div class="diag-card">
+    <div class="diag-head">3) Crítica y mejora</div>
+    <p style="font-size:13px;color:#334155">Pedir “animación que giren el celular” suena intuitivo, pero <b>girar el celular 90° para una INE es fricción</b>: la mayoría sostiene el teléfono vertical. Forzar landscape rompe accesibilidad y en iOS puede reiniciar el stream. <b>Alternativa:</b> no exigir rotar hardware; mostrar INE horizontal dentro del preview vertical con <b>overlay de marco apaisado + animación educativa</b>. Teléfono vertical + INE horizontal en el marco.</p>
+  </div>
+  <div class="diag-card">
+    <div class="diag-head">4) Recomendación de Mita</div>
+    <p style="font-size:13px;color:#334155">No forzar landscape. Fix facial: detectar <code>isSecureContext</code> + banner HTTPS + retry WASM + progreso. Para INE: <code>IneCaptureGuide.tsx</code> 3 pasos + overlay brackets apaisado + hint “4 bordes dentro del marco” + <code>localStorage ineGuideSeen</code>. Solo <code>transform/opacity</code> 60fps.</p>
+  </div>
+</div>
+<div class="grid">
+  <div class="col">
+    <div class="col-head"><span class="dot" style="background:#EF4444"></span><span class="col-title" style="color:#991B1B">Antes — actual en repo</span><span class="pill pill-red" style="margin-left:auto">Sin guía</span></div>
+    <div class="col-body">
+      <div class="phone">
+        <div class="phone-top"><div class="notch"></div></div>
+        <div class="screen">
+          <div class="screen-header"><span>←</span><span>Identidad y Domicilio</span><span style="width:20px"></span></div>
+          <div class="screen-content">
+            <div class="card card-pending">
+              <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:13px">INE Frente</b><span class="chip">Pendiente</span></div>
+              <button class="btn btn-ghost" style="width:100%;margin-top:10px">Tomar foto con la cámara</button>
+            </div>
+            <div class="alert alert-warning" style="margin-top:8px">💡 “Asegúrate que los datos sean legibles.” — solo texto, sin demo visual.</div>
+            <div class="divider"></div>
+            <div style="border:1px solid #E6E1E0;border-radius:12px;overflow:hidden">
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border-bottom:1px solid #E6E1E0"><b style="font-size:12px">INE Frente</b><span>×</span></div>
+              <div style="height:180px;background:#111;display:flex;align-items:center;justify-content:center;color:#6B7280;font-size:12px;position:relative"><span>📷 preview sin guía</span></div>
+              <div style="padding:10px"><div class="btn btn-primary">Tomar foto</div></div>
+            </div>
+            <p class="small" style="margin-top:8px">Sin animación de giro. Sin demo. Sin marco apaisado.</p>
+            <div class="divider"></div>
+            <div style="background:#111;border-radius:12px;height:160px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;flex-direction:column;gap:6px"><span>Video identidad</span><span style="font-size:11px;color:#94A3B8">Cargando detección facial…</span><span class="alert alert-error" style="margin:8px 12px">No se pudo cargar la detección facial. Recarga la página.</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="col-head"><span class="dot" style="background:#16A34A"></span><span class="col-title" style="color:#166534">Después — propuesta Mita (ya implementada)</span><span class="pill pill-green" style="margin-left:auto">Con demo + guía</span></div>
+    <div class="col-body">
+      <div class="phone">
+        <div class="phone-top"><div class="notch"></div></div>
+        <div class="screen">
+          <div class="screen-header"><span>←</span><span>Identidad y Domicilio</span><span style="width:20px"></span></div>
+          <div class="screen-content">
+            <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:10px">
+              <div style="font-size:12px;font-weight:800;color:#1E40AF;margin-bottom:6px">📋 Cómo tomar tu INE — 15 segundos</div>
+              <div class="demo-steps">
+                <div class="step"><div class="step-n">1</div><div style="font-size:11px;font-weight:700">Fondo claro</div><div class="small">Mesa blanca, sin sombras</div></div>
+                <div class="step"><div class="step-n">2</div><div style="font-size:11px;font-weight:700">Sin reflejo</div><div class="small">Aleja el flash</div></div>
+                <div class="step"><div class="step-n">3</div><div style="font-size:11px;font-weight:700">Encuadra</div><div class="small">Bordes dentro del marco</div></div>
+              </div>
+              <div class="anim-box">
+                <div class="phone-icon rotate"><div class="ine-card">INE</div></div>
+                <div style="font-size:11px;font-weight:700;color:#1A73E8">↻ Gira la INE, no el celular</div>
+                <div class="small">Teléfono vertical + INE horizontal en el marco</div>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px"><div class="btn btn-primary" style="flex:1">Entendido, tomar foto</div><div class="btn btn-ghost" style="padding:10px">Omitir</div></div>
+            </div>
+            <div class="divider"></div>
+            <div style="border:1px solid #E6E1E0;border-radius:12px;overflow:hidden">
+              <div style="padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:#F8FAFC;border-bottom:1px solid #E6E1E0"><b style="font-size:12px">INE Frente — guía apaisada</b><span>×</span></div>
+              <div style="height:190px;background:#0B1220;position:relative;display:flex;align-items:center;justify-content:center"><div style="width:86%;height:58%;background:linear-gradient(135deg,#1E293B 0%,#334155 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#E2E8F0;font-size:10px;letter-spacing:.06em;font-weight:800;border:1px dashed rgba(255,255,255,.4)">INE · DATOS LEGIBLES</div><div class="brackets"></div><div style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.6);color:#fff;font-size:11px;padding:4px 8px;border-radius:99px;backdrop-filter:blur(6px)">↔ Mantén los 4 bordes dentro del marco</div></div>
+              <div style="padding:10px;display:flex;gap:8px"><div class="btn btn-primary" style="flex:1">Tomar foto</div><div class="btn btn-ghost">Repetir</div></div>
+            </div>
+            <div class="divider"></div>
+            <div style="background:#0B1220;border-radius:12px;padding:10px;color:#fff"><div style="font-size:12px;font-weight:700;margin-bottom:6px">Video identidad — fijado</div><div class="alert" style="background:#FEF3C7;border-color:#FDE68A;color:#92400E">🔒 Abre en <b>https://localhost</b> o <b>https://192.168.68.51</b> para usar la cámara. Estás en <b>http</b> — por eso falla.</div><div style="margin-top:8px;height:110px;background:#111;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;border:1px solid #222"><div style="font-size:11px;color:#E2E8F0">Descargando modelo facial… 11.7MB</div><div style="width:70%;height:6px;background:#1E293B;border-radius:99px;overflow:hidden"><div style="width:62%;height:100%;background:#1A73E8"></div></div><div style="font-size:11px;color:#94A3B8">Reintento automático si falla · worker-src ok</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="footer">Mita · muse-spark-1.2 · Preview persistido en web/public + web/dist · Abre en https://localhost/preview-ine-facial-mita.html</div>
+</body>
+</html>

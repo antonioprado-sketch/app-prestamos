@@ -6,6 +6,7 @@ import { Alert } from '../components/ui/Alert';
 import { Spinner } from '../components/ui/Spinner';
 import { Icon } from '../components/ui/Icon';
 import { CameraCapture } from '../components/CameraCapture';
+import { IneCaptureGuide, shouldShowIneGuide } from '../components/IneCaptureGuide';
 import { RequireGps } from '../components/RequireGps';
 
 type DocumentType = 'INE_FRONT' | 'INE_BACK' | 'ADDRESS_PROOF';
@@ -44,6 +45,8 @@ export function DocumentsPage() {
   const [loadingList, setLoadingList] = useState(true);
   const [uploadingType, setUploadingType] = useState<DocumentType | null>(null);
   const [captureType, setCaptureType] = useState<DocumentType | null>(null);
+  const [pendingCaptureType, setPendingCaptureType] = useState<DocumentType | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
@@ -156,34 +159,48 @@ export function DocumentsPage() {
                         >
                           <Icon name="visibility" size={20} />
                         </button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          loading={isUploading}
-                          onClick={() => setCaptureType(slot.type)}
-                        >
-                          Reemplazar
-                        </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            loading={isUploading}
+                            onClick={() => {
+                              if (shouldShowIneGuide()) {
+                                setPendingCaptureType(slot.type);
+                                setShowGuide(true);
+                              } else {
+                                setCaptureType(slot.type);
+                              }
+                            }}
+                          >
+                            Reemplazar
+                          </Button>
                       </div>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      disabled={isUploading}
-                      onClick={() => setCaptureType(slot.type)}
-                      className="mt-md flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-outline-variant bg-background p-xl transition-colors hover:border-secondary"
-                    >
-                      {isUploading ? (
-                        <Spinner />
-                      ) : (
-                        <>
-                          <Icon name="add_a_photo" size={36} className="mb-sm text-on-surface-variant" />
-                          <span className="font-label-md text-label-md text-primary">
-                            Tomar foto con la cámara
-                          </span>
-                        </>
-                      )}
-                    </button>
+                      <button
+                        type="button"
+                        disabled={isUploading}
+                        onClick={() => {
+                          if (shouldShowIneGuide()) {
+                            setPendingCaptureType(slot.type);
+                            setShowGuide(true);
+                          } else {
+                            setCaptureType(slot.type);
+                          }
+                        }}
+                        className="mt-md flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-outline-variant bg-background p-xl transition-colors hover:border-secondary"
+                      >
+                        {isUploading ? (
+                          <Spinner />
+                        ) : (
+                          <>
+                            <Icon name="add_a_photo" size={36} className="mb-sm text-on-surface-variant" />
+                            <span className="font-label-md text-label-md text-primary">
+                              Tomar foto con la cámara
+                            </span>
+                          </>
+                        )}
+                      </button>
                   )}
                 </div>
               );
@@ -206,6 +223,20 @@ export function DocumentsPage() {
         </div>
       </div>
 
+      {showGuide && pendingCaptureType && (
+        <IneCaptureGuide
+          onContinue={() => {
+            setShowGuide(false);
+            setCaptureType(pendingCaptureType);
+            setPendingCaptureType(null);
+          }}
+          onDismiss={() => {
+            setShowGuide(false);
+            setCaptureType(pendingCaptureType);
+            setPendingCaptureType(null);
+          }}
+        />
+      )}
       {captureType && (
         <CameraCapture
           title={SLOTS.find((s) => s.type === captureType)?.label ?? 'Documento'}

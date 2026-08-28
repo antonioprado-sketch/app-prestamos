@@ -31,6 +31,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     ports:
       - "9000:9000"
       - "9001:9001"
@@ -55,7 +56,8 @@ services:
       NODE_ENV: development
       MINIO_ENDPOINT: minio
       MINIO_PUBLIC_ENDPOINT: ${MINIO_PUBLIC_ENDPOINT:-localhost}
-      MINIO_PUBLIC_PORT: "9000"
+      MINIO_PUBLIC_PORT: ${MINIO_PUBLIC_PORT:-9000}
+      MINIO_PUBLIC_USE_SSL: ${MINIO_PUBLIC_USE_SSL:-false}
     ports:
       - "3000:3000"
     volumes:

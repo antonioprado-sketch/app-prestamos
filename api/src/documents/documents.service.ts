@@ -15,6 +15,8 @@ const EXTENSION_BY_MIME: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'application/pdf': 'pdf',
+  'video/webm': 'webm',
+  'video/mp4': 'mp4',
 };
 
 @Injectable()

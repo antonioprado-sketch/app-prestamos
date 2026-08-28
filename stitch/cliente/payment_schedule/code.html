@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LendWise - Payment Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#d3e4fe",
+                        "primary-fixed": "#d8e2ff",
+                        "tertiary": "#141819",
+                        "on-primary-container": "#8293ba",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary": "#00629d",
+                        "surface-container": "#e5eeff",
+                        "tertiary-fixed": "#e0e3e5",
+                        "on-surface": "#0b1c30",
+                        "surface": "#f8f9ff",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#d3e4fe",
+                        "secondary-fixed": "#cfe5ff",
+                        "tertiary-fixed-dim": "#c4c7c9",
+                        "primary-fixed-dim": "#b6c6f0",
+                        "on-primary-fixed-variant": "#364669",
+                        "outline": "#75777f",
+                        "surface-tint": "#4e5e82",
+                        "on-tertiary-container": "#909395",
+                        "inverse-surface": "#213145",
+                        "on-tertiary-fixed": "#191c1e",
+                        "primary-container": "#1a2b4c",
+                        "on-secondary-fixed": "#001d33",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary-fixed-variant": "#004a77",
+                        "on-secondary-container": "#003558",
+                        "tertiary-container": "#292c2e",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed": "#071b3b",
+                        "on-primary": "#ffffff",
+                        "on-background": "#0b1c30",
+                        "on-tertiary": "#ffffff",
+                        "inverse-primary": "#b6c6f0",
+                        "on-error-container": "#93000a",
+                        "surface-container-high": "#dce9ff",
+                        "background": "#f8f9ff",
+                        "on-tertiary-fixed-variant": "#444749",
+                        "primary": "#031636",
+                        "on-surface-variant": "#44474e",
+                        "outline-variant": "#c5c6cf",
+                        "on-secondary": "#ffffff",
+                        "surface-dim": "#cbdbf5",
+                        "secondary-container": "#00a2fd",
+                        "surface-bright": "#f8f9ff",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "secondary-fixed-dim": "#98cbff",
+                        "success": "#10B981",
+                        "success-container": "rgba(16, 185, 129, 0.1)",
+                        "warning": "#F59E0B",
+                        "warning-container": "rgba(245, 158, 11, 0.1)"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "xs": "8px",
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "2xl": "48px",
+                        "3xl": "64px",
+                        "lg": "24px",
+                        "md": "16px",
+                        "base": "4px",
+                        "xl": "32px",
+                        "sm": "12px"
+                    },
+                    "fontFamily": {
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "label-md": ["Inter"],
+                        "data-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-md": ["14px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "data-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background min-h-screen font-body-md pb-24 md:pb-0 md:pl-72 lg:pl-72 antialiased selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-on-primary-container shadow-[0px_4px_20px_rgba(26,43,76,0.05)] docked full-width top-0 flex justify-between items-center px-margin-mobile h-16 w-full z-40 md:hidden sticky">
+<div class="flex items-center gap-sm">
+<img class="w-8 h-8 rounded-full object-cover" data-alt="A small, professional portrait photograph of an administrative user, framed in a tight circular crop. The lighting is studio quality, highlighting the subject's face against a clean, neutral background, perfect for a financial application profile avatar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAN0YHsUAFfjbdcw8ahJccCJY8g9b7QmxNavwZRFt9L756OT-bbfiOnXFQLxX7ewUNDGBGMUqmuZKe4MGPZAfpdPJxqfzkSXc6YY4oLr_ndREnmKQ4ioydbmuRH5-xUPErPQSHJj7xoTq00OJMJYZu04nlbIdLr7hIeWsqYuQRSY-QDvaQcHJUBgeSA_9Rb5sVMAZDz9K5Q4DYtxetgE_G4oHtB0ygkX1tM2v48l9FzpVb0skJx2vl2"/>
+<span class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-primary dark:text-primary-fixed">LendWise</span>
+</div>
+<button class="text-on-surface-variant hover:opacity-80 transition-opacity active:scale-95 duration-150">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+</header>
+<!-- Side Navigation Drawer (Desktop) -->
+<aside class="hidden md:flex flex-col h-screen fixed left-0 top-0 border-r border-outline-variant w-72 bg-surface-container-low dark:bg-tertiary-container text-primary dark:text-primary-fixed-dim z-50">
+<div class="p-6">
+<span class="font-headline-lg text-headline-lg font-bold text-primary">LendWise</span>
+</div>
+<div class="flex items-center gap-sm px-6 pb-6 mb-4 border-b border-outline-variant">
+<img class="w-12 h-12 rounded-full object-cover" data-alt="A professional headshot of an operations manager, used as an administrative avatar in a high-trust fintech application. Clean corporate lighting and a modern aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5cdxFy2z_J_ggFtV7F2y6FHOnWsuqkR5V43mNXM3ZhhzdJgXiEQMUyyfELvs1cmnK9dSb2ig5Aj3ACptDWn_Zlf9542S76eNWFRiYfJ_uswYiCB4TntXIp75L8fgpl3_oJ_ylEWNFQTNp7zqRvXi83zAzsAHNc-QzGNCvRT4DV6vUztYJWWymLFEBkoo9vrEAORW6lxzG9dAOIw82nqpYlf1jdsKZV2hEEWsXBo2BwwRRuvEU5Xdv"/>
+<div>
+<p class="font-headline-md text-headline-md text-primary">LendWise Admin</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Operations Manager</p>
+<p class="font-label-md text-label-md text-outline text-xs mt-1">v2.4.0</p>
+</div>
+</div>
+<nav class="flex-1 overflow-y-auto font-body-md text-body-md">
+<a class="flex items-center gap-md px-6 py-4 text-on-surface-variant hover:bg-surface-container dark:hover:bg-on-primary-container transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-md px-6 py-4 text-on-surface-variant hover:bg-surface-container dark:hover:bg-on-primary-container transition-all" href="#">
+<span class="material-symbols-outlined">pending_actions</span>
+                Loan Requests
+            </a>
+<a class="flex items-center gap-md px-6 py-4 text-on-surface-variant hover:bg-surface-container dark:hover:bg-on-primary-container transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+                Clients
+            </a>
+<a class="flex items-center gap-md px-6 py-4 text-secondary font-bold border-l-4 border-secondary bg-surface-container-highest dark:bg-on-primary-fixed-variant transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rule</span>
+                Rules Engine
+            </a>
+<a class="flex items-center gap-md px-6 py-4 text-on-surface-variant hover:bg-surface-container dark:hover:bg-on-primary-container transition-all" href="#">
+<span class="material-symbols-outlined">history</span>
+                Audit Logs
+            </a>
+<a class="flex items-center gap-md px-6 py-4 text-on-surface-variant hover:bg-surface-container dark:hover:bg-on-primary-container transition-all" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+</aside>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-3xl mx-auto p-margin-mobile md:p-margin-desktop">
+<header class="mb-lg">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg text-primary mb-2">Payment Schedule</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Track your upcoming, pending, and past loan installments.</p>
+</header>
+<!-- Filter Tabs -->
+<div class="flex gap-sm overflow-x-auto pb-4 mb-md hide-scrollbar">
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-primary-container text-on-primary font-label-md text-label-md transition-colors active:scale-95">
+                All
+            </button>
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md transition-colors active:scale-95 border border-outline-variant">
+                Pending
+            </button>
+<button class="whitespace-nowrap px-4 py-2 rounded-full bg-surface-container text-on-surface-variant hover:bg-surface-container-high font-label-md text-label-md transition-colors active:scale-95 border border-outline-variant">
+                Paid
+            </button>
+</div>
+<!-- Payment Cards List -->
+<div class="flex flex-col gap-md">
+<!-- Overdue Item -->
+<article class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-l-2 border-error flex justify-between items-center relative overflow-hidden group hover:shadow-[0px_8px_24px_rgba(26,43,76,0.08)] transition-shadow">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Payment #12</span>
+<span class="font-headline-md text-headline-md text-error">Oct 15, 2023</span>
+<div class="mt-1 flex items-center gap-1 bg-error-container text-on-error-container font-label-md text-[12px] px-2 py-0.5 rounded-full w-max">
+<span class="material-symbols-outlined text-[14px]">error</span>
+                        Overdue
+                    </div>
+</div>
+<div class="text-right">
+<span class="font-data-lg text-data-lg text-primary block">$450.00</span>
+<button class="mt-2 text-secondary font-label-md text-label-md hover:underline flex items-center justify-end gap-1">
+                        Pay Now <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+</article>
+<!-- Next Item (Active) -->
+<article class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border-l-2 border-secondary-container flex justify-between items-center relative overflow-hidden group hover:shadow-[0px_8px_24px_rgba(26,43,76,0.08)] transition-shadow">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Payment #13</span>
+<span class="font-headline-md text-headline-md text-primary">Nov 15, 2023</span>
+<div class="mt-1 flex items-center gap-1 bg-secondary-fixed text-on-secondary-fixed-variant font-label-md text-[12px] px-2 py-0.5 rounded-full w-max">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+                        Next
+                    </div>
+</div>
+<div class="text-right">
+<span class="font-data-lg text-data-lg text-primary block">$450.00</span>
+<button class="mt-2 bg-primary-container text-on-primary rounded-lg px-4 py-2 font-label-md text-label-md hover:bg-opacity-90 transition-opacity flex items-center gap-2">
+                        Pay 
+                    </button>
+</div>
+</article>
+<!-- Pending Item -->
+<article class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border border-outline-variant flex justify-between items-center relative overflow-hidden group opacity-80 hover:opacity-100 transition-opacity">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Payment #14</span>
+<span class="font-body-md text-body-md font-semibold text-primary">Dec 15, 2023</span>
+<div class="mt-1 flex items-center gap-1 bg-warning-container text-warning font-label-md text-[12px] px-2 py-0.5 rounded-full w-max">
+<span class="material-symbols-outlined text-[14px]">hourglass_empty</span>
+                        Pending
+                    </div>
+</div>
+<div class="text-right">
+<span class="font-body-lg text-body-lg font-semibold text-primary block">$450.00</span>
+</div>
+</article>
+<!-- Paid Item -->
+<article class="bg-surface-container-lowest p-md rounded-xl shadow-[0px_4px_20px_rgba(26,43,76,0.05)] border border-outline-variant flex justify-between items-center relative overflow-hidden group opacity-70">
+<div class="flex flex-col gap-1">
+<span class="font-label-md text-label-md text-on-surface-variant">Payment #11</span>
+<span class="font-body-md text-body-md font-semibold text-on-surface-variant">Sep 15, 2023</span>
+<div class="mt-1 flex items-center gap-1 bg-success-container text-success font-label-md text-[12px] px-2 py-0.5 rounded-full w-max">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                        Paid
+                    </div>
+</div>
+<div class="text-right">
+<span class="font-body-lg text-body-lg font-semibold text-on-surface-variant block">$450.00</span>
+</div>
+</article>
+</div>
+</main>
+<!-- BottomNavBar (Mobile) -->
+<nav class="bg-surface dark:bg-on-primary-container shadow-[0px_-4px_20px_rgba(26,43,76,0.05)] docked full-width bottom-0 rounded-t-xl fixed w-full z-50 flex justify-around items-center px-2 py-3 md:hidden">
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-xl p-2 w-16" href="#">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-label-md text-label-md text-[10px]">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-xl p-2 w-16" href="#">
+<span class="material-symbols-outlined mb-1">account_balance_wallet</span>
+<span class="font-label-md text-label-md text-[10px]">Loans</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-2xl px-4 py-1 hover:bg-surface-container-highest transition-colors w-20 active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">payments</span>
+<span class="font-label-md text-label-md text-[10px] font-bold">Payments</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant hover:bg-surface-container-highest transition-colors rounded-xl p-2 w-16" href="#">
+<span class="material-symbols-outlined mb-1">person</span>
+<span class="font-label-md text-label-md text-[10px]">Profile</span>
+</a>
+</nav>
+<style>
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</body></html>

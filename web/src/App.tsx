@@ -21,6 +21,9 @@ import { AdminLoanHistoricalPage } from './pages/AdminLoanHistoricalPage';
 import { AdminBlacklistPage } from './pages/AdminBlacklistPage';
 import { CollectorLoansPage } from './pages/CollectorLoansPage';
 import { DashboardShell } from './pages/dashboard/DashboardShell';
+import { ClientPaymentsPage } from './pages/dashboard/ClientPaymentsPage';
+import { ClientNotificationsPage } from './pages/dashboard/ClientNotificationsPage';
+import { ClientProfilePage } from './pages/dashboard/ClientProfilePage';
 import { Spinner } from './components/ui/Spinner';
 
 function homeFor(role: string) {
@@ -163,6 +166,24 @@ export default function App() {
           ) : (
             <Navigate to={user ? homeFor(user.role) : '/login'} />
           )
+        }
+      />
+      <Route
+        path="/app/cliente/pagos"
+        element={
+          user?.role === 'CLIENT' ? <ClientPaymentsPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/app/cliente/notificaciones"
+        element={
+          user?.role === 'CLIENT' ? <ClientNotificationsPage /> : <Navigate to={user ? homeFor(user.role) : '/login'} />
+        }
+      />
+      <Route
+        path="/app/cliente/perfil"
+        element={
+          user ? <ClientProfilePage /> : <Navigate to="/login" />
         }
       />
       <Route

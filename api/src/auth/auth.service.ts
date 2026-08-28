@@ -131,7 +131,15 @@ export class AuthService {
       include: { customer: true },
     });
     if (!user) throw new UnauthorizedException('Sesión inválida');
-    return { user: this.publicUser(user), customer: user.customer };
+    const lastLogin = await this.prisma.auditLog.findFirst({
+      where: { userPhone: phone, action: 'login' },
+      orderBy: { createdAt: 'desc' },
+    });
+    return {
+      user: this.publicUser(user),
+      customer: user.customer,
+      lastLoginAt: lastLogin?.createdAt ?? user.updatedAt,
+    };
   }
 
   async changePassword(
@@ -164,6 +172,29 @@ export class AuthService {
       ip,
       userAgent: ua,
     });
+    // Enviar confirmación (y, por requerimiento, la nueva contraseña) al correo registrado
+    if (user.email) {
+      const safe = next.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      await this.email
+        .send(
+          user.email,
+          'Contraseña actualizada — Prestamitos',
+          `<p>Hola ${phone},</p><p>Tu contraseña fue cambiada el ${new Date().toLocaleString('es-MX', { timeZone: 'America/Mexico_City' })} desde IP ${ip}.</p><p>Tu nueva contraseña es: <b>${safe}</b></p><p>Si no fuiste tú, contacta a soporte de inmediato.</p>`,
+        )
+        .catch(() => undefined);
+    } else {
+      const customer = await this.prisma.customer.findUnique({ where: { phone } });
+      if (customer?.email) {
+        const safe = next.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        await this.email
+          .send(
+            customer.email,
+            'Contraseña actualizada — Prestamitos',
+            `<p>Hola ${phone},</p><p>Tu contraseña fue cambiada. Tu nueva contraseña es: <b>${safe}</b></p>`,
+          )
+          .catch(() => undefined);
+      }
+    }
     return this.tokens.issue(phone, ip, ua);
   }
 

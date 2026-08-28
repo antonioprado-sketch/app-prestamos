@@ -1205,3 +1205,17 @@ Datos para documentar se recolectaron del cÃ³digo real (schema Prisma,
 controllers, router de la web, `business-rules.constants.ts`) â€” no de memoria.
 Pendientes heredados sin cambio: pasada visual en navegador y cÃ¡mara/geo/push
 por HTTPS (Fase 8).
+## Sincronización 2026-08-27 — perfil, reglas visibles, admin reset manual, GPS gate, admin usuarios buscador, Playwright siempre
+
+**Perfil cliente (/app/cliente/perfil) + reglas con palomitas:** password.policy.ts endurecida 8–64 mayús/minús/número/especial + PasswordRules.tsx checklist en vivo aplicado en Registro, Cambio y Perfil. ClientProfilePage muestra teléfono no editable, correo, nombres/apellidos, última conexión (AuditLog login o updatedAt) y cambio con currentPassword + email de confirmación (y envío de nueva a correo si existe). Ruta App.tsx /app/cliente/perfil.
+
+**Admin reset manual:** dmin-users.service.ts resetPassword ahora recibe 
+ewPassword validado y envía a User.email ?? Customer.email con mustChangePassword, mail Sent. FE modal manual con PasswordRules. Test dmin-users.e2e-spec.ts actualizado.
+
+**GPS gate en login** (implementado y revertido a pedido): location.ts ensureGpsGranted + LoginPage gate para CLIENT/COLLECTOR con animación ??? y Activar GPS (admin exento). Detectó LoginPage.test.tsx 2 failed por isSecureContext en jsdom — corregido con mock isSecureContext:true + geolocation. Luego revertido a login directo sin GPS ni InstallButton a pedido del usuario.
+
+**Admin Usuarios compacto + buscador:** dmin-users.service.ts findAll({search}) con OR phone/nombres/apellidos (	ake:50), ?search= en controller, FE search sticky debounce 300ms, header p-md compacto, tabla densa 48px desktop hidden md:block + cards p-3 gap-2 md:hidden, count y clear. preview-admin-usuarios-search.html.
+
+**Regla general Playwright siempre (desde 2026-08-27):** AGENTS.md:90 + docs/reglas-mita.md:14 + project_state.md:659 documentan que todo pedido con cambio UI/behaviour debe correr web: npm run test:e2e (1 worker, trace) y corregir rojos antes de entregar. Verificado con client-happy-path (fix InstallButton + RequireGps localStorage '"granted"' ? 'granted').
+
+Build 688?412KB, itest 44 pass, pi 72 pass, playwright 1 passed.

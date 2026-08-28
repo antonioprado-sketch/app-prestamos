@@ -112,16 +112,19 @@ describe('Admin users (e2e)', () => {
 
   it('POST /admin/users/:phone/reset-password genera una contraseña temporal usable', async () => {
     const token = await loginAdmin();
+    const newPass = 'Abcdef12!';
     const res = await request(app.getHttpServer())
       .post(`/api/v1/admin/users/${clientPhone}/reset-password`)
       .set('Authorization', `Bearer ${token}`)
+      .send({ newPassword: newPass })
       .expect(200);
 
-    expect(typeof res.body.tempPassword).toBe('string');
+    expect(res.body.tempPassword).toBe(newPass);
+    expect(typeof res.body.emailSent).toBe('boolean');
 
     const login = await request(app.getHttpServer())
       .post('/api/v1/auth/login')
-      .send({ phone: clientPhone, password: res.body.tempPassword })
+      .send({ phone: clientPhone, password: newPass })
       .expect(200);
     expect(login.body.mustChangePassword).toBe(true);
   });
@@ -131,6 +134,7 @@ describe('Admin users (e2e)', () => {
     await request(app.getHttpServer())
       .post(`/api/v1/admin/users/${adminPhone}/reset-password`)
       .set('Authorization', `Bearer ${token}`)
+      .send({ newPassword: 'Abcdef12!' })
       .expect(400);
   });
 
@@ -139,7 +143,17 @@ describe('Admin users (e2e)', () => {
     await request(app.getHttpServer())
       .post('/api/v1/admin/users/5500009999/reset-password')
       .set('Authorization', `Bearer ${token}`)
+      .send({ newPassword: 'Abcdef12!' })
       .expect(404);
+  });
+
+  it('POST /admin/users/:phone/reset-password rechaza password sin especial', async () => {
+    const token = await loginAdmin();
+    await request(app.getHttpServer())
+      .post(`/api/v1/admin/users/${clientPhone}/reset-password`)
+      .set('Authorization', `Bearer ${token}`)
+      .send({ newPassword: 'Abcdef12' })
+      .expect(400);
   });
 
   it('PATCH /admin/collectors/:phone/status desactiva a un cobrador y le bloquea el login', async () => {

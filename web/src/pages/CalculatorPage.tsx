@@ -152,6 +152,71 @@ function ScheduleSummary({ quote }: { quote: QuoteResult }) {
   );
 }
 
+function LoanSummaryCard({ quote }: { quote: QuoteResult }) {
+  const nextDate = quote.schedule[1]?.dueDate ?? quote.schedule[0]?.dueDate ?? quote.openingDate;
+  return (
+    <div className="rounded-xl bg-surface-container-lowest p-md shadow-level-2 border-l-2 border-secondary-container">
+      <div className="grid grid-cols-2 gap-y-lg gap-x-md">
+        <div className="col-span-2 md:col-span-1">
+          <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant mb-1">Monto solicitado</p>
+          <p className="font-data-lg text-data-lg text-primary">{currency.format(quote.amount)}</p>
+        </div>
+        <div className="col-span-2 md:col-span-1">
+          <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant mb-1">Total a pagar</p>
+          <p className="font-data-lg text-data-lg text-primary">{currency.format(quote.total)}</p>
+        </div>
+        <div className="col-span-2 my-2 h-px w-full bg-outline-variant opacity-30" />
+        <div>
+          <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant mb-1">Pago {quote.model === 'WEEKLY' ? 'semanal' : 'quincenal'}</p>
+          <p className="font-headline-md text-headline-md text-on-surface">{currency.format(quote.payment)}</p>
+        </div>
+        <div>
+          <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant mb-1">Duración</p>
+          <p className="font-headline-md text-headline-md text-on-surface">{quote.model === 'WEEKLY' ? '20 Semanas' : '10 Quincenas'}</p>
+        </div>
+        <div>
+          <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant mb-1">Fecha de inicio</p>
+          <p className="font-body-md text-body-md text-on-surface">{formatShortDate(quote.openingDate)}</p>
+        </div>
+        <div>
+          <p className="font-label-md text-label-md uppercase tracking-wider text-on-surface-variant mb-1">Próximo pago</p>
+          <p className="font-body-md text-body-md text-on-surface">{formatShortDate(nextDate)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PenaltyGuide() {
+  return (
+    <div className="rounded-xl bg-surface-container-low p-md">
+      <h3 className="font-headline-md text-headline-md text-primary mb-2 flex items-center gap-2">
+        <Icon name="warning" className="text-error" size={20} />¿Qué pasa si no pagas a tiempo?
+      </h3>
+      <p className="font-body-sm text-body-sm text-on-surface-variant mb-4">Se aplica una multa acumulable por cada pago consecutivo no realizado (configurable por el administrador).</p>
+      <div className="flex flex-col md:flex-row items-center gap-3 justify-between">
+        <div className="flex flex-col items-center p-3 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+          <span className="font-label-md text-label-md text-error mb-1">Atraso</span>
+          <Icon name="event_busy" className="text-on-surface-variant mb-1" size={20} />
+          <span className="font-body-sm text-body-sm text-center">Pago no realizado</span>
+        </div>
+        <Icon name="arrow_forward" className="text-outline rotate-90 md:rotate-0" size={20} />
+        <div className="flex flex-col items-center p-3 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+          <span className="font-label-md text-label-md text-on-surface mb-1">Semana 1</span>
+          <span className="font-headline-md text-headline-md text-error mb-1">+$50</span>
+          <span className="font-body-sm text-body-sm text-center">Multa</span>
+        </div>
+        <Icon name="arrow_forward" className="text-outline rotate-90 md:rotate-0" size={20} />
+        <div className="flex flex-col items-center p-3 bg-surface-container-lowest rounded-lg shadow-sm flex-1 w-full border border-outline-variant">
+          <span className="font-label-md text-label-md text-on-surface mb-1">Semana 2</span>
+          <span className="font-headline-md text-headline-md text-error mb-1">+$50</span>
+          <span className="font-body-sm text-body-sm text-center">Adicional</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PenaltySummary({ penalty }: { penalty: PenaltyResult }) {
   if (penalty.totalPenalty <= 0) return null;
 
@@ -478,6 +543,9 @@ export function CalculatorPage({ embedded = false }: { embedded?: boolean }) {
               <span className="font-data-lg text-data-lg text-primary">
                 {amount.toLocaleString('es-MX')}
               </span>
+              <span className="ml-2 font-body-sm text-body-sm text-outline">
+                · {maxAmount > 0 ? Math.round((amount / maxAmount) * 100) : 0}% de tu tope
+              </span>
             </div>
             <input
               id="amount-slider"
@@ -496,8 +564,36 @@ export function CalculatorPage({ embedded = false }: { embedded?: boolean }) {
               Máx: {maxAmount >= 20000 ? '$20k' : currency.format(maxAmount)}
             </span>
           </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-container-high">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-200"
+              style={{ width: `${maxAmount > 0 ? Math.min(100, Math.round((amount / maxAmount) * 100)) : 0}%` }}
+              aria-hidden
+            />
+          </div>
+          <div className="mt-1 flex justify-between px-1">
+            <span className="font-body-sm text-[11px] text-outline">Ocupado</span>
+            <span className="font-body-sm text-[11px] text-outline">Disponible</span>
+          </div>
+          <div className="mt-2 flex items-center gap-sm">
+            <button
+              type="button"
+              onClick={() => {
+                const half = Math.round(maxAmount / 2 / 500) * 500;
+                const clamped = Math.max(500, Math.min(maxAmount, half || 500));
+                setAmount(clamped);
+              }}
+              className="rounded-full border border-primary px-3 py-1.5 font-label-md text-[12px] font-semibold text-primary transition-colors hover:bg-primary-light focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              aria-label="Poner monto a mitad del crédito"
+            >
+              ↔ Poner a mitad
+            </button>
+            <span className="font-body-sm text-[11px] text-outline">
+              {currency.format(Math.round(maxAmount / 2 / 500) * 500)} · 50% de {maxAmount >= 20000 ? '$20,000' : currency.format(maxAmount)}
+            </span>
+          </div>
           {maxAmount < 20000 && (
-            <p className="mt-1 text-xs text-secondary">
+            <p className="mt-2 text-xs text-secondary">
               Tope de {currency.format(maxAmount)} para tu primer préstamo.
             </p>
           )}
@@ -694,11 +790,11 @@ export function CalculatorPage({ embedded = false }: { embedded?: boolean }) {
 
       {result && (
         <div ref={resultRef} className="flex w-full max-w-md flex-col gap-4 pt-6">
+          <LoanSummaryCard quote={result} />
+          <PenaltyGuide />
           <div className="flex flex-col gap-4 rounded-xl bg-surface-container-lowest p-md shadow-level-2">
             <ScheduleSummary quote={result} />
-
             {wantItError && <Alert variant="error">{wantItError}</Alert>}
-
             {user ? (
               <Button type="button" loading={wantItLoading} onClick={onWantIt}>
                 Lo quiero

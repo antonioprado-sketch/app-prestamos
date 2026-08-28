@@ -42,7 +42,33 @@ async function mockCamera(page: import('@playwright/test').Page) {
       }
       return canvas.captureStream(10);
     };
+    // Mock GPS para RequireGps — localhost es secureContext, pero el permiso está blocked por defecto
+    localStorage.setItem('locationConsent', 'granted');
+    const mockPos = { coords: { latitude: 19.4326, longitude: -99.1332, accuracy: 10 }, timestamp: Date.now() };
+    navigator.geolocation.getCurrentPosition = (success) => {
+      setTimeout(() => success(mockPos), 10);
+    };
+    try {
+      Object.defineProperty(navigator, 'permissions', {
+        value: {
+          query: async () => ({ state: 'granted' }),
+        },
+        configurable: true,
+      });
+    } catch {}
   });
+}
+
+async function dismissInstallPrompt(page: import('@playwright/test').Page) {
+  const btn = page.getByRole('button', { name: /Ahora no|Entendido/ });
+  try {
+    if (await btn.isVisible({ timeout: 2000 })) {
+      await btn.click();
+      await expect(btn).toBeHidden({ timeout: 2000 });
+    }
+  } catch {
+    // no prompt visible
+  }
 }
 
 test('cliente completa registro, cotización, onboarding, documentos y firma de pagaré', async ({
@@ -55,24 +81,29 @@ test('cliente completa registro, cotización, onboarding, documentos y firma de 
 
   // Registro
   await page.goto('/register');
+  await dismissInstallPrompt(page);
   await page.getByLabel('Teléfono').fill(phone);
   await page.getByLabel('Contraseña', { exact: true }).fill(password);
   await page.getByLabel('Confirmar contraseña').fill(password);
+  await dismissInstallPrompt(page);
   await page.getByRole('button', { name: 'Registrarme' }).click();
   await expect(page).toHaveURL(/\/app\/cliente/);
 
   // Cotizador
   await page.goto('/calculadora');
+  await dismissInstallPrompt(page);
   await page.getByLabel('Monto solicitado').fill('3000');
   await page.getByRole('button', { name: nextWeeklyOpeningDate() }).click();
   await page.getByRole('button', { name: 'Calcular opciones' }).click();
   await expect(page.getByText('Calendario de pagos')).toBeVisible();
 
   // Crear solicitud (borrador)
+  await dismissInstallPrompt(page);
   await page.getByRole('button', { name: 'Lo quiero' }).click();
   await expect(page.getByText(/Folio/)).toBeVisible();
 
   // Onboarding
+  await dismissInstallPrompt(page);
   await page.getByRole('button', { name: 'Completar mis datos' }).click();
   await expect(page).toHaveURL(/\/onboarding/);
   await page.getByLabel('Nombres').fill('Juan');
@@ -86,21 +117,38 @@ test('cliente completa registro, cotización, onboarding, documentos y firma de 
   await page.getByLabel('Ciudad').fill('CDMX');
   await page.getByLabel('Estado').fill('CDMX');
   await page.getByLabel('Referencias del domicilio').fill('Casa azul, portón negro');
+  await dismissInstallPrompt(page);
   await page.getByRole('button', { name: 'Guardar' }).click();
   await expect(page.getByText('Tus datos se guardaron correctamente.')).toBeVisible();
 
   // Documentos (INE frente/reverso + comprobante) — cámara simulada
+  await dismissInstallPrompt(page);
   await page.getByRole('link', { name: 'Continuar con mis documentos' }).click();
   await expect(page).toHaveURL(/\/documentos/);
   for (let i = 1; i <= 3; i++) {
+    await dismissInstallPrompt(page);
     await page.getByRole('button', { name: /Tomar foto con la cámara/ }).first().click();
+    const guideBtn = page.getByRole('button', { name: /Entendido, tomar foto/ });
+    try {
+      await guideBtn.waitFor({ timeout: 800 });
+      await guideBtn.click();
+    } catch {
+      // no guide this iteration
+    }
+    await dismissInstallPrompt(page);
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
     await page.waitForFunction(() => {
       const v = document.querySelector('[data-testid="camera-live"]') as HTMLVideoElement | null;
       return !!v && v.readyState >= 2;
     });
-    await dialog.getByRole('button', { name: 'Tomar foto' }).click();
+    // banner bottom puede tapar el botón — re-dismiss y force si hace falta
+    await dismissInstallPrompt(page);
+    try {
+      await dialog.getByRole('button', { name: 'Tomar foto' }).click({ timeout: 3000 });
+    } catch {
+      await dialog.getByRole('button', { name: 'Tomar foto' }).click({ force: true });
+    }
     await expect(dialog.getByRole('button', { name: 'Usar esta foto' })).toBeVisible();
     await dialog.getByRole('button', { name: 'Usar esta foto' }).click();
     await expect(page.getByText('Validado')).toHaveCount(i);

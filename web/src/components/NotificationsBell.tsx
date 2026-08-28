@@ -42,6 +42,7 @@ export function NotificationsBell() {
 
   const markRead = (id: string) => {
     setItems((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
+    setOpen(false);
     apiFetch(`/notifications/${id}/read`, { method: 'PATCH' }).catch(() => undefined);
   };
 

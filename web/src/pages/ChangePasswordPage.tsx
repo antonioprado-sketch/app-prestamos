@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Card } from '../components/ui/Card';
 import { Alert } from '../components/ui/Alert';
+import { PasswordRules, isPasswordValid } from '../components/PasswordRules';
 
 function homeFor(role: string) {
   if (role === 'ADMIN') return '/admin/indicadores';
@@ -18,7 +19,9 @@ function validatePassword(password: string): string | null {
   if (password.length < 8) return 'La contraseña debe tener mínimo 8 caracteres';
   if (password.length > 64) return 'La contraseña debe tener máximo 64 caracteres';
   if (!/[A-Z]/.test(password)) return 'La contraseña debe tener al menos una mayúscula';
+  if (!/[a-z]/.test(password)) return 'La contraseña debe tener al menos una minúscula';
   if (!/\d/.test(password)) return 'La contraseña debe tener al menos un número';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'La contraseña debe tener al menos un carácter especial';
   return null;
 }
 
@@ -86,10 +89,8 @@ export function ChangePasswordPage() {
             onChange={(e) => setConfirm(e.target.value)}
             required
           />
-          <p className="text-xs text-secondary">
-            Mínimo 8 caracteres, máximo 64, al menos una mayúscula y un número.
-          </p>
-          <Button type="submit" loading={loading}>
+          <PasswordRules password={next} confirm={confirm} />
+          <Button type="submit" loading={loading} disabled={!isPasswordValid(next, confirm) || !current}>
             Guardar
           </Button>
         </form>

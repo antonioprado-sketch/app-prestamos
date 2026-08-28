@@ -31,6 +31,10 @@ describe('DocumentsPage', () => {
       (await screen.findAllByRole('button', { name: 'Tomar foto con la cámara' }))[0],
     );
 
+    const guide = await screen.findByRole('dialog', { name: /Cómo tomar tu INE/i });
+    expect(guide).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /Entendido, tomar foto/i }));
+
     const dialog = await screen.findByRole('dialog', { name: /INE Frente/i });
     expect(dialog).toBeTruthy();
 

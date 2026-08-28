@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AuthProvider } from '../store/auth';
@@ -33,6 +33,18 @@ function fillAndSubmit() {
 describe('LoginPage', () => {
   beforeEach(() => {
     localStorage.clear();
+    Object.defineProperty(window, 'isSecureContext', { value: true, configurable: true });
+    vi.stubGlobal('navigator', {
+      ...navigator,
+      geolocation: {
+        getCurrentPosition: (success: PositionCallback) =>
+          success({ coords: { latitude: 19, longitude: -99, accuracy: 10 } } as GeolocationPosition),
+      },
+    } as unknown as Navigator);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it('muestra el título y los campos', () => {

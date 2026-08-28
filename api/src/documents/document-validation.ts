@@ -94,11 +94,19 @@ export function validateDocument(
 
   // MediaRecorder declara mime con parámetros de códec (ej. "video/webm;codecs=vp9,opus");
   // solo nos importa el tipo base para esta comparación anti-spoofing.
-  const declaredBaseMime = declaredMime.split(';')[0].trim();
-  if (declaredBaseMime !== sniffed) {
-    throw new DocumentValidationError(
-      'El contenido del archivo no coincide con el tipo declarado',
-    );
+  const declaredBaseMime = declaredMime.split(';')[0].trim().toLowerCase();
+  const sniffedLower = sniffed.toLowerCase();
+  // Busboy/multer a veces cae a text/plain u octet-stream cuando el Content-Type
+  // trae parámetros con coma (ej. video/webm;codecs=vp8,opus). Si el sniff es
+  // concluyente (video/webm|mp4) y está permitido para el tipo, aceptamos aunque
+  // el declarado venga genérico, para no bloquear celulares reales.
+  const GENERIC_FALLBACKS = ['text/plain', 'application/octet-stream', ''];
+  if (declaredBaseMime !== sniffedLower) {
+    if (!(GENERIC_FALLBACKS.includes(declaredBaseMime) && ['video/webm', 'video/mp4'].includes(sniffedLower))) {
+      throw new DocumentValidationError(
+        `El contenido del archivo no coincide con el tipo declarado (declarado=${declaredBaseMime}, detectado=${sniffedLower})`,
+      );
+    }
   }
 
   return sniffed;

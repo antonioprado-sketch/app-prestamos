@@ -19,4 +19,10 @@ describe('validatePassword', () => {
   it('permite símbolos', () => {
     expect(validatePassword('Abcdef12!@#$')).toBeNull();
   });
+  it('rechaza sin carácter especial', () => {
+    expect(validatePassword('Abcdef12x')).toContain('especial');
+  });
+  it('rechaza sin minúscula', () => {
+    expect(validatePassword('ABCDEF12!')).toContain('minúscula');
+  });
 });

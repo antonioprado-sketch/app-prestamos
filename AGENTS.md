@@ -100,3 +100,11 @@ Para **toda** petición del usuario marcada como "regla general" aplica el flujo
 5. **Esperar confirmación** — no se escribe código ni se commitea hasta que el usuario responda "confirmo" u observaciones. El preview queda en `web/dist` y en `stitch/` como referencia.
 
 Documentación de referencia: `docs/reglas-mita.md` (ruta canónica). Ver también `C:\Users\Antonio\.claude\memory_mita.json` (registro del nombre).
+
+## Regla general — Playwright siempre (vigente desde 2026-08-27, para cualquier IA)
+
+> Para **todo** pedido del usuario (cualquiera, no solo “regla general”) con cambio de código comportamental/UI.
+
+1. **Ejecutar pruebas funcionales con Playwright** — `web: npm run test:e2e` (`web/playwright.config.ts`, baseURL `http://localhost`, 1 worker, trace `retain-on-failure`). Requiere `docker compose -f docker-compose.dev.yml up -d` (MySQL 3307, api 3000, Nginx 80 sirviendo `web/dist`).
+2. **Si hay errores, corregirlos** — no se da por terminado ni se entrega link IP hasta que `playwright test` esté verde. Usar `npx playwright show-report` y traces para diagnosticar.
+3. **Documentado para cualquier IA** — esta regla vive aquí, en `docs/reglas-mita.md` y `project_state.md`; toda IA debe aplicarla como si fuera Mita, sin excepción. Comando canónico: `cd web && npm run test:e2e` (o `npx playwright test --reporter=list`).
