@@ -38,6 +38,7 @@ export function DocumentList({ documents }: { documents: AdminDocument[] }) {
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [videoOpenId, setVideoOpenId] = useState<string | null>(null);
+  const [viewer, setViewer] = useState<{ id: string; blobUrl: string; isPdf: boolean; label: string } | null>(null);
 
   const signedUrl = async (id: string): Promise<string | null> => {
     if (urls[id]) return urls[id];
@@ -59,9 +60,28 @@ export function DocumentList({ documents }: { documents: AdminDocument[] }) {
     }
   };
 
-  const openInTab = async (id: string) => {
-    const url = await signedUrl(id);
-    if (url) window.open(url, '_blank', 'noopener');
+  const openViewer = async (doc: AdminDocument) => {
+    const url = await signedUrl(doc.id);
+    if (!url) return;
+    setLoadingId(doc.id);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('No se pudo descargar el documento');
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      if (viewer?.blobUrl) URL.revokeObjectURL(viewer.blobUrl);
+      setViewer({ id: doc.id, blobUrl, isPdf: isPdf(doc), label: documentTypeLabel(doc.type) });
+    } catch {
+      // Fallback a window.open si el fetch blob falla (CORS inusual)
+      window.open(url, '_blank', 'noopener');
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
+  const closeViewer = () => {
+    if (viewer?.blobUrl) URL.revokeObjectURL(viewer.blobUrl);
+    setViewer(null);
   };
 
   const toggleVideo = async (id: string) => {
@@ -109,7 +129,7 @@ export function DocumentList({ documents }: { documents: AdminDocument[] }) {
                 type="button"
                 variant="ghost"
                 loading={loadingId === doc.id}
-                onClick={() => openInTab(doc.id)}
+                onClick={() => openViewer(doc)}
               >
                 {isPdf(doc) ? 'Ver PDF' : 'Ver'}
               </Button>
@@ -127,6 +147,24 @@ export function DocumentList({ documents }: { documents: AdminDocument[] }) {
           )}
         </div>
       ))}
+      {viewer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" onClick={closeViewer}>
+          <div className="w-full max-w-3xl max-h-[85vh] overflow-auto rounded-xl bg-white p-3 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-secondary">{viewer.label}</p>
+              <div className="flex gap-2">
+                <a href={viewer.blobUrl} download={`${viewer.label.replace(/\s+/g, '_')}.${viewer.isPdf ? 'pdf' : 'jpg'}`} className="rounded-full bg-surface-container-low px-3 py-1 text-xs font-medium text-primary hover:bg-surface-container-high">Descargar</a>
+                <button type="button" onClick={closeViewer} className="rounded-full bg-primary px-3 py-1 text-xs font-medium text-white">Cerrar</button>
+              </div>
+            </div>
+            {viewer.isPdf ? (
+              <iframe src={viewer.blobUrl} title={viewer.label} className="h-[70vh] w-full rounded-lg border border-gray-200" />
+            ) : (
+              <img src={viewer.blobUrl} alt={viewer.label} className="max-h-[70vh] w-full object-contain rounded-lg bg-black" />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

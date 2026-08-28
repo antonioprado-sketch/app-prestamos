@@ -59,7 +59,6 @@ export function VideoIdentityPage() {
   const [recording, setRecording] = useState(false);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [videoBlob, setVideoBlob] = useState<Blob | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [done, setDone] = useState(false);
@@ -161,14 +160,6 @@ export function VideoIdentityPage() {
     detectionLoopRef.current = null;
   };
 
-  // Maneja preview blob URL con revoke
-  useEffect(() => {
-    if (!videoBlob) { setPreviewUrl(null); return; }
-    const url = URL.createObjectURL(videoBlob);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [videoBlob]);
-
   const startRecording = () => {
     const stream = streamRef.current;
     if (!stream) return;
@@ -246,11 +237,6 @@ export function VideoIdentityPage() {
       videoRef.current.play().catch(() => undefined);
     }
   }, [showInstructions, videoBlob, cameraReady]);
-
-  const retry = () => {
-    setVideoBlob(null);
-    setError(null);
-  };
 
   const submit = async () => {
     if (!videoBlob) return;
@@ -355,14 +341,13 @@ export function VideoIdentityPage() {
           )}
 
           {videoBlob ? (
-            <video
-              src={previewUrl ?? undefined}
-              controls
-              playsInline
-              className="h-full w-full object-cover"
-              data-testid="preview"
-              onError={() => setError('No se pudo cargar el video grabado. Prueba grabar de nuevo (usa Chrome/Edge actualizado).')}
-            />
+            <div className="flex h-full w-full flex-col items-center justify-center bg-surface-container-lowest p-lg" data-testid="preview">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-success/15 animate-[pop_.35s_ease]" style={{animation:'pop .35s ease'}}>
+                <Icon name="check_circle" size={48} className="text-success" filled />
+              </div>
+              <p className="mt-3 text-center font-headline-md text-headline-md text-success">¡Video grabado con éxito!</p>
+              <p className="mt-1 text-center text-xs leading-snug text-on-surface-variant">Tu video se guardó correctamente.<br/>Si el administrador requiere uno nuevo, te avisará por la app.</p>
+            </div>
           ) : (
             <video ref={videoRef} autoPlay muted playsInline className="h-full w-full -scale-x-100 object-cover" />
           )}
@@ -420,9 +405,6 @@ export function VideoIdentityPage() {
           <div className="mt-4 flex flex-col gap-2">
             <Button type="button" loading={uploading} onClick={submit}>
               Enviar video
-            </Button>
-            <Button type="button" variant="ghost" disabled={uploading} onClick={retry}>
-              Grabar de nuevo
             </Button>
           </div>
         )}

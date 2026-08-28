@@ -1205,17 +1205,29 @@ Datos para documentar se recolectaron del cÃ³digo real (schema Prisma,
 controllers, router de la web, `business-rules.constants.ts`) â€” no de memoria.
 Pendientes heredados sin cambio: pasada visual en navegador y cÃ¡mara/geo/push
 por HTTPS (Fase 8).
-## Sincronización 2026-08-27 — perfil, reglas visibles, admin reset manual, GPS gate, admin usuarios buscador, Playwright siempre
+## Sincronizaciï¿½n 2026-08-27 ï¿½ perfil, reglas visibles, admin reset manual, GPS gate, admin usuarios buscador, Playwright siempre
 
-**Perfil cliente (/app/cliente/perfil) + reglas con palomitas:** password.policy.ts endurecida 8–64 mayús/minús/número/especial + PasswordRules.tsx checklist en vivo aplicado en Registro, Cambio y Perfil. ClientProfilePage muestra teléfono no editable, correo, nombres/apellidos, última conexión (AuditLog login o updatedAt) y cambio con currentPassword + email de confirmación (y envío de nueva a correo si existe). Ruta App.tsx /app/cliente/perfil.
+**Perfil cliente (/app/cliente/perfil) + reglas con palomitas:** password.policy.ts endurecida 8ï¿½64 mayï¿½s/minï¿½s/nï¿½mero/especial + PasswordRules.tsx checklist en vivo aplicado en Registro, Cambio y Perfil. ClientProfilePage muestra telï¿½fono no editable, correo, nombres/apellidos, ï¿½ltima conexiï¿½n (AuditLog login o updatedAt) y cambio con currentPassword + email de confirmaciï¿½n (y envï¿½o de nueva a correo si existe). Ruta App.tsx /app/cliente/perfil.
 
 **Admin reset manual:** dmin-users.service.ts resetPassword ahora recibe 
-ewPassword validado y envía a User.email ?? Customer.email con mustChangePassword, mail Sent. FE modal manual con PasswordRules. Test dmin-users.e2e-spec.ts actualizado.
+ewPassword validado y envï¿½a a User.email ?? Customer.email con mustChangePassword, mail Sent. FE modal manual con PasswordRules. Test dmin-users.e2e-spec.ts actualizado.
 
-**GPS gate en login** (implementado y revertido a pedido): location.ts ensureGpsGranted + LoginPage gate para CLIENT/COLLECTOR con animación ??? y Activar GPS (admin exento). Detectó LoginPage.test.tsx 2 failed por isSecureContext en jsdom — corregido con mock isSecureContext:true + geolocation. Luego revertido a login directo sin GPS ni InstallButton a pedido del usuario.
+**GPS gate en login** (implementado y revertido a pedido): location.ts ensureGpsGranted + LoginPage gate para CLIENT/COLLECTOR con animaciï¿½n ??? y Activar GPS (admin exento). Detectï¿½ LoginPage.test.tsx 2 failed por isSecureContext en jsdom ï¿½ corregido con mock isSecureContext:true + geolocation. Luego revertido a login directo sin GPS ni InstallButton a pedido del usuario.
 
 **Admin Usuarios compacto + buscador:** dmin-users.service.ts findAll({search}) con OR phone/nombres/apellidos (	ake:50), ?search= en controller, FE search sticky debounce 300ms, header p-md compacto, tabla densa 48px desktop hidden md:block + cards p-3 gap-2 md:hidden, count y clear. preview-admin-usuarios-search.html.
 
 **Regla general Playwright siempre (desde 2026-08-27):** AGENTS.md:90 + docs/reglas-mita.md:14 + project_state.md:659 documentan que todo pedido con cambio UI/behaviour debe correr web: npm run test:e2e (1 worker, trace) y corregir rojos antes de entregar. Verificado con client-happy-path (fix InstallButton + RequireGps localStorage '"granted"' ? 'granted').
 
-Build 688?412KB, itest 44 pass, pi 72 pass, playwright 1 passed.
+Build 688â†’412KB, vitest 44 pass, api 72 pass, playwright 1 passed.
+
+## Fix 2026-08-28 â€” video celular + visor admin (Mita aprobado)
+
+**SÃ­ntoma:** `POST /documents` Android 1.9MB `400` y `HEAD /documentos/... 403` en Nginx, preview negro en celular y admin video ya ok tras primer fix pero foto/PDF redirigÃ­a a `/` por `window.open` bloqueado.
+
+**Causa 1 â€” firma MinIO:** `docker-compose.dev.yml:59` hardcodeado `9000` vs `.env:443` â†’ URL `https://:9000` vs proxy `Host` sin puerto â†’ `SignatureDoesNotMatch`. Fix genÃ©rico `${MINIO_PUBLIC_PORT}` + `MINIO_PUBLIC_USE_SSL`, URL sin `:9000` â†’ `200`.
+
+**Causa 2 â€” mime codec:** `video/webm;codecs=vp8,opus` con coma mal-parseado por `busboy` a `text/plain` â†’ `validateDocument` `no coincide`. Fix cliente normaliza a base `video/webm` antes de `FormData` y servidor tolera `text/plain/octet-stream` cuando sniff es video.
+
+**Causa 3 â€” UX:** preview `<video>` no decodificaba en algunos celulares y â€œGrabar de nuevoâ€ confundÃ­a. Aprobado Mita: animaciÃ³n `âœ“ Â¡Video grabado con Ã©xito!` sin preview ni re-grabar; re-grabar solo si admin notifica. `DocumentList` cambia `window.open` por `fetchâ†’blobâ†’modal` con `img/iframe` + Descargar, evitando popup-blocker.
+
+Verificado `node` 201 + `admin GET 200` para video/imagen/pdf, `playwright 1 passed`, `api 72`, `web build` 1160KB, preview `preview-video-exito.html`.
